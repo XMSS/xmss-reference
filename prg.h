@@ -1,3 +1,9 @@
+/*
+prg.h version 20150811
+Andreas Hülsing
+Public domain.
+*/
+
 #ifndef PRG_H
 #define PRG_H
 #include <stdlib.h>

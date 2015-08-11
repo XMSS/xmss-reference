@@ -1,5 +1,5 @@
 /*
-wots.c version 2015xxxx
+wots.c version 20150811
 Andreas Hülsing
 Public domain.
 */

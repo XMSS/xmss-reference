@@ -1,3 +1,8 @@
+/*
+xmss_commons.h version 20150811
+Andreas Hülsing
+Public domain.
+*/
 #ifndef XMSS_COMMONS_H
 #define XMSS_COMMONS_H
 

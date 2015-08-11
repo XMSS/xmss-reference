@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include "../wots.h"
 #include "../randombytes.h"
-#include "../params.h"
 
 static void hexdump(unsigned char *a, size_t len)
 {

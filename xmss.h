@@ -1,3 +1,9 @@
+/*
+xmss.h version 20150811
+Andreas Hülsing
+Public domain.
+*/
+
 #include "wots.h"
 
 #ifndef XMSS_H

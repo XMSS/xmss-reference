@@ -1,5 +1,10 @@
+/*
+prg.c version 20150811
+Andreas Hülsing
+Public domain.
+*/
+
 #include "chacha.h"
-//#include "params.h"
 #include "prg.h"
 
 const unsigned char zero_nonce[12] = {0};

@@ -1,7 +1,11 @@
+/*
+hash.h version 20150811
+Andreas Hülsing
+Public domain.
+*/
+
 #ifndef HASH_H
 #define HASH_H
-
-#include "params.h"
 
 int prf_m(unsigned char *out, const unsigned char *in, size_t inlen, const unsigned char *key, int keylen);
 int hash_m(unsigned char *out,const unsigned char *in,unsigned long long inlen, const unsigned char *key, const int keylen, const int m);

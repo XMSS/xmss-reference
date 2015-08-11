@@ -1,3 +1,9 @@
+/*
+xmss_commons.c version 20150811
+Andreas Hülsing
+Public domain.
+*/
+
 #include "xmss_commons.h"
 #include <stdlib.h>
 #include <stdio.h>

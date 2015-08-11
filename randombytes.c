@@ -1,3 +1,7 @@
+/*
+This code was taken from the SPHINCS reference implementation and is public domain.
+*/
+
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>

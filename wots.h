@@ -1,7 +1,12 @@
+/*
+wots.h version 20150811
+Andreas Hülsing
+Public domain.
+*/
+
 #ifndef WOTS_H
 #define WOTS_H
 
-#include "params.h"
 /**
  * WOTS parameter set
  * 

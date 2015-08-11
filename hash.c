@@ -1,4 +1,9 @@
-#include "params.h"
+/*
+hash.c version 20150811
+Andreas Hülsing
+Public domain.
+*/
+
 #include "prg.h"
 
 #include <stddef.h>
