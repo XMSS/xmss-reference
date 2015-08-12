@@ -43,7 +43,7 @@ void wots_set_params(wots_params *params, int m, int n, int w)
  * Expands a 32 byte array into a len*n byte array 
  * this is done using chacha20 with nonce 0 and counter 0
  */
-static void expand_seed(unsigned char *outseeds, const unsigned char *inseed, wots_params *params)
+static void expand_seed(unsigned char *outseeds, const unsigned char *inseed, const wots_params *params)
 {
   prg(outseeds, params->keysize, inseed, 32);
 }
@@ -75,7 +75,7 @@ static void gen_chain(unsigned char *out, const unsigned char *in, int start, in
  * 
  * 
  */
-static void base_w(int *output, const unsigned char *input, int in_len, wots_params *params)
+static void base_w(int *output, const unsigned char *input, int in_len, const wots_params *params)
 {
   int in = 0;
   int out = 0;
@@ -99,7 +99,7 @@ static void base_w(int *output, const unsigned char *input, int in_len, wots_par
 /**
  * Alternative base w algorithm for w = 16 to check...
  */
-static void base_w_alternative(int *output, unsigned char *input, int in_len, wots_params *params)
+static void base_w_alternative(int *output, unsigned char *input, int in_len, const wots_params *params)
 {
   uint i = 0; 
   for(i = 0; i < in_len; i += 2)
@@ -109,7 +109,7 @@ static void base_w_alternative(int *output, unsigned char *input, int in_len, wo
   }
 }
 
-void wots_pkgen(unsigned char *pk, const unsigned char *sk, wots_params *params, const unsigned char *pub_seed, unsigned char addr[16])
+void wots_pkgen(unsigned char *pk, const unsigned char *sk, const wots_params *params, const unsigned char *pub_seed, unsigned char addr[16])
 {
   uint i;
   expand_seed(pk, sk, params);
@@ -123,7 +123,7 @@ void wots_pkgen(unsigned char *pk, const unsigned char *sk, wots_params *params,
 }
 
 
-void wots_sign(unsigned char *sig, const unsigned char *msg, const unsigned char *sk, wots_params *params, const unsigned char *pub_seed, unsigned char addr[16])
+void wots_sign(unsigned char *sig, const unsigned char *msg, const unsigned char *sk, const wots_params *params, const unsigned char *pub_seed, unsigned char addr[16])
 {
   int basew[params->len];
   int csum = 0;
@@ -162,7 +162,7 @@ void wots_sign(unsigned char *sig, const unsigned char *msg, const unsigned char
   }
 }
 
-void wots_pkFromSig(unsigned char *pk, const unsigned char *sig, const unsigned char *msg, wots_params *params, const unsigned char *pub_seed, unsigned char addr[16])
+void wots_pkFromSig(unsigned char *pk, const unsigned char *sig, const unsigned char *msg, const wots_params *params, const unsigned char *pub_seed, unsigned char addr[16])
 {
   int basew[params->len];
   int csum = 0;

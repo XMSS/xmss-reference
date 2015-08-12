@@ -38,7 +38,7 @@ unsigned char addr[16] = {1,2,3,4};
   for(i=0;i<sig_len;i++)
     if(pk1[i] != pk2[i])
     {
-      printf("fuck %d\n",i);
+      printf("pk1 != pk2 %d\n",i);
       return -1;
     }
   printf("worked great!\npk1: ");

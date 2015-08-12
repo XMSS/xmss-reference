@@ -4,7 +4,7 @@
 #include "../xmss.h"
 
 #define MLEN 3491
-
+#define SIGNATURES 50
 
 
 unsigned char sk[100];
@@ -25,7 +25,7 @@ int main()
   xmss_params p;
   xmss_params *params = &p;
   xmss_set_params(params, m, n, h, w);
-  unsigned long long signature_length = 4+m+params->wots_par->keysize+h*n;
+  unsigned long long signature_length = 4+m+params->wots_par.keysize+h*n;
   unsigned char mo[MLEN+signature_length];
   unsigned char sm[MLEN+signature_length];
 
@@ -37,15 +37,20 @@ int main()
   // check pub_seed in SK
   for(i=0;i<n;i++)
   {
-    if(pk[n+i] != sk[4+m+n+i]) printf("fuck %llu",i);
+    if(pk[n+i] != sk[4+m+n+i]) printf("pk.pub_seed != sk.pub_seed %llu",i);
   }
 
   // check index
-  unsigned long idx = (sk[0] << 24) | (sk[1] << 16) | (sk[2] << 8) || sk[3];
-  if(idx) printf("\nfuck %lu\n",idx);
+  unsigned long idx = ((unsigned long)sk[0] << 24) | ((unsigned long)sk[1] << 16) | ((unsigned long)sk[2] << 8) | sk[3];
+  if(idx) printf("\nidx != 0 %lu\n",idx);
   
-  printf("sign\n");
-  xmss_sign(sk, sm, &smlen, mi, MLEN, params, pk);
+  for(i=0;i<SIGNATURES;i++){
+    printf("sign\n");
+    xmss_sign(sk, sm, &smlen, mi, MLEN, params);
+    idx = ((unsigned long)sm[0] << 24) | ((unsigned long)sm[1] << 16) | ((unsigned long)sm[2] << 8) | sm[3];
+    printf("\nidx = %lu\n",idx);
+  
+  }
 
   r = memcmp(mi, sm+signature_length,MLEN);
   printf("%d\n", r);
