@@ -17,8 +17,8 @@ int main()
   unsigned long long i,j;
   int m = 32;
   int n = 32;
-  int h = 10;
-  int d = 2;
+  int h = 20;
+  int d = 5;
   int w = 16;
   
   xmssmt_params p;
