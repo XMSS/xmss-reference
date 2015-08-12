@@ -121,7 +121,7 @@ void xmssmt_set_params(xmssmt_params *params, int m, int n, int h, int d, int w)
   params->d = d;
   params->m = m;
   params->n = n;
-  params->index_len = ceil(h / 8);
+  params->index_len = (h + 7) / 8;
   xmss_params xmss_par;
   xmss_set_params(&xmss_par, m, n, (h/d), w);
   params->xmss_par = xmss_par;
@@ -748,7 +748,7 @@ int xmssmt_sign_open(unsigned char *msg, unsigned long long *msglen, const unsig
   
   // Extract index
   for(i = 0; i < idx_len; i++){
-    idx |= ((unsigned long long)sig_msg[i]) << 8*(idx_len - 1 - i);
+    idx |= ((unsigned long long)sig_msg[i]) << (8*(idx_len - 1 - i));
   }
   printf("verify:: idx = %llu\n",idx);
   sig_msg += idx_len;

@@ -22,8 +22,7 @@ test/test_xmssmt: chacha.c hash.c prg.c randombytes.c wots.c xmss.c xmss_commons
 
 clean:
 	-rm *.o *.s
-	-rm test/test_sign
+	-rm test/test_chacha
 	-rm test/test_wots
-	-rm test/test_horst
-	-rm test/speed
-	-rm test/gen_testvectors
+	-rm test/test_xmss
+	-rm test/test_xmssmt

@@ -93,10 +93,7 @@ int hash_m(unsigned char *out,const unsigned char *in,unsigned long long inlen,c
  */
 int hash_2n_n(unsigned char *out,const unsigned char *in, const unsigned char *pub_seed, unsigned char addr[16], const int n)
 {
-  if(n != 32){ 
-    fprintf(stderr, "Hash.c:hash_2n_n: Current implementation does not support n != 32, yet.\n");
-    return -1;
-  }
+  
   unsigned char buf[4*n];
   unsigned char key[n];
   unsigned char bitmask[2*n];
@@ -104,12 +101,12 @@ int hash_2n_n(unsigned char *out,const unsigned char *in, const unsigned char *p
   
   SET_KEY_BIT(addr,1);
   SET_BLOCK_BIT(addr,0);
-  prg_with_counter(key, n, pub_seed, 32, addr);
+  prg_with_counter(key, n, pub_seed, n, addr);
   SET_KEY_BIT(addr,0);
   // Use MSB order
-  prg_with_counter(bitmask, n, pub_seed, 32, addr);
+  prg_with_counter(bitmask, n, pub_seed, n, addr);
   SET_BLOCK_BIT(addr,1);
-  prg_with_counter(bitmask+n, n, pub_seed, 32, addr);
+  prg_with_counter(bitmask+n, n, pub_seed, n, addr);
   for(i=0;i<n;i++)
   {
     buf[i] = 0x00;
@@ -117,32 +114,47 @@ int hash_2n_n(unsigned char *out,const unsigned char *in, const unsigned char *p
     buf[2*n+i] = in[i] ^ bitmask[i];
     buf[3*n+i] = in[n+i] ^ bitmask[n+i];
   }
-  SHA256(buf,4*n,out);
-  return 0;
+  if(n==32){
+    SHA256(buf,4*n,out);
+    return 0;
+  } else {
+    if(n==64){
+      SHA512(buf,4*n,out);
+      return 0;
+    } else {
+      fprintf(stderr, "Hash.c:hash_2n_n: Code only supports n=32 or n=64");
+      return -1;
+    }
+  }
 }
 
 int hash_n_n(unsigned char *out,const unsigned char *in, const unsigned char *pub_seed, unsigned char addr[16], const int n)
-{
-  if(n != 32){ 
-    fprintf(stderr, "Hash.c:hash_n_n: Current implementation does not support n != 32, yet.\n");
-    return -1;
-  }
-  
+{ 
   unsigned char buf[3*n];
   unsigned char key[n];
   unsigned char bitmask[n];
   int i;
   
   WOTS_SELECT_KEY(addr);
-  prg_with_counter(key, n, pub_seed, 32, addr);
+  prg_with_counter(key, n, pub_seed, n, addr);
   WOTS_SELECT_BLOCK(addr);
-  prg_with_counter(bitmask, n, pub_seed, 32, addr);
+  prg_with_counter(bitmask, n, pub_seed, n, addr);
   for(i=0;i<n;i++)
   {
     buf[i] = 0x00;
     buf[n+i] = key[i];
     buf[2*n+i] = in[i] ^ bitmask[i];
   }
-  SHA256(buf,3*n,out);
-  return 0;
+  if(n==32){
+    SHA256(buf,3*n,out);
+    return 0;
+  } else {
+    if(n==64){
+      SHA512(buf,3*n,out);
+      return 0;
+    } else {
+      fprintf(stderr, "Hash.c:hash_n_n: Code only supports n=32 or n=64");
+      return -1;
+    }
+  }
 }
