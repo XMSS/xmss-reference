@@ -8,7 +8,7 @@ Public domain.
 #include <stdlib.h>
 #include <stdio.h>
 
-void to_byte(unsigned char *out, uint in, int bytes)
+void to_byte(unsigned char *out, unsigned int in, int bytes)
 {
   int i;
   for(i = 0; i < bytes; i++){
