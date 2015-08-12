@@ -1,0 +1,7 @@
+test/test_chacha
+test/test_wots
+test/test_horst
+test/test_xmss
+test/test_xmssmt
+test/speed
+test/gen_testvectors

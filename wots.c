@@ -57,7 +57,7 @@ static void expand_seed(unsigned char *outseeds, const unsigned char *inseed, co
  */
 static void gen_chain(unsigned char *out, const unsigned char *in, int start, int steps, const wots_params *params, const unsigned char *pub_seed, unsigned char addr[16])
 {
-  uint i,j;
+  unsigned int i,j;
   for(j=0;j<params->n;j++) 
     out[j] = in[j];
 
@@ -101,7 +101,7 @@ static void base_w(int *output, const unsigned char *input, int in_len, const wo
  */
 static void base_w_alternative(int *output, unsigned char *input, int in_len, const wots_params *params)
 {
-  uint i = 0; 
+  unsigned int i = 0;
   for(i = 0; i < in_len; i += 2)
   {
     output[i] = input[in_len - 1 - (i / 2)] >> 4;
@@ -111,7 +111,7 @@ static void base_w_alternative(int *output, unsigned char *input, int in_len, co
 
 void wots_pkgen(unsigned char *pk, const unsigned char *sk, const wots_params *params, const unsigned char *pub_seed, unsigned char addr[16])
 {
-  uint i;
+  unsigned int i;
   expand_seed(pk, sk, params);
   for(i=0;i<params->len;i++){
     SET_CHAIN_ADDRESS(addr,i);
@@ -127,7 +127,7 @@ void wots_sign(unsigned char *sig, const unsigned char *msg, const unsigned char
 {
   int basew[params->len];
   int csum = 0;
-  uint i=0;
+  unsigned int i=0;
 
   base_w(basew, msg, params->m, params);
   
@@ -166,7 +166,7 @@ void wots_pkFromSig(unsigned char *pk, const unsigned char *sig, const unsigned 
 {
   int basew[params->len];
   int csum = 0;
-  uint i=0;
+  unsigned int i=0;
 
   base_w(basew, msg, params->m, params);
   

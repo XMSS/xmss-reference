@@ -13,7 +13,7 @@ const unsigned char zero_nonce[12] = {0};
 /**
  * Generates rlen output bytes using ChaCha20 with a zero nonce and counter = 0
  */
-void prg(unsigned char *r, unsigned long long rlen, const unsigned char *key, uint key_len)
+void prg(unsigned char *r, unsigned long long rlen, const unsigned char *key, unsigned int key_len)
 {  
   CRYPTO_chacha_20_keystream(r, rlen, key, zero_nonce, 0);
 }
@@ -22,7 +22,7 @@ void prg(unsigned char *r, unsigned long long rlen, const unsigned char *key, ui
  * Generates rlen output bytes using ChaCha20.
  * Nonce and counter are set depending on the address addr.
  */
-void prg_with_counter(unsigned char *r, unsigned long long rlen, const unsigned char *key, uint key_len, const unsigned char addr[16])
+void prg_with_counter(unsigned char *r, unsigned long long rlen, const unsigned char *key, unsigned int key_len, const unsigned char addr[16])
 {
   int i;
   unsigned char nonce[12];

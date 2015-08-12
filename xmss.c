@@ -132,10 +132,10 @@ void xmssmt_set_params(xmssmt_params *params, int m, int n, int h, int d, int w)
  */
 static void l_tree(unsigned char *leaf, unsigned char *wots_pk, const xmss_params *params, const unsigned char *pub_seed, unsigned char addr[16])
 { 
-  uint l = params->wots_par.len;
-  uint n = params->n;
+  unsigned int l = params->wots_par.len;
+  unsigned int n = params->n;
   unsigned long i = 0;
-  uint height = 0;
+  unsigned int height = 0;
   
   //ADRS.setTreeHeight(0);
   SET_LTREE_TREE_HEIGHT(addr,height);
@@ -192,8 +192,8 @@ static void gen_leaf_wots(unsigned char *leaf, const unsigned char *sk_seed, con
 static void treehash(unsigned char *node, int height, int index, const unsigned char *sk_seed, const xmss_params *params, const unsigned char *pub_seed, const unsigned char addr[16])
 {
 
-  uint idx = index;
-  uint n = params->n;
+  unsigned int idx = index;
+  unsigned int n = params->n;
   // use three different addresses because at this point we use all three formats in parallel
   unsigned char ots_addr[16];
   unsigned char ltree_addr[16];
@@ -240,7 +240,7 @@ static void treehash(unsigned char *node, int height, int index, const unsigned 
  */
 static void validate_authpath(unsigned char *root, const unsigned char *leaf, unsigned long leafidx, const unsigned char *authpath, const xmss_params *params, const unsigned char *pub_seed, unsigned char addr[16])
 {
-  uint n = params->n;
+  unsigned int n = params->n;
   
   int i,j;
   unsigned char buffer[2*n];
@@ -295,7 +295,7 @@ static void validate_authpath(unsigned char *root, const unsigned char *leaf, un
  */
 static void compute_authpath_wots(unsigned char *root, unsigned char *authpath, unsigned long leaf_idx, const unsigned char *sk_seed, const xmss_params *params, unsigned char *pub_seed, unsigned char addr[16])
 {
-  uint i, j, level;
+  unsigned int i, j, level;
   int n = params->n;
   int h = params->h;
   
@@ -355,8 +355,8 @@ static void compute_authpath_wots(unsigned char *root, unsigned char *authpath, 
  */
 int xmss_keypair(unsigned char *pk, unsigned char *sk, xmss_params *params)
 {
-  uint n = params->n;
-  uint m = params->m;
+  unsigned int n = params->n;
+  unsigned int m = params->m;
   // Set idx = 0
   sk[0] = 0;
   sk[1] = 0;
@@ -382,8 +382,8 @@ int xmss_keypair(unsigned char *pk, unsigned char *sk, xmss_params *params)
  */
 int xmss_sign(unsigned char *sk, unsigned char *sig_msg, unsigned long long *sig_msg_len, const unsigned char *msg, unsigned long long msglen, const xmss_params *params)
 {
-  uint n = params->n;
-  uint m = params->m;
+  unsigned int n = params->n;
+  unsigned int m = params->m;
   
   // Extract SK
   unsigned long idx = ((unsigned long)sk[0] << 24) | ((unsigned long)sk[1] << 16) | ((unsigned long)sk[2] << 8) | sk[3];
@@ -474,8 +474,8 @@ int xmss_sign(unsigned char *sk, unsigned char *sig_msg, unsigned long long *sig
  */
 int xmss_sign_open(unsigned char *msg, unsigned long long *msglen, const unsigned char *sig_msg, unsigned long long sig_msg_len, const unsigned char *pk, const xmss_params *params)
 {
-  uint n = params->n;
-  uint m = params->m;
+  unsigned int n = params->n;
+  unsigned int m = params->m;
     
   unsigned long long i, m_len;
   unsigned long idx=0;
@@ -564,9 +564,9 @@ fail:
  */
 int xmssmt_keypair(unsigned char *pk, unsigned char *sk, xmssmt_params *params)
 {
-  uint n = params->n;
-  uint m = params->m;
-  uint i;
+  unsigned int n = params->n;
+  unsigned int m = params->m;
+  unsigned int i;
   // Set idx = 0
   for (i = 0; i < params->index_len; i++){
     sk[i] = 0;
@@ -594,10 +594,10 @@ int xmssmt_keypair(unsigned char *pk, unsigned char *sk, xmssmt_params *params)
  */
 int xmssmt_sign(unsigned char *sk, unsigned char *sig_msg, unsigned long long *sig_msg_len, const unsigned char *msg, unsigned long long msglen, const xmssmt_params *params)
 {
-  uint n = params->n;
-  uint m = params->m;
-  uint tree_h = params->xmss_par.h;
-  uint idx_len = params->index_len;
+  unsigned int n = params->n;
+  unsigned int m = params->m;
+  unsigned int tree_h = params->xmss_par.h;
+  unsigned int idx_len = params->index_len;
   unsigned long long idx_tree;
   unsigned long long idx_leaf;
   unsigned long long i;
@@ -686,7 +686,7 @@ int xmssmt_sign(unsigned char *sk, unsigned char *sig_msg, unsigned long long *s
   *sig_msg_len += tree_h*n;
   
   // Now loop over remaining layers...
-  uint j;
+  unsigned int j;
   for(j = 1; j < params->d; j++){
     // Prepare Address
     idx_leaf = (idx_tree & ((1 << tree_h)-1));
@@ -723,11 +723,11 @@ int xmssmt_sign(unsigned char *sk, unsigned char *sig_msg, unsigned long long *s
  */
 int xmssmt_sign_open(unsigned char *msg, unsigned long long *msglen, const unsigned char *sig_msg, unsigned long long sig_msg_len, const unsigned char *pk, const xmssmt_params *params)
 {
-  uint n = params->n;
-  uint m = params->m;
+  unsigned int n = params->n;
+  unsigned int m = params->m;
   
-  uint tree_h = params->xmss_par.h;
-  uint idx_len = params->index_len;
+  unsigned int tree_h = params->xmss_par.h;
+  unsigned int idx_len = params->index_len;
   unsigned long long idx_tree;
   unsigned long long idx_leaf;
   
