@@ -95,11 +95,11 @@ typedef struct{
 // TODO these data structures need to be non-global (especially for xmss_mt)
 unsigned char STACK[(H-K-1)*N];
 unsigned int STACKOFFSET = 0;
-unsigned char STACKLEVELS[H];
+unsigned char STACKLEVELS[H-K-1];
 
 unsigned char AUTH[H*N];
-unsigned char KEEP[H*N]; // this can be H / 2 + 1 rather than H, but that makes it  more tedious to index
-treehash_inst TREEHASH[H];
+unsigned char KEEP[(H >> 1)*N];
+treehash_inst TREEHASH[H-K];
 unsigned char RETAIN[((1 << K) - K - 1) * N];
 
   /**
@@ -435,8 +435,13 @@ static void compute_authpath_wots_fast(unsigned char *root, unsigned char *authp
     }
   }
 
+  if (tau > 0) {
+    memcpy(buf,     AUTH + (tau-1) * n, n);
+    // we need to do this before refreshing KEEP to prevent overwriting
+    memcpy(buf + n, KEEP + ((tau-1) >> 1) * n, n);
+  }
   if (!((leaf_idx >> (tau + 1)) & 1) && (tau < h - 1)) {
-    memcpy(KEEP + tau*n, AUTH + tau*n, n);
+    memcpy(KEEP + (tau >> 1)*n, AUTH + tau*n, n);
   }
   if (tau == 0) {
     SET_LTREE_ADDRESS(ltree_addr,leaf_idx);
@@ -446,8 +451,6 @@ static void compute_authpath_wots_fast(unsigned char *root, unsigned char *authp
   else {
     SET_NODE_TREE_HEIGHT(node_addr, (tau-1));
     SET_NODE_TREE_INDEX(node_addr, leaf_idx >> tau);
-    memcpy(buf,     AUTH + (tau-1) * n, n);
-    memcpy(buf + n, KEEP + (tau-1) * n, n);
     hash_2n_n(AUTH + tau * n, buf, pub_seed, node_addr, n);
     for (i = 0; i < tau; i++) {
       if (i < h - k) {
