@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "../xmss.h"
+#include "../xmss_fast.h"
 
 #define MLEN 3491
 #define SIGNATURES 50
@@ -49,37 +49,36 @@ int main()
     xmss_sign(sk, sm, &smlen, mi, MLEN, params);
     idx = ((unsigned long)sm[0] << 24) | ((unsigned long)sm[1] << 16) | ((unsigned long)sm[2] << 8) | sm[3];
     printf("\nidx = %lu\n",idx);
-  
+
+    r = memcmp(mi, sm+signature_length,MLEN);
+    printf("%d\n", r);
+
+    /* Test valid signature */
+    printf("verify\n");
+    r = xmss_sign_open(mo, &mlen, sm, smlen, pk, params);
+    printf("%d\n", r);
+    r = memcmp(mi,mo,MLEN);
+    printf("%d\n", r);
+    printf("%llu\n", MLEN-mlen);
+
+    /* Test with modified message */
+    sm[52] ^= 1;
+    r = xmss_sign_open(mo, &mlen, sm, smlen, pk, params);
+    printf("%d\n", r+1);
+    r = memcmp(mi,mo,MLEN);
+    printf("%d\n", (r!=0) - 1);
+    printf("%llu\n", mlen+1);
+
+    /* Test with modified signature */
+    sm[260] ^= 1;
+    sm[52] ^= 1;
+    sm[2] ^= 1;
+    r = xmss_sign_open(mo, &mlen, sm, smlen, pk, params);
+    printf("%d\n", r+1);
+    r = memcmp(mi,mo,MLEN);
+    printf("%d\n", (r!=0) - 1);
+    printf("%llu\n", mlen+1);
   }
-
-  r = memcmp(mi, sm+signature_length,MLEN);
-  printf("%d\n", r);
-  
-  /* Test valid signature */
-  printf("verify\n");
-  r = xmss_sign_open(mo, &mlen, sm, smlen, pk, params);
-  printf("%d\n", r);
-  r = memcmp(mi,mo,MLEN);
-  printf("%d\n", r);
-  printf("%llu\n", MLEN-mlen);
-
-  /* Test with modified message */
-  sm[52] ^= 1;
-  r = xmss_sign_open(mo, &mlen, sm, smlen, pk, params);
-  printf("%d\n", r+1);
-  r = memcmp(mi,mo,MLEN);
-  printf("%d\n", (r!=0) - 1);
-  printf("%llu\n", mlen+1);
-
-  /* Test with modified signature */
-  sm[260] ^= 1;
-  sm[52] ^= 1;
-  sm[2] ^= 1;
-  r = xmss_sign_open(mo, &mlen, sm, smlen, pk, params);
-  printf("%d\n", r+1);
-  r = memcmp(mi,mo,MLEN);
-  printf("%d\n", (r!=0) - 1);
-  printf("%llu\n", mlen+1);
 
   fclose(urandom);
   return 0;
