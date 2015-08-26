@@ -327,7 +327,7 @@ static void compute_authpath_wots(unsigned char *root, unsigned char *authpath, 
   level = 0;
   // Compute tree:
   // Outer loop: For each inner layer 
-  for (i = (1<<h); i > 0; i>>=1)
+  for (i = (1<<h); i > 1; i>>=1)
   {
     SET_NODE_TREE_HEIGHT(node_addr, level);
     // Inner loop: for each pair of sibling nodes
