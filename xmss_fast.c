@@ -79,6 +79,29 @@ Public domain.
   a[12] = (a[12] & 252) | ((v >> 22) & 3);}
 
 
+// TODO these defines still need to be merged into the parameter selection
+#define H 8
+#define K 2
+#define N 32
+
+typedef struct{
+  int h;
+  int next_idx;
+  unsigned int stackusage;
+  unsigned char completed;
+  unsigned char node[N];
+} treehash_inst;
+
+// TODO these data structures need to be non-global (especially for xmss_mt)
+unsigned char STACK[(H-K-1)*N];
+unsigned int STACKOFFSET = 0;
+unsigned char STACKLEVELS[H];
+
+unsigned char AUTH[H*N];
+unsigned char KEEP[H*N]; // this can be H / 2 + 1 rather than H, but that makes it  more tedious to index
+treehash_inst TREEHASH[H];
+unsigned char RETAIN[((1 << K) - K - 1) * N];
+
   /**
  * Used for pseudorandom keygeneration,
  * generates the seed for the WOTS keypair at address addr
@@ -184,12 +207,22 @@ static void gen_leaf_wots(unsigned char *leaf, const unsigned char *sk_seed, con
   l_tree(leaf, pk, params, pub_seed, ltree_addr); 
 }
 
+static int treehash_minheight_on_stack(const xmss_params *params, const treehash_inst *treehash) {
+  int r = params->h, i;
+  for (i = 0; i < treehash->stackusage; i++) {
+    if (STACKLEVELS[STACKOFFSET - i - 1] < r) {
+      r = STACKLEVELS[STACKOFFSET - i - 1];
+    }
+  }
+  return r;
+}
+
 /**
  * Merkle's TreeHash algorithm. The address only needs to initialize the first 78 bits of addr. Everything else will be set by treehash.
  * Currently only used for key generation.
  * 
  */
-static void treehash(unsigned char *node, int height, int index, const unsigned char *sk_seed, const xmss_params *params, const unsigned char *pub_seed, const unsigned char addr[16])
+static void treehash_setup(unsigned char *node, int height, int index, const unsigned char *sk_seed, const xmss_params *params, const unsigned char *pub_seed, const unsigned char addr[16])
 {
 
   unsigned int idx = index;
@@ -212,8 +245,17 @@ static void treehash(unsigned char *node, int height, int index, const unsigned 
   unsigned int  stacklevels[height+1];
   unsigned int  stackoffset=0;
   
+  int nodeh;
+
   lastnode = idx+(1<<height);
 
+  for(i = 0; i < H-K; i++) {
+    TREEHASH[i].h = i;
+    TREEHASH[i].completed = 1;
+    TREEHASH[i].stackusage = 0;
+  }
+
+  i = 0;
   for(;idx<lastnode;idx++) 
   {
     SET_LTREE_ADDRESS(ltree_addr,idx);
@@ -221,8 +263,23 @@ static void treehash(unsigned char *node, int height, int index, const unsigned 
     gen_leaf_wots(stack+stackoffset*n,sk_seed,params, pub_seed, ltree_addr, ots_addr);
     stacklevels[stackoffset] = 0;
     stackoffset++;
+    if (H - K > 0 && i == 3) {
+      memcpy(TREEHASH[0].node, stack+stackoffset*n, n);
+    }
     while(stackoffset>1 && stacklevels[stackoffset-1] == stacklevels[stackoffset-2])
     {
+      nodeh = stacklevels[stackoffset-1];
+      if (i >> nodeh == 1) {
+        memcpy(AUTH + nodeh*n, stack+(stackoffset-1)*n, n);
+      }
+      else {
+        if (nodeh < H - K && i >> nodeh == 3) {
+          memcpy(TREEHASH[nodeh].node, stack+(stackoffset-1)*n, n);
+        }
+        else if (nodeh >= H - K) {
+          memcpy(RETAIN + ((1 << (H - 1 - nodeh)) + nodeh - H + (((i >> nodeh) - 3) >> 1)) * n, stack+(stackoffset-1)*n, n);
+        }
+      }
       SET_NODE_TREE_HEIGHT(node_addr,stacklevels[stackoffset-1]);
       SET_NODE_TREE_INDEX(node_addr, (idx >> (stacklevels[stackoffset-1]+1)));
       hash_2n_n(stack+(stackoffset-2)*n,stack+(stackoffset-2)*n, pub_seed,
@@ -230,9 +287,56 @@ static void treehash(unsigned char *node, int height, int index, const unsigned 
       stacklevels[stackoffset-2]++;
       stackoffset--;
     }
+    i++;
   }
+
   for(i=0;i<n;i++)
     node[i] = stack[i];
+}
+
+static void treehash_update(treehash_inst *treehash, const unsigned char *sk_seed, const xmss_params *params, const unsigned char *pub_seed, const unsigned char addr[16]) {
+  int n = params->n;
+
+  unsigned char ots_addr[16];
+  unsigned char ltree_addr[16];
+  unsigned char node_addr[16];
+
+  memcpy(ots_addr, addr, 10);
+  SET_OTS_BIT(ots_addr, 1);
+  memcpy(ltree_addr, addr, 10);
+  SET_OTS_BIT(ltree_addr, 0);
+  SET_LTREE_BIT(ltree_addr, 1);
+  memcpy(node_addr, ltree_addr, 10);
+  SET_LTREE_BIT(node_addr, 0);
+  SET_NODE_PADDING(node_addr);
+
+  SET_LTREE_ADDRESS(ltree_addr, treehash->next_idx);
+  SET_OTS_ADDRESS(ots_addr, treehash->next_idx);
+
+  unsigned char nodebuffer[2 * n];
+  unsigned int nodeheight = 0;
+  gen_leaf_wots(nodebuffer, sk_seed, params, pub_seed, ltree_addr, ots_addr);
+  while (treehash->stackusage > 0 && STACKLEVELS[STACKOFFSET-1] == nodeheight) {
+    memcpy(nodebuffer + n, nodebuffer, n);
+    memcpy(nodebuffer, STACK + (STACKOFFSET-1)*n, n);
+    SET_NODE_TREE_HEIGHT(node_addr, nodeheight);
+    SET_NODE_TREE_INDEX(node_addr, (treehash->next_idx >> (nodeheight+1)));
+    hash_2n_n(nodebuffer, nodebuffer, pub_seed, node_addr, n);
+    nodeheight++;
+    treehash->stackusage--;
+    STACKOFFSET--;
+  }
+  if (nodeheight == treehash->h) { // this also implies stackusage == 0
+    memcpy(treehash->node, nodebuffer, n);
+    treehash->completed = 1;
+  }
+  else {
+    memcpy(STACK + STACKOFFSET*n, nodebuffer, n);
+    treehash->stackusage++;
+    STACKLEVELS[STACKOFFSET] = nodeheight;
+    STACKOFFSET++;
+    treehash->next_idx++;
+  }
 }
 
 /**
@@ -289,17 +393,27 @@ static void validate_authpath(unsigned char *root, const unsigned char *leaf, un
 }
 
 /**
- * Computes the authpath and the root. This method is using a lot of space as we build the whole tree and then select the authpath nodes.
- * For more efficient algorithms see e.g. the chapter on hash-based signatures in Bernstein, Buchmann, Dahmen. "Post-quantum Cryptography", Springer 2009.
- * It returns the authpath in "authpath" with the node on level 0 at index 0.  
+ * Returns the auth path for node leaf_idx and computes the auth path for the
+ * next leaf node, using the algorithm described by Buchmann, Dahmen and Szydlo
+ * in "Post Quantum Cryptography", Springer 2009.
  */
-static void compute_authpath_wots(unsigned char *root, unsigned char *authpath, unsigned long leaf_idx, const unsigned char *sk_seed, const xmss_params *params, unsigned char *pub_seed, unsigned char addr[16])
+static void compute_authpath_wots_fast(unsigned char *root, unsigned char *authpath, unsigned long leaf_idx, const unsigned char *sk_seed, const xmss_params *params, unsigned char *pub_seed, unsigned char addr[16])
 {
-  unsigned int i, j, level;
+  unsigned int i, j;
   int n = params->n;
   int h = params->h;
-  
-  unsigned char tree[2*(1<<h)*n];
+  int k = K; // TODO retrieve this from params instead
+
+  // the auth path was already computed during the previous round
+  memcpy(authpath, AUTH, h*n);
+  // TODO but we don't have the root handy yet.
+  // memcpy(root, ???, n);
+
+  int tau = h;
+  int startidx;
+  int offset, rowidx;
+  int level, l_min, low;
+  unsigned char buf[2 * n];
 
   unsigned char ots_addr[16];
   unsigned char ltree_addr[16];
@@ -314,39 +428,71 @@ static void compute_authpath_wots(unsigned char *root, unsigned char *authpath, 
   SET_LTREE_BIT(node_addr, 0);
   SET_NODE_PADDING(node_addr);
 
-  
-  // Compute all leaves
-  for(i = 0; i < (1<<h); i++)
-  {
-    SET_LTREE_ADDRESS(ltree_addr,i);
-    SET_OTS_ADDRESS(ots_addr,i);
-    gen_leaf_wots(tree+((1<<h)*n + i*n), sk_seed, params, pub_seed, ltree_addr, ots_addr);
-  }
-  
-  
-  level = 0;
-  // Compute tree:
-  // Outer loop: For each inner layer 
-  for (i = (1<<h); i > 0; i>>=1)
-  {
-    SET_NODE_TREE_HEIGHT(node_addr, level);
-    // Inner loop: for each pair of sibling nodes
-    for (j = 0; j < i; j+=2)
-    {
-      SET_NODE_TREE_INDEX(node_addr, j>>1);
-      hash_2n_n(tree + (i>>1)*n + (j>>1) * n, tree + i*n + j*n, pub_seed, node_addr, n);
+  for (i = 0; i < h; i++) {
+    if (! ((leaf_idx >> i) & 1)) {
+      tau = i;
+      break;
     }
-    level++;
   }
 
-  // copy authpath
-  for(i=0;i<h;i++)
-    memcpy(authpath + i*n, tree + ((1<<h)>>i)*n + ((leaf_idx >> i) ^ 1) * n, n);
-  
-  // copy root
-  memcpy(root, tree+n, n);
-}
+  if (!((leaf_idx >> (tau + 1)) & 1) && (tau < h - 1)) {
+    memcpy(KEEP + tau*n, AUTH + tau*n, n);
+  }
+  if (tau == 0) {
+    SET_LTREE_ADDRESS(ltree_addr,leaf_idx);
+    SET_OTS_ADDRESS(ots_addr,leaf_idx);
+    gen_leaf_wots(AUTH, sk_seed, params, pub_seed, ltree_addr, ots_addr);
+  }
+  else {
+    SET_NODE_TREE_HEIGHT(node_addr, (tau-1));
+    SET_NODE_TREE_INDEX(node_addr, leaf_idx >> tau);
+    memcpy(buf,     AUTH + (tau-1) * n, n);
+    memcpy(buf + n, KEEP + (tau-1) * n, n);
+    hash_2n_n(AUTH + tau * n, buf, pub_seed, node_addr, n);
+    for (i = 0; i < tau; i++) {
+      if (i < h - k) {
+        memcpy(AUTH + i * n, TREEHASH[i].node, n);
+      }
+      else {
+        offset = (1 << (h - 1 - i)) + i - h;
+        rowidx = ((leaf_idx >> i) - 1) >> 1;
+        memcpy(AUTH + i * n, RETAIN + (offset + rowidx) * n, n);
+      }
+    }
 
+    for (i = 0; i < ((tau < h - k) ? tau : (h - k)); i++) {
+      startidx = leaf_idx + 1 + 3 * (1 << i);
+      if (startidx < 1 << h) {
+        TREEHASH[i].h = i;
+        TREEHASH[i].next_idx = startidx;
+        TREEHASH[i].completed = 0;
+      }
+    }
+  }
+
+  for (i = 0; i < (h - k) >> 1; i++) {
+    l_min = h;
+    level = h - k;
+    for (j = 0; j < h - k; j++) {
+      if (TREEHASH[j].completed) {
+        low = h;
+      }
+      else if (TREEHASH[j].stackusage == 0) {
+        low = j;
+      }
+      else {
+        low = treehash_minheight_on_stack(params, &TREEHASH[j]);
+      }
+      if (low < l_min) {
+        level = j;
+        l_min = low;
+      }
+    }
+    if (level != h - k) {
+      treehash_update(&TREEHASH[level], sk_seed, params, pub_seed, addr);
+    }
+  }
+}
 
 /*
  * Generates a XMSS key pair for a given parameter set.
@@ -369,7 +515,7 @@ int xmss_keypair(unsigned char *pk, unsigned char *sk, xmss_params *params)
 
   unsigned char addr[16] = {0,0,0,0};
   // Compute root
-  treehash(pk, params->h, 0, sk+4, params, sk+4+n+m, addr);
+  treehash_setup(pk, params->h, 0, sk+4, params, sk+4+n+m, addr);
   return 0;
 }
 
@@ -456,7 +602,7 @@ int xmss_sign(unsigned char *sk, unsigned char *sig_msg, unsigned long long *sig
   sig_msg += params->wots_par.keysize;
   *sig_msg_len += params->wots_par.keysize;
 
-  compute_authpath_wots(root, sig_msg, idx, sk_seed, params, pub_seed, ots_addr);
+  compute_authpath_wots_fast(root, sig_msg, idx, sk_seed, params, pub_seed, ots_addr);
   sig_msg += params->h*n;
   *sig_msg_len += params->h*n;
   
@@ -581,7 +727,7 @@ int xmssmt_keypair(unsigned char *pk, unsigned char *sk, xmssmt_params *params)
   SET_LAYER_ADDRESS(addr, (params->d-1));
   
   // Compute root
-  treehash(pk, params->xmss_par.h, 0, sk+params->index_len, &(params->xmss_par), pk+n, addr);
+  treehash_setup(pk, params->xmss_par.h, 0, sk+params->index_len, &(params->xmss_par), pk+n, addr);
   return 0;
 }
 
@@ -681,7 +827,7 @@ int xmssmt_sign(unsigned char *sk, unsigned char *sig_msg, unsigned long long *s
   sig_msg += params->xmss_par.wots_par.keysize;
   *sig_msg_len += params->xmss_par.wots_par.keysize;
 
-  compute_authpath_wots(root, sig_msg, idx_leaf, sk_seed, &(params->xmss_par), pub_seed, ots_addr);
+  compute_authpath_wots_fast(root, sig_msg, idx_leaf, sk_seed, &(params->xmss_par), pub_seed, ots_addr);
   sig_msg += tree_h*n;
   *sig_msg_len += tree_h*n;
   
@@ -704,7 +850,7 @@ int xmssmt_sign(unsigned char *sk, unsigned char *sig_msg, unsigned long long *s
     sig_msg += params->xmss_par.wots_par.keysize;
     *sig_msg_len += params->xmss_par.wots_par.keysize;
 
-    compute_authpath_wots(root, sig_msg, idx_leaf, sk_seed, &(params->xmss_par), pub_seed, ots_addr);
+    compute_authpath_wots_fast(root, sig_msg, idx_leaf, sk_seed, &(params->xmss_par), pub_seed, ots_addr);
     sig_msg += tree_h*n;
     *sig_msg_len += tree_h*n;   
   }
