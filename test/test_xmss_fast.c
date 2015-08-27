@@ -1,10 +1,11 @@
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 
 #include "../xmss_fast.h"
 
 #define MLEN 3491
-#define SIGNATURES 50
+#define SIGNATURES 256
 
 
 unsigned char sk[100];
@@ -21,10 +22,26 @@ int main()
   int n = 32;
   int h = 8;
   int w = 16;
+  int k = 2;
   
   xmss_params p;
   xmss_params *params = &p;
-  xmss_set_params(params, m, n, h, w);
+  xmss_set_params(params, m, n, h, w, k);
+
+  // TODO should we hide this into xmss_fast.c and just allocate a large enough chunk of memory here?
+  unsigned char stack[(h-k-1)*n];
+  unsigned int stackoffset = 0;
+  unsigned char stacklevels[h-k-1];
+  unsigned char auth[h*n];
+  unsigned char keep[(h >> 1)*n];
+  treehash_inst treehash[h-k];
+  unsigned char retain[((1 << k) - k - 1)*n];
+  bds_state s;
+  bds_state *state = &s;
+  for(i=0;i<h-k;i++)
+    treehash[i].node = (unsigned char *)malloc(n);
+  xmss_set_bds_state(state, stack, stackoffset, stacklevels, auth, keep, treehash, retain);
+
   unsigned long long signature_length = 4+m+params->wots_par.keysize+h*n;
   unsigned char mo[MLEN+signature_length];
   unsigned char sm[MLEN+signature_length];
@@ -33,7 +50,7 @@ int main()
   for(i=0;i<MLEN;i++) mi[i] = fgetc(urandom);
 
   printf("keypair\n");
-  xmss_keypair(pk, sk, params);
+  xmss_keypair(pk, sk, state, params);
   // check pub_seed in SK
   for(i=0;i<n;i++)
   {
@@ -46,7 +63,7 @@ int main()
   
   for(i=0;i<SIGNATURES;i++){
     printf("sign\n");
-    xmss_sign(sk, sm, &smlen, mi, MLEN, params);
+    xmss_sign(sk, state, sm, &smlen, mi, MLEN, params);
     idx = ((unsigned long)sm[0] << 24) | ((unsigned long)sm[1] << 16) | ((unsigned long)sm[2] << 8) | sm[3];
     printf("\nidx = %lu\n",idx);
 
@@ -80,6 +97,8 @@ int main()
     printf("%llu\n", mlen+1);
   }
 
+  for(i=0;i<h-k;i++)
+    free(treehash[i].node);
   fclose(urandom);
   return 0;
 }
