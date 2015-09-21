@@ -35,12 +35,13 @@ int main()
   unsigned char auth[h*n];
   unsigned char keep[(h >> 1)*n];
   treehash_inst treehash[h-k];
+  unsigned char th_nodes[(h-k)*n];
   unsigned char retain[((1 << k) - k - 1)*n];
   bds_state s;
   bds_state *state = &s;
   for(i=0;i<h-k;i++)
-    treehash[i].node = (unsigned char *)malloc(n);
-  xmss_set_bds_state(state, stack, stackoffset, stacklevels, auth, keep, treehash, retain);
+    treehash[i].node = &th_nodes[n*i];
+  xmss_set_bds_state(state, stack, stackoffset, stacklevels, auth, keep, treehash, retain, 0);
 
   unsigned long long signature_length = 4+m+params->wots_par.keysize+h*n;
   unsigned char mo[MLEN+signature_length];
@@ -97,8 +98,6 @@ int main()
     printf("%llu\n", mlen+1);
   }
 
-  for(i=0;i<h-k;i++)
-    free(treehash[i].node);
   fclose(urandom);
   return 0;
 }

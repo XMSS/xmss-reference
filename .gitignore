@@ -4,5 +4,6 @@ test/test_horst
 test/test_xmss
 test/test_xmss_fast
 test/test_xmssmt
+test/test_xmssmt_fast
 test/speed
 test/gen_testvectors
