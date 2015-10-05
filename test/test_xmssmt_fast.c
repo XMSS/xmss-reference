@@ -4,7 +4,7 @@
 #include "../xmss_fast.h"
 
 #define MLEN 3491
-#define SIGNATURES 1024
+#define SIGNATURES 4096
 
 
 unsigned char mi[MLEN];
@@ -17,8 +17,8 @@ int main()
   unsigned long long i,j;
   int m = 32;
   int n = 32;
-  int h = 20;
-  int d = 5;
+  int h = 12;
+  int d = 2;
   int w = 16;
   int k = 2;
 
@@ -28,24 +28,27 @@ int main()
     return 1;
   }
 
-  unsigned char stack[2*d * (h-k-1)*n];
-  unsigned char stacklevels[2*d * (h-k-1)];
-  unsigned char auth[2*d * h*n];
-  unsigned char keep[2*d * (h >> 1)*n];
-  treehash_inst treehash[2*d * (h-k)];
-  unsigned char th_nodes[2*d * (h-k)*n];
+  unsigned int tree_h = h / d;
+
+  // stack needs to be larger than regular (H-K-1), since we re-use for 'next'
+  unsigned char stack[2*d * (tree_h + 1)*n];
+  unsigned char stacklevels[2*d * (tree_h + 1)*n];
+  unsigned char auth[2*d * tree_h*n];
+  unsigned char keep[2*d * (tree_h >> 1)*n];
+  treehash_inst treehash[2*d * (tree_h-k)];
+  unsigned char th_nodes[2*d * (tree_h-k)*n];
   unsigned char retain[2*d * ((1 << k) - k - 1)*n];
   unsigned char wots_sigs[d * params->xmss_par.wots_par.keysize];
   bds_state states[2*d]; // first d are 'regular' states, second d are 'next'
 
   for (i = 0; i < 2*d; i++) {
-    for(j=0;j<h-k;j++)
-      treehash[i*(h-k) + j].node = th_nodes + (i*(h-k) + j) * n;
+    for(j=0;j<tree_h-k;j++)
+      treehash[i*(tree_h-k) + j].node = th_nodes + (i*(tree_h-k) + j) * n;
     xmss_set_bds_state(states + i,
-      stack + i*(h-k-1)*n, 0, stacklevels + i*(h-k-1),
-      auth + i*h*n,
-      keep + i*(h >> 1)*n,
-      treehash + i*(h-k),
+      stack + i*(tree_h + 1)*n, 0, stacklevels + i*(tree_h + 1),
+      auth + i*tree_h*n,
+      keep + i*(tree_h >> 1)*n,
+      treehash + i*(tree_h-k),
       retain + i*((1 << k) - k - 1)*n,
       0
     );
