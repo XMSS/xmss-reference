@@ -844,6 +844,7 @@ int xmssmt_sign(unsigned char *sk, bds_state *states, unsigned char *wots_sigs, 
   unsigned int n = params->n;
   unsigned int m = params->m;
   unsigned int tree_h = params->xmss_par.h;
+  unsigned int h = params->h;
   unsigned int k = params->xmss_par.k;
   unsigned int idx_len = params->index_len;
   unsigned long long idx_tree;
@@ -951,34 +952,39 @@ int xmssmt_sign(unsigned char *sk, bds_state *states, unsigned char *wots_sigs, 
 
   SET_LAYER_ADDRESS(ots_addr, 0);
   SET_TREE_ADDRESS(ots_addr, (idx_tree + 1));
-  // mandatory update for NEXT_0 (does not count towards h-k)
-  bds_state_update(&states[params->d], sk_seed, &(params->xmss_par), pub_seed, ots_addr);
 
   updates = tree_h - k;
 
-  for (i = 0; i < params->d; i++) {
-    if (((idx + 1) & ((1 << ((i+1)*tree_h)) - 1)) == 0) {
-      memcpy(&tmp, states+params->d + i, sizeof(bds_state));
-      memcpy(states+params->d + i, states + i, sizeof(bds_state));
-      memcpy(states + i, &tmp, sizeof(bds_state));
+  // if a NEXT-tree exists within the hypertree
+  if ((1 + idx_tree) * (1 << tree_h) + idx_leaf < (1 << h)) {
+    // mandatory update for NEXT_0 (does not count towards h-k)
+    bds_state_update(&states[params->d], sk_seed, &(params->xmss_par), pub_seed, ots_addr);
 
-      SET_TREE_ADDRESS(ots_addr, ((idx + 1) >> ((i+2) * tree_h)));
-      SET_OTS_ADDRESS(ots_addr, (((idx >> ((i+1) * tree_h)) + 1) & ((1 << tree_h)-1)));
-      SET_LAYER_ADDRESS(ots_addr, (i+1));
+    // check if we're at the end of a tree
+    for (i = 0; i < params->d; i++) {
+      if (((idx + 1) & ((1 << ((i+1)*tree_h)) - 1)) == 0) {
+        memcpy(&tmp, states+params->d + i, sizeof(bds_state));
+        memcpy(states+params->d + i, states + i, sizeof(bds_state));
+        memcpy(states + i, &tmp, sizeof(bds_state));
 
-      get_seed(ots_seed, sk+params->index_len, ots_addr);
-      wots_sign(wots_sigs + i*params->xmss_par.wots_par.keysize, states[i].stack, ots_seed, &(params->xmss_par.wots_par), pub_seed, ots_addr);
+        SET_TREE_ADDRESS(ots_addr, ((idx + 1) >> ((i+2) * tree_h)));
+        SET_OTS_ADDRESS(ots_addr, (((idx >> ((i+1) * tree_h)) + 1) & ((1 << tree_h)-1)));
+        SET_LAYER_ADDRESS(ots_addr, (i+1));
 
-      states[params->d + i].stackoffset = 0;
-      states[params->d + i].next_leaf = 0;
+        get_seed(ots_seed, sk+params->index_len, ots_addr);
+        wots_sign(wots_sigs + i*params->xmss_par.wots_par.keysize, states[i].stack, ots_seed, &(params->xmss_par.wots_par), pub_seed, ots_addr);
 
-      updates--; // WOTS-signing counts as one update
+        states[params->d + i].stackoffset = 0;
+        states[params->d + i].next_leaf = 0;
 
-      // this bds_round is needed to initialise the state, but should not perform updates
-      // note that one should still pass the (reduced) current idx, as bds_round sets up for idx+1
-      bds_round(&states[i+1], ((idx >> ((i+1)*tree_h))) & ((1 << tree_h)-1), sk_seed, &(params->xmss_par), 0, pub_seed, ots_addr);
-      for (j = 0; j < tree_h-k; j++) {
-        states[i].treehash[j].completed = 1;
+        updates--; // WOTS-signing counts as one update
+
+        // this bds_round is needed to initialise the state, but should not perform updates
+        // note that one should still pass the (reduced) current idx, as bds_round sets up for idx+1
+        bds_round(&states[i+1], ((idx >> ((i+1)*tree_h))) & ((1 << tree_h)-1), sk_seed, &(params->xmss_par), 0, pub_seed, ots_addr);
+        for (j = 0; j < tree_h-k; j++) {
+          states[i].treehash[j].completed = 1;
+        }
       }
     }
   }
@@ -1005,8 +1011,11 @@ int xmssmt_sign(unsigned char *sk, bds_state *states, unsigned char *wots_sigs, 
       updates--;
     }
     SET_TREE_ADDRESS(ots_addr, (idx_tree + 1));
-    while (updates > 0 && !bds_state_update(&states[params->d + i], sk_seed, &(params->xmss_par), pub_seed, ots_addr)) {
-      updates--;
+    // if a NEXT-tree exists for this level;
+    if ((1 + idx_tree) * (1 << tree_h) + idx_leaf < (1 << (h - tree_h * i))) {
+      while (updates > 0 && !bds_state_update(&states[params->d + i], sk_seed, &(params->xmss_par), pub_seed, ots_addr)) {
+        updates--;
+      }
     }
   }
   
