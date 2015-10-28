@@ -31,9 +31,9 @@ int main()
   xmss_set_params(params, m, n, h, w, k);
 
   // TODO should we hide this into xmss_fast.c and just allocate a large enough chunk of memory here?
-  unsigned char stack[(h-k-1)*n];
+  unsigned char stack[(h+1)*n];
   unsigned int stackoffset = 0;
-  unsigned char stacklevels[h-k-1];
+  unsigned char stacklevels[h+1];
   unsigned char auth[h*n];
   unsigned char keep[(h >> 1)*n];
   treehash_inst treehash[h-k];
