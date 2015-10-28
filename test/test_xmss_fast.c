@@ -24,6 +24,8 @@ int main()
   int w = 16;
   int k = 2;
   
+  unsigned long errors = 0;
+  
   xmss_params p;
   xmss_params *params = &p;
   xmss_set_params(params, m, n, h, w, k);
@@ -62,7 +64,7 @@ int main()
   unsigned long idx = ((unsigned long)sk[0] << 24) | ((unsigned long)sk[1] << 16) | ((unsigned long)sk[2] << 8) | sk[3];
   if(idx) printf("\nidx != 0 %lu\n",idx);
   
-  for(i=0;i<SIGNATURES;i++){
+  for(i=0;i<(1<<h);i++){
     printf("sign\n");
     xmss_sign(sk, state, sm, &smlen, mi, MLEN, params);
     idx = ((unsigned long)sm[0] << 24) | ((unsigned long)sm[1] << 16) | ((unsigned long)sm[2] << 8) | sm[3];
@@ -71,34 +73,69 @@ int main()
     r = memcmp(mi, sm+signature_length,MLEN);
     printf("%d\n", r);
 
-    /* Test valid signature */
+        /* Test valid signature */
     printf("verify\n");
     r = xmss_sign_open(mo, &mlen, sm, smlen, pk, params);
     printf("%d\n", r);
+    if(r != 0) errors++;
     r = memcmp(mi,mo,MLEN);
     printf("%d\n", r);
     printf("%llu\n", MLEN-mlen);
 
     /* Test with modified message */
-    sm[52] ^= 1;
+    sm[signature_length+10] ^= 1;
     r = xmss_sign_open(mo, &mlen, sm, smlen, pk, params);
     printf("%d\n", r+1);
+    if(r == 0) errors++;
     r = memcmp(mi,mo,MLEN);
     printf("%d\n", (r!=0) - 1);
     printf("%llu\n", mlen+1);
 
     /* Test with modified signature */
-    sm[260] ^= 1;
-    sm[52] ^= 1;
+    /* Modified index */
     sm[2] ^= 1;
     r = xmss_sign_open(mo, &mlen, sm, smlen, pk, params);
     printf("%d\n", r+1);
+    if(r == 0) errors++;
+    r = memcmp(mi,mo,MLEN);
+    printf("%d\n", (r!=0) - 1);
+    printf("%llu\n", mlen+1);
+    
+    /* Modified R */
+    sm[2] ^= 1;
+    sm[5] ^= 1;
+    r = xmss_sign_open(mo, &mlen, sm, smlen, pk, params);
+    printf("%d\n", r+1);
+    if(r == 0) errors++;
+    r = memcmp(mi,mo,MLEN);
+    printf("%d\n", (r!=0) - 1);
+    printf("%llu\n", mlen+1);
+    
+    /* Modified OTS sig */
+    sm[5] ^= 1;
+    sm[240] ^= 1;
+    r = xmss_sign_open(mo, &mlen, sm, smlen, pk, params);
+    printf("%d\n", r+1);
+    if(r == 0) errors++;
+    r = memcmp(mi,mo,MLEN);
+    printf("%d\n", (r!=0) - 1);
+    printf("%llu\n", mlen+1);
+    
+    /* Modified AUTH */
+    sm[240] ^= 1;
+    sm[signature_length - 10] ^= 1;
+    r = xmss_sign_open(mo, &mlen, sm, smlen, pk, params);
+    printf("%d\n", r+1);
+    if(r == 0) errors++;
     r = memcmp(mi,mo,MLEN);
     printf("%d\n", (r!=0) - 1);
     printf("%llu\n", mlen+1);
   }
 
+  printf("#errors = %lu\n", errors);
+  printf("finished loop\n");
   fclose(urandom);
+  printf("closed urandom\n");
   return 0;
 }
 
