@@ -9,7 +9,7 @@ test/test_xmssmt_fast \
 test/test_xmssmt
 
 test/test_chacha: chacha.c prg.c randombytes.c test/test_chacha.c chacha.h prg.h randombytes.h
-	$(CC) $(CFLAGS) chacha.c prg.c randombytes.c test/test_chacha.c -o $@ #-lcrypto -lm
+	$(CC) $(CFLAGS) chacha.c prg.c randombytes.c test/test_chacha.c -o $@ -lcrypto -lm
 
 test/test_wots: chacha.c hash.c prg.c randombytes.c wots.c xmss_commons.c test/test_wots.c chacha.h hash.h prg.h randombytes.h wots.h xmss_commons.h 
 	$(CC) $(CFLAGS) chacha.c hash.c prg.c randombytes.c wots.c xmss_commons.c test/test_wots.c -o $@ -lcrypto -lm
