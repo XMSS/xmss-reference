@@ -690,7 +690,10 @@ int xmss_sign(unsigned char *sk, bds_state *state, unsigned char *sig_msg, unsig
   // the auth path was already computed during the previous round
   memcpy(sig_msg, state->auth, h*n);
 
-  bds_round(state, idx, sk_seed, params, (h - k) >> 1, pub_seed, ots_addr);
+  if (idx < (1 << h) - 1) {
+    bds_round(state, idx, sk_seed, params, (h - k) >> 1, pub_seed, ots_addr);
+  }
+
   sig_msg += params->h*n;
   *sig_msg_len += params->h*n;
   
