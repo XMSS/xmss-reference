@@ -101,12 +101,12 @@ int hash_2n_n(unsigned char *out,const unsigned char *in, const unsigned char *p
   
   SET_KEY_BIT(addr,1);
   SET_BLOCK_BIT(addr,0);
-  prg_with_counter(key, n, pub_seed, n, addr);
+  prg_with_counter(key, pub_seed, n, addr);
   SET_KEY_BIT(addr,0);
   // Use MSB order
-  prg_with_counter(bitmask, n, pub_seed, n, addr);
+  prg_with_counter(bitmask, pub_seed, n, addr);
   SET_BLOCK_BIT(addr,1);
-  prg_with_counter(bitmask+n, n, pub_seed, n, addr);
+  prg_with_counter(bitmask+n, pub_seed, n, addr);
   for(i=0;i<n;i++)
   {
     buf[i] = 0x00;
@@ -136,9 +136,9 @@ int hash_n_n(unsigned char *out,const unsigned char *in, const unsigned char *pu
   int i;
   
   WOTS_SELECT_KEY(addr);
-  prg_with_counter(key, n, pub_seed, n, addr);
+  prg_with_counter(key, pub_seed, n, addr);
   WOTS_SELECT_BLOCK(addr);
-  prg_with_counter(bitmask, n, pub_seed, n, addr);
+  prg_with_counter(bitmask, pub_seed, n, addr);
   for(i=0;i<n;i++)
   {
     buf[i] = 0x00;

@@ -45,7 +45,7 @@ void wots_set_params(wots_params *params, int m, int n, int w)
  */
 static void expand_seed(unsigned char *outseeds, const unsigned char *inseed, const wots_params *params)
 {
-  prg(outseeds, params->keysize, inseed, 32);
+  prg(outseeds, params->keysize, inseed, params->n);
 }
 
 /**

@@ -79,16 +79,18 @@ Public domain.
   a[12] = (a[12] & 252) | ((v >> 22) & 3);}
 
 
-  /**
+/**
  * Used for pseudorandom keygeneration,
  * generates the seed for the WOTS keypair at address addr
+ * 
+ * takes n byte sk_seed and returns n byte seed using 16 byte address addr.
  */
-static void get_seed(unsigned char seed[32], const unsigned char *sk_seed, unsigned char addr[16])
+static void get_seed(unsigned char *seed, const unsigned char *sk_seed, int n, unsigned char addr[16])
 {
   // Make sure that chain addr, hash addr, and key bit are 0!
   ZEROISE_OTS_ADDR(addr);
   // Generate pseudorandom value
-  prg_with_counter(seed, 32, sk_seed, 32, addr);
+  prg_with_counter(seed, sk_seed, n, addr);
 }
 
 /**
@@ -175,10 +177,10 @@ static void l_tree(unsigned char *leaf, unsigned char *wots_pk, const xmss_param
  */
 static void gen_leaf_wots(unsigned char *leaf, const unsigned char *sk_seed, const xmss_params *params, const unsigned char *pub_seed, unsigned char ltree_addr[16], unsigned char ots_addr[16])
 {
-  unsigned char seed[32];
+  unsigned char seed[params->n];
   unsigned char pk[params->wots_par.keysize];
 
-  get_seed(seed, sk_seed, ots_addr);
+  get_seed(seed, sk_seed, params->n, ots_addr);
   wots_pkgen(pk, seed, &(params->wots_par), pub_seed, ots_addr);
 
   l_tree(leaf, pk, params, pub_seed, ltree_addr); 
@@ -448,7 +450,7 @@ int xmss_sign(unsigned char *sk, unsigned char *sig_msg, unsigned long long *sig
   SET_OTS_ADDRESS(ots_addr,idx);
   
   // Compute seed for OTS key pair
-  get_seed(ots_seed, sk_seed, ots_addr);
+  get_seed(ots_seed, sk_seed, n, ots_addr);
      
   // Compute WOTS signature
   wots_sign(sig_msg, msg_h, ots_seed, &(params->wots_par), pub_seed, ots_addr);
@@ -673,7 +675,7 @@ int xmssmt_sign(unsigned char *sk, unsigned char *sig_msg, unsigned long long *s
   SET_OTS_ADDRESS(ots_addr, idx_leaf);
   
   // Compute seed for OTS key pair
-  get_seed(ots_seed, sk_seed, ots_addr);
+  get_seed(ots_seed, sk_seed, n, ots_addr);
      
   // Compute WOTS signature
   wots_sign(sig_msg, msg_h, ots_seed, &(params->xmss_par.wots_par), pub_seed, ots_addr);
@@ -696,7 +698,7 @@ int xmssmt_sign(unsigned char *sk, unsigned char *sig_msg, unsigned long long *s
     SET_OTS_ADDRESS(ots_addr, idx_leaf);
     
     // Compute seed for OTS key pair
-    get_seed(ots_seed, sk_seed, ots_addr);
+    get_seed(ots_seed, sk_seed, n, ots_addr);
       
     // Compute WOTS signature
     wots_sign(sig_msg, root, ots_seed, &(params->xmss_par.wots_par), pub_seed, ots_addr);

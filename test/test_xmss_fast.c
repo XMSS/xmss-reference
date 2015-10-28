@@ -8,8 +8,7 @@
 #define SIGNATURES 256
 
 
-unsigned char sk[100];
-unsigned char pk[64];
+
 unsigned char mi[MLEN];
 unsigned long long smlen;
 unsigned long long mlen;
@@ -26,6 +25,9 @@ int main()
   
   unsigned long errors = 0;
   
+  unsigned char sk[3*n+4];
+  unsigned char pk[2*n];
+
   xmss_params p;
   xmss_params *params = &p;
   xmss_set_params(params, m, n, h, w, k);
@@ -34,7 +36,7 @@ int main()
   unsigned char stack[(h+1)*n];
   unsigned int stackoffset = 0;
   unsigned char stacklevels[h+1];
-  unsigned char auth[h*n];
+  unsigned char auth[(h)*n];
   unsigned char keep[(h >> 1)*n];
   treehash_inst treehash[h-k];
   unsigned char th_nodes[(h-k)*n];
@@ -64,7 +66,7 @@ int main()
   unsigned long idx = ((unsigned long)sk[0] << 24) | ((unsigned long)sk[1] << 16) | ((unsigned long)sk[2] << 8) | sk[3];
   if(idx) printf("\nidx != 0 %lu\n",idx);
   
-  for(i=0;i<(1<<h);i++){
+  for(i=0;i<((1<<h));i++){
     printf("sign\n");
     xmss_sign(sk, state, sm, &smlen, mi, MLEN, params);
     idx = ((unsigned long)sm[0] << 24) | ((unsigned long)sm[1] << 16) | ((unsigned long)sm[2] << 8) | sm[3];
@@ -93,6 +95,7 @@ int main()
 
     /* Test with modified signature */
     /* Modified index */
+    sm[signature_length+10] ^= 1;
     sm[2] ^= 1;
     r = xmss_sign_open(mo, &mlen, sm, smlen, pk, params);
     printf("%d\n", r+1);

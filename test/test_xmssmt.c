@@ -53,7 +53,7 @@ int main()
 
   if(idx) printf("\nidx != 0: %llu\n",idx);
   
-  for(i=0;i<SIGNATURES;i++){
+  for(i=0;i<(1<<h);i++){
     printf("sign\n");
     xmssmt_sign(sk, sm, &smlen, mi, MLEN, params);
     idx = 0;

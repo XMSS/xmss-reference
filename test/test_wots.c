@@ -11,24 +11,25 @@ static void hexdump(unsigned char *a, size_t len)
 
 int main()
 {
-unsigned char seed[32];
-unsigned char pub_seed[32];
-wots_params params;
-wots_set_params(&params, 32, 32, 16);
+  int n = 32;
+  unsigned char seed[n];
+  unsigned char pub_seed[n];
+  wots_params params;
+  wots_set_params(&params, n, n, 16);
 
-int sig_len = params.len*params.n;
+  int sig_len = params.len*params.n;
 
-unsigned char pk1[sig_len];
-unsigned char pk2[sig_len];
-unsigned char sig[sig_len];
-unsigned char addr[16] = {1,2,3,4};
+  unsigned char pk1[sig_len];
+  unsigned char pk2[sig_len];
+  unsigned char sig[sig_len];
+  unsigned char addr[16] = {1,2,3,4};
 
-  unsigned char msg[32];
+  unsigned char msg[n];
   int i;
 
-  randombytes(seed, 32);
-  randombytes(pub_seed, 32);
-  randombytes(msg, 32);
+  randombytes(seed, n);
+  randombytes(pub_seed, n);
+  randombytes(msg, n);
   //randombytes(addr, 16);
 
   wots_pkgen(pk1, seed, &params, pub_seed, addr);

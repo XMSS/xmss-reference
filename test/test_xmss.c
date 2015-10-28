@@ -7,8 +7,7 @@
 #define SIGNATURES 50
 
 
-unsigned char sk[100];
-unsigned char pk[64];
+
 unsigned char mi[MLEN];
 unsigned long long smlen;
 unsigned long long mlen;
@@ -17,13 +16,16 @@ int main()
 {
   int r;
   unsigned long long i;
-  int m = 32;
-  int n = 32;
+  int m = 64;
+  int n = 64;
   int h = 8;
   int w = 16;
   
   unsigned long errors = 0;
   
+  unsigned char sk[3*n+4];
+  unsigned char pk[2*n];
+
   xmss_params p;
   xmss_params *params = &p;
   xmss_set_params(params, m, n, h, w);
@@ -75,6 +77,7 @@ int main()
 
     /* Test with modified signature */
     /* Modified index */
+    sm[signature_length+10] ^= 1;
     sm[2] ^= 1;
     r = xmss_sign_open(mo, &mlen, sm, smlen, pk, params);
     printf("%d\n", r+1);

@@ -11,23 +11,26 @@ static void hexdump(unsigned char *a, size_t len)
 
 int main()
 {
+  int n = 32;
   unsigned char seed[32] = {0};
-  unsigned char out[64];
+//   unsigned char seed[64] = {0,0};
+  
+  unsigned char out[2*n];
   unsigned char addr[16] = {2};
 
   printf("Case 1: All 0\n");
-  prg(out, 64, seed, 32);
+  prg(out, 2*n, seed, n);
 
   printf("\n");
-  hexdump(out, 64);
+  hexdump(out, 2*n);
   printf("\n");
   
   printf("Case 2: key = 1\n");
   seed[31] = 1;
-  prg_with_counter(out, 64, seed, 32, addr);
+  prg_with_counter(out, seed, n, addr);
 
   printf("\n");
-  hexdump(out, 64);
+  hexdump(out, n);
   printf("\n");
   return 0;
 }

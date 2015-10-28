@@ -78,16 +78,18 @@ Public domain.
   a[13] = (v >> 14) & 255;\
   a[12] = (a[12] & 252) | ((v >> 22) & 3);}
 
-  /**
+/**
  * Used for pseudorandom keygeneration,
  * generates the seed for the WOTS keypair at address addr
+ * 
+ * takes n byte sk_seed and returns n byte seed using 16 byte address addr.
  */
-static void get_seed(unsigned char seed[32], const unsigned char *sk_seed, unsigned char addr[16])
+static void get_seed(unsigned char *seed, const unsigned char *sk_seed, int n, unsigned char addr[16])
 {
   // Make sure that chain addr, hash addr, and key bit are 0!
   ZEROISE_OTS_ADDR(addr);
   // Generate pseudorandom value
-  prg_with_counter(seed, 32, sk_seed, 32, addr);
+  prg_with_counter(seed, sk_seed, n, addr);
 }
 
 /**
@@ -200,10 +202,10 @@ static void l_tree(unsigned char *leaf, unsigned char *wots_pk, const xmss_param
  */
 static void gen_leaf_wots(unsigned char *leaf, const unsigned char *sk_seed, const xmss_params *params, const unsigned char *pub_seed, unsigned char ltree_addr[16], unsigned char ots_addr[16])
 {
-  unsigned char seed[32];
+  unsigned char seed[params->n];
   unsigned char pk[params->wots_par.keysize];
 
-  get_seed(seed, sk_seed, ots_addr);
+  get_seed(seed, sk_seed, params->n, ots_addr);
   wots_pkgen(pk, seed, &(params->wots_par), pub_seed, ots_addr);
 
   l_tree(leaf, pk, params, pub_seed, ltree_addr); 
@@ -679,7 +681,7 @@ int xmss_sign(unsigned char *sk, bds_state *state, unsigned char *sig_msg, unsig
   SET_OTS_ADDRESS(ots_addr,idx);
   
   // Compute seed for OTS key pair
-  get_seed(ots_seed, sk_seed, ots_addr);
+  get_seed(ots_seed, sk_seed, n, ots_addr);
      
   // Compute WOTS signature
   wots_sign(sig_msg, msg_h, ots_seed, &(params->wots_par), pub_seed, ots_addr);
@@ -828,7 +830,7 @@ int xmssmt_keypair(unsigned char *pk, unsigned char *sk, bds_state *states, unsi
     // Compute seed for OTS key pair
     treehash_setup(pk, params->xmss_par.h, 0, states + i, sk+params->index_len, &(params->xmss_par), pk+n, addr);
     SET_LAYER_ADDRESS(addr, (i+1));
-    get_seed(ots_seed, sk+params->index_len, addr);
+    get_seed(ots_seed, sk+params->index_len, n, addr);
     wots_sign(wots_sigs + i*params->xmss_par.wots_par.keysize, pk, ots_seed, &(params->xmss_par.wots_par), pk+n, addr);
   }
   treehash_setup(pk, params->xmss_par.h, 0, states + i, sk+params->index_len, &(params->xmss_par), pk+n, addr);
@@ -927,7 +929,7 @@ int xmssmt_sign(unsigned char *sk, bds_state *states, unsigned char *wots_sigs, 
   SET_OTS_ADDRESS(ots_addr, idx_leaf);
   
   // Compute seed for OTS key pair
-  get_seed(ots_seed, sk_seed, ots_addr);
+  get_seed(ots_seed, sk_seed, n, ots_addr);
      
   // Compute WOTS signature
   wots_sign(sig_msg, msg_h, ots_seed, &(params->xmss_par.wots_par), pub_seed, ots_addr);
@@ -974,7 +976,7 @@ int xmssmt_sign(unsigned char *sk, bds_state *states, unsigned char *wots_sigs, 
         SET_OTS_ADDRESS(ots_addr, (((idx >> ((i+1) * tree_h)) + 1) & ((1 << tree_h)-1)));
         SET_LAYER_ADDRESS(ots_addr, (i+1));
 
-        get_seed(ots_seed, sk+params->index_len, ots_addr);
+        get_seed(ots_seed, sk+params->index_len, n, ots_addr);
         wots_sign(wots_sigs + i*params->xmss_par.wots_par.keysize, states[i].stack, ots_seed, &(params->xmss_par.wots_par), pub_seed, ots_addr);
 
         states[params->d + i].stackoffset = 0;
