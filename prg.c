@@ -74,14 +74,6 @@ void prg_with_counter(unsigned char *r, const unsigned char *key, unsigned int n
   {
     if(n == 64)
     {
-//       for(i = 0; i < 12; i++)
-//       {
-// 	nonce[i] = addr[i];
-//       }
-//       uint32_t counter;
-//       counter = (((uint32_t)addr[12]) << 24)|(((uint32_t)addr[13]) << 16)|(((uint32_t)addr[14]) << 8)|addr[15];
-//       // TODO: WRONG! Uses only 32 byte of key. However, does not compile with HMAC-SHA512
-//       CRYPTO_chacha_20_keystream(r, rlen, key, nonce, counter);
       unsigned int length;
       HMAC(EVP_sha512(), key, n, addr, 16, r, &length);
       if(length != 64)
