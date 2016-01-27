@@ -13,8 +13,8 @@ Public domain.
 #include <openssl/evp.h>
 
 
-#define SET_KEY_BIT(a,b) (a[15] = (a[15] & 253) | (b << 1))
-#define SET_BLOCK_BIT(a,b) (a[15] = (a[15] & 254) | b)
+#define SET_KEY_BIT(a,b) (a[15] = (a[15] & 253) | ((b << 1) & 2))
+#define SET_BLOCK_BIT(a,b) (a[15] = (a[15] & 254) | (b & 1))
 
 #define WOTS_SELECT_KEY(a) (a[15] = (a[15] & 254) | 1)
 #define WOTS_SELECT_BLOCK(a) (a[15] = (a[15] & 254) | 0)

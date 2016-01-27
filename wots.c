@@ -17,11 +17,11 @@ Public domain.
  * in the 16byte hash address
  */
 #define SET_HASH_ADDRESS(a, v) {\
-  a[15] = (a[15] & 1) | ((v << 1) & 255);\
+  a[15] = (a[15] & 1) | ((v << 1) & 254);\
   a[14] = (a[14] & 254) | ((v >> 7) & 1);}
   
 #define SET_CHAIN_ADDRESS(a, v) {\
-  a[14] = (a[14] & 1) | ((v << 1) & 255);\
+  a[14] = (a[14] & 1) | ((v << 1) & 254);\
   a[13] = (v >> 7) & 255;\
   a[12] = (a[12] & 254) | ((v >> 15) & 1);}
 
