@@ -401,34 +401,39 @@ static void validate_authpath(unsigned char *root, const unsigned char *leaf, un
  * Performs one treehash update on the instance that needs it the most.
  * Returns 1 if such an instance was not found
  **/
-static char bds_treehash_update(bds_state *state, const unsigned char *sk_seed, const xmss_params *params, unsigned char *pub_seed, const unsigned char addr[16]) {
-  unsigned int i;
+static char bds_treehash_update(bds_state *state, unsigned int updates, const unsigned char *sk_seed, const xmss_params *params, unsigned char *pub_seed, const unsigned char addr[16]) {
+  unsigned int i, j;
   int level, l_min, low;
   int h = params->h;
   int k = params->k;
+  int used = 0;
 
-  l_min = h;
-  level = h - k;
-  for (i = 0; i < h - k; i++) {
-    if (state->treehash[i].completed) {
-      low = h;
+  for (j = 0; j < updates; j++) {
+    l_min = h;
+    level = h - k;
+    for (i = 0; i < h - k; i++) {
+      if (state->treehash[i].completed) {
+        low = h;
+      }
+      else if (state->treehash[i].stackusage == 0) {
+        low = i;
+      }
+      else {
+        low = treehash_minheight_on_stack(state, params, &(state->treehash[i]));
+      }
+      if (low < l_min) {
+        level = i;
+        l_min = low;
+      }
     }
-    else if (state->treehash[i].stackusage == 0) {
-      low = i;
+    if (level == h - k) {
+      break;
     }
-    else {
-      low = treehash_minheight_on_stack(state, params, &(state->treehash[i]));
-    }
-    if (low < l_min) {
-      level = i;
-      l_min = low;
-    }
+    // printf("Updated treehash instance on level %d\n", level);
+    treehash_update(&(state->treehash[level]), state, sk_seed, params, pub_seed, addr);
+    used++;
   }
-  if (level == h - k) {
-    return 1;
-  }
-  treehash_update(&(state->treehash[level]), state, sk_seed, params, pub_seed, addr);
-  return 0;
+  return updates - used;
 }
 
 /**
@@ -501,8 +506,9 @@ static char bds_state_update(bds_state *state, const unsigned char *sk_seed, con
  * next leaf node, using the algorithm described by Buchmann, Dahmen and Szydlo
  * in "Post Quantum Cryptography", Springer 2009.
  */
-static int bds_round(bds_state *state, const unsigned long leaf_idx, const unsigned char *sk_seed, const xmss_params *params, const int updates, unsigned char *pub_seed, unsigned char addr[16])
+static void bds_round(bds_state *state, const unsigned long leaf_idx, const unsigned char *sk_seed, const xmss_params *params, unsigned char *pub_seed, unsigned char addr[16])
 {
+  // printf("COMPUTING %llu\n", leaf_idx);
   unsigned int i;
   int n = params->n;
   int h = params->h;
@@ -571,13 +577,6 @@ static int bds_round(bds_state *state, const unsigned long leaf_idx, const unsig
       }
     }
   }
-  int remaining = 0;
-  for (i = 0; i < updates; i++) {
-    if (bds_treehash_update(state, sk_seed, params, pub_seed, addr)) {
-      remaining++;
-    }
-  }
-  return remaining;
 }
 
 /*
@@ -693,7 +692,8 @@ int xmss_sign(unsigned char *sk, bds_state *state, unsigned char *sig_msg, unsig
   memcpy(sig_msg, state->auth, h*n);
 
   if (idx < (1 << h) - 1) {
-    bds_round(state, idx, sk_seed, params, (h - k) >> 1, pub_seed, ots_addr);
+    bds_round(state, idx, sk_seed, params, pub_seed, ots_addr);
+    bds_treehash_update(state, (h - k) >> 1, sk_seed, params, pub_seed, ots_addr);
   }
 
   sig_msg += params->h*n;
@@ -855,8 +855,8 @@ int xmssmt_sign(unsigned char *sk, bds_state *states, unsigned char *wots_sigs, 
   unsigned long long idx_tree;
   unsigned long long idx_leaf;
   unsigned long long i, j;
+  int needswap_upto = -1;
   unsigned int updates;
-  unsigned int first_nonwots;
 
   unsigned char sk_seed[n];
   unsigned char sk_prf[m];
@@ -865,6 +865,7 @@ int xmssmt_sign(unsigned char *sk, bds_state *states, unsigned char *wots_sigs, 
   unsigned char R[m];
   unsigned char msg_h[m];
   unsigned char ots_seed[n];
+  unsigned char addr[16] = {0,0,0,0};
   unsigned char ots_addr[16] = {0,0,0,0};
   bds_state tmp;
 
@@ -955,71 +956,52 @@ int xmssmt_sign(unsigned char *sk, bds_state *states, unsigned char *wots_sigs, 
     *sig_msg_len += tree_h*n;   
   }
 
-  SET_LAYER_ADDRESS(ots_addr, 0);
-  SET_TREE_ADDRESS(ots_addr, (idx_tree + 1));
+  updates = (tree_h - k) >> 1;
 
-  updates = tree_h - k;
+  SET_LAYER_ADDRESS(addr, 0);
+  SET_TREE_ADDRESS(addr, (idx_tree + 1));
+  // mandatory update for NEXT_0 (does not count towards h-k/2)
+  bds_state_update(&states[params->d], sk_seed, &(params->xmss_par), pub_seed, addr);
 
-  // if a NEXT-tree exists within the hypertree
-  if ((1 + idx_tree) * (1 << tree_h) + idx_leaf < (1 << h)) {
-    // mandatory update for NEXT_0 (does not count towards h-k)
-    bds_state_update(&states[params->d], sk_seed, &(params->xmss_par), pub_seed, ots_addr);
-
-    // check if we're at the end of a tree
-    for (i = 0; i < params->d; i++) {
-      if (((idx + 1) & ((1 << ((i+1)*tree_h)) - 1)) == 0) {
-        memcpy(&tmp, states+params->d + i, sizeof(bds_state));
-        memcpy(states+params->d + i, states + i, sizeof(bds_state));
-        memcpy(states + i, &tmp, sizeof(bds_state));
-
-        SET_TREE_ADDRESS(ots_addr, ((idx + 1) >> ((i+2) * tree_h)));
-        SET_OTS_ADDRESS(ots_addr, (((idx >> ((i+1) * tree_h)) + 1) & ((1 << tree_h)-1)));
-        SET_LAYER_ADDRESS(ots_addr, (i+1));
-
-        get_seed(ots_seed, sk+params->index_len, n, ots_addr);
-        wots_sign(wots_sigs + i*params->xmss_par.wots_par.keysize, states[i].stack, ots_seed, &(params->xmss_par.wots_par), pub_seed, ots_addr);
-
-        states[params->d + i].stackoffset = 0;
-        states[params->d + i].next_leaf = 0;
-
-        updates--; // WOTS-signing counts as one update
-
-        // this bds_round is needed to initialise the state, but should not perform updates
-        // note that one should still pass the (reduced) current idx, as bds_round sets up for idx+1
-        bds_round(&states[i+1], ((idx >> ((i+1)*tree_h))) & ((1 << tree_h)-1), sk_seed, &(params->xmss_par), 0, pub_seed, ots_addr);
-        for (j = 0; j < tree_h-k; j++) {
-          states[i].treehash[j].completed = 1;
+  for (i = 0; i < params->d; i++) {
+    // check if we're not at the end of a tree
+    if (! (((idx + 1) & ((1 << ((i+1)*tree_h)) - 1)) == 0)) {
+      idx_leaf = (idx >> (tree_h * i)) & ((1 << tree_h)-1);
+      idx_tree = (idx >> (tree_h * (i+1)));
+      SET_LAYER_ADDRESS(addr, i);
+      SET_TREE_ADDRESS(addr, idx_tree);
+      if (i == needswap_upto+1) {
+        bds_round(&states[i], idx_leaf, sk_seed, &(params->xmss_par), pub_seed, addr);
+      }
+      updates = bds_treehash_update(&states[i], updates, sk_seed, &(params->xmss_par), pub_seed, addr);
+      SET_TREE_ADDRESS(addr, (idx_tree + 1));
+      // if a NEXT-tree exists for this level;
+      if ((1 + idx_tree) * (1 << tree_h) + idx_leaf < (1 << (h - tree_h * i))) {
+        if (i > 0 && updates > 0 && states[params->d + i].next_leaf < 1 << h) {
+          bds_state_update(&states[params->d + i], sk_seed, &(params->xmss_par), pub_seed, addr);
+          updates--;
         }
       }
     }
-  }
+    else {
+      memcpy(&tmp, states+params->d + i, sizeof(bds_state));
+      memcpy(states+params->d + i, states + i, sizeof(bds_state));
+      memcpy(states + i, &tmp, sizeof(bds_state));
 
-  SET_LAYER_ADDRESS(ots_addr, 0);
-  SET_TREE_ADDRESS(ots_addr, idx_tree);
+      SET_LAYER_ADDRESS(ots_addr, (i+1));
+      SET_TREE_ADDRESS(ots_addr, ((idx + 1) >> ((i+2) * tree_h)));
+      SET_OTS_ADDRESS(ots_addr, (((idx >> ((i+1) * tree_h)) + 1) & ((1 << tree_h)-1)));
 
-  first_nonwots = (tree_h - k) - updates;
+      get_seed(ots_seed, sk+params->index_len, n, ots_addr);
+      wots_sign(wots_sigs + i*params->xmss_par.wots_par.keysize, states[i].stack, ots_seed, &(params->xmss_par.wots_par), pub_seed, ots_addr);
 
-  if (first_nonwots == 0) {
-    updates = bds_round(&states[0], idx_leaf, sk_seed, &(params->xmss_par), (tree_h - k) >> 1, pub_seed, ots_addr);
-  }
+      states[params->d + i].stackoffset = 0;
+      states[params->d + i].next_leaf = 0;
 
-  for (i = 1; updates > 0 && i < params->d; i++) {
-    idx_leaf = (idx_tree & ((1 << tree_h)-1));
-    idx_tree = idx_tree >> tree_h;
-    if (first_nonwots > i) {
-      continue;
-    }
-    SET_LAYER_ADDRESS(ots_addr, i);
-    SET_TREE_ADDRESS(ots_addr, idx_tree);
-    SET_OTS_ADDRESS(ots_addr, idx_leaf);
-    while (updates > 0 && !bds_treehash_update(&states[i], sk_seed, &(params->xmss_par), pub_seed, ots_addr)) {
-      updates--;
-    }
-    SET_TREE_ADDRESS(ots_addr, (idx_tree + 1));
-    // if a NEXT-tree exists for this level;
-    if ((1 + idx_tree) * (1 << tree_h) + idx_leaf < (1 << (h - tree_h * i))) {
-      while (updates > 0 && !bds_state_update(&states[params->d + i], sk_seed, &(params->xmss_par), pub_seed, ots_addr)) {
-        updates--;
+      updates--; // WOTS-signing counts as one update
+      needswap_upto = i;
+      for (j = 0; j < tree_h-k; j++) {
+        states[i].treehash[j].completed = 1;
       }
     }
   }
