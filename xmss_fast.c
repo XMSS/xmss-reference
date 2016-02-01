@@ -983,7 +983,7 @@ int xmssmt_sign(unsigned char *sk, bds_state *states, unsigned char *wots_sigs, 
         }
       }
     }
-    else {
+    else if (idx < (1UL << h) - 1) {
       memcpy(&tmp, states+params->d + i, sizeof(bds_state));
       memcpy(states+params->d + i, states + i, sizeof(bds_state));
       memcpy(states + i, &tmp, sizeof(bds_state));

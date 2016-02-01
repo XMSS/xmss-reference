@@ -31,17 +31,18 @@ int main()
   unsigned int tree_h = h / d;
 
   // stack needs to be larger than regular (H-K-1), since we re-use for 'next'
-  unsigned char stack[2*d * (tree_h + 1)*n];
-  unsigned char stacklevels[2*d * (tree_h + 1)*n];
-  unsigned char auth[2*d * tree_h*n];
-  unsigned char keep[2*d * (tree_h >> 1)*n];
-  treehash_inst treehash[2*d * (tree_h-k)];
-  unsigned char th_nodes[2*d * (tree_h-k)*n];
-  unsigned char retain[2*d * ((1 << k) - k - 1)*n];
+  unsigned char stack[(2*d-1) * (tree_h + 1)*n];
+  unsigned char stacklevels[(2*d-1) * (tree_h + 1)*n];
+  unsigned char auth[(2*d-1) * tree_h*n];
+  unsigned char keep[(2*d-1) * (tree_h >> 1)*n];
+  treehash_inst treehash[(2*d-1) * (tree_h-k)];
+  unsigned char th_nodes[(2*d-1) * (tree_h-k)*n];
+  unsigned char retain[(2*d-1) * ((1 << k) - k - 1)*n];
   unsigned char wots_sigs[d * params->xmss_par.wots_par.keysize];
-  bds_state states[2*d]; // first d are 'regular' states, second d are 'next'
+  // first d are 'regular' states, second d are 'next'; top tree has no 'next'
+  bds_state states[2*d-1];
 
-  for (i = 0; i < 2*d; i++) {
+  for (i = 0; i < 2*d-1; i++) {
     for(j=0;j<tree_h-k;j++)
       treehash[i*(tree_h-k) + j].node = th_nodes + (i*(tree_h-k) + j) * n;
     xmss_set_bds_state(states + i,
