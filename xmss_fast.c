@@ -965,7 +965,7 @@ int xmssmt_sign(unsigned char *sk, bds_state *states, unsigned char *wots_sigs, 
 
   for (i = 0; i < params->d; i++) {
     // check if we're not at the end of a tree
-    if (! (((idx + 1) & ((1 << ((i+1)*tree_h)) - 1)) == 0)) {
+    if (! (((idx + 1) & ((1UL << ((i+1)*tree_h)) - 1)) == 0)) {
       idx_leaf = (idx >> (tree_h * i)) & ((1 << tree_h)-1);
       idx_tree = (idx >> (tree_h * (i+1)));
       SET_LAYER_ADDRESS(addr, i);
@@ -976,8 +976,8 @@ int xmssmt_sign(unsigned char *sk, bds_state *states, unsigned char *wots_sigs, 
       updates = bds_treehash_update(&states[i], updates, sk_seed, &(params->xmss_par), pub_seed, addr);
       SET_TREE_ADDRESS(addr, (idx_tree + 1));
       // if a NEXT-tree exists for this level;
-      if ((1 + idx_tree) * (1 << tree_h) + idx_leaf < (1 << (h - tree_h * i))) {
-        if (i > 0 && updates > 0 && states[params->d + i].next_leaf < 1 << h) {
+      if ((1 + idx_tree) * (1 << tree_h) + idx_leaf < (1UL << (h - tree_h * i))) {
+        if (i > 0 && updates > 0 && states[params->d + i].next_leaf < (1UL << h)) {
           bds_state_update(&states[params->d + i], sk_seed, &(params->xmss_par), pub_seed, addr);
           updates--;
         }
