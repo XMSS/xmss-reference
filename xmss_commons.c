@@ -11,7 +11,7 @@ Public domain.
 void to_byte(unsigned char *out, unsigned int in, int bytes)
 {
   int i;
-  for(i = 0; i < bytes; i++){
+  for (i = 0; i < bytes; i++) {
     out[i] = in & 0xff;
     in = in >> 8;
   }

@@ -6,7 +6,6 @@
 #define MLEN 3491
 #define SIGNATURES 4096
 
-
 unsigned char mi[MLEN];
 unsigned long long smlen;
 unsigned long long mlen;
@@ -15,12 +14,12 @@ int main()
 {
   int r;
   unsigned long long i,j;
-  int m = 32;
-  int n = 32;
-  int h = 12;
-  int d = 2;
-  int w = 16;
-  int k = 2;
+  unsigned int m = 32;
+  unsigned int n = 32;
+  unsigned int h = 12;
+  unsigned int d = 3;
+  unsigned int w = 16;
+  unsigned int k = 2;
 
   xmssmt_params p;
   xmssmt_params *params = &p;
@@ -43,7 +42,7 @@ int main()
   bds_state states[2*d-1];
 
   for (i = 0; i < 2*d-1; i++) {
-    for(j=0;j<tree_h-k;j++)
+    for (j = 0; j < tree_h-k; j++)
       treehash[i*(tree_h-k) + j].node = th_nodes + (i*(tree_h-k) + j) * n;
     xmss_set_bds_state(states + i,
       stack + i*(tree_h + 1)*n, 0, stacklevels + i*(tree_h + 1),
@@ -63,32 +62,31 @@ int main()
   unsigned char sm[MLEN+signature_length];
 
   FILE *urandom = fopen("/dev/urandom", "r");
-  for(i=0;i<MLEN;i++) mi[i] = fgetc(urandom);
+  for (i = 0; i < MLEN; i++) mi[i] = fgetc(urandom);
 
   printf("keypair\n");
   xmssmt_keypair(pk, sk, states, wots_sigs, params);
   // check pub_seed in SK
-  for(i=0;i<n;i++)
-  {
-    if(pk[n+i] != sk[params->index_len+m+n+i]) printf("pk.pub_seed != sk.pub_seed %llu",i);
+  for (i = 0; i < n; i++) {
+    if (pk[n+i] != sk[params->index_len+m+n+i]) printf("pk.pub_seed != sk.pub_seed %llu",i);
   }
   printf("pk checked\n");
 
   unsigned int idx_len = params->index_len;
   // check index
   unsigned long long idx = 0;
-  for(i = 0; i < idx_len; i++){
+  for (i = 0; i < idx_len; i++) {
     idx |= ((unsigned long long)sk[i]) << 8*(idx_len - 1 - i);
   }
 
-  if(idx) printf("\nidx != 0: %llu\n",idx);
+  if (idx) printf("\nidx != 0: %llu\n",idx);
 
-  for(i=0;i<SIGNATURES;i++){
+  for (i = 0; i < SIGNATURES; i++) {
     printf("sign\n");
     xmssmt_sign(sk, states, wots_sigs, sm, &smlen, mi, MLEN, params);
 
     idx = 0;
-    for(j = 0; j < idx_len; j++){
+    for (j = 0; j < idx_len; j++) {
       idx += ((unsigned long long)sm[j]) << 8*(idx_len - 1 - j);
     }
     printf("\nidx = %llu\n",idx);
