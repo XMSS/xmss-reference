@@ -812,9 +812,6 @@ int xmssmt_keypair(unsigned char *pk, unsigned char *sk, bds_state *states, unsi
   SET_LAYER_ADDRESS(addr, 0);
   // Set up state and compute wots signatures for all but topmost tree root
   for (i = 0; i < params->d - 1; i++) {
-    SET_LAYER_ADDRESS(addr, i);
-    SET_TREE_ADDRESS(addr, 0);
-    SET_OTS_ADDRESS(addr, 0);
     // Compute seed for OTS key pair
     treehash_setup(pk, params->xmss_par.h, 0, states + i, sk+params->index_len, &(params->xmss_par), pk+n, addr);
     SET_LAYER_ADDRESS(addr, (i+1));
@@ -946,7 +943,6 @@ int xmssmt_sign(unsigned char *sk, bds_state *states, unsigned char *wots_sigs, 
 
   updates = (tree_h - k) >> 1;
 
-  SET_LAYER_ADDRESS(addr, 0);
   SET_TREE_ADDRESS(addr, (idx_tree + 1));
   // mandatory update for NEXT_0 (does not count towards h-k/2) if NEXT_0 exists
   if ((1 + idx_tree) * (1 << tree_h) + idx_leaf < (1UL << h)) {
