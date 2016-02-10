@@ -1,5 +1,5 @@
 /*
-hash.h version 20150811
+hash.h version 20151120
 Andreas Hülsing
 Public domain.
 */

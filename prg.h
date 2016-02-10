@@ -1,5 +1,5 @@
 /*
-prg.h version 20150811
+prg.h version 20151120
 Andreas Hülsing
 Public domain.
 */

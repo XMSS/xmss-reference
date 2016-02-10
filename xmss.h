@@ -1,5 +1,5 @@
 /*
-xmss.h version 20150811
+xmss.h version 20151120
 Andreas Hülsing
 Public domain.
 */

@@ -1,5 +1,5 @@
 /*
-xmss_commons.c version 20150811
+xmss_commons.c version 20151120
 Andreas Hülsing
 Public domain.
 */

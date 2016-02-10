@@ -1,6 +1,6 @@
 /*
-xmss.c version 20150811
-Andreas Hülsing
+xmss_fast.c version 20151120
+Andreas Hülsing and Joost Rijneveld
 Public domain.
 */
 
