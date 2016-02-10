@@ -24,32 +24,32 @@ Public domain.
  * in the 16byte hash address
  */
 #define SET_LAYER_ADDRESS(a, v) {\
-  a[6] = (a[6] & 3) | ((v << 2) & 255);\
-  a[5] = (a[5] & 252) | ((v >> 6) & 255);}  
+  a[6] = (a[6] & 3) | ((v << 2) & 252);\
+  a[5] = (a[5] & 252) | ((v >> 6) & 3);}
 
 #define SET_TREE_ADDRESS(a, v) {\
-  a[9] = (a[9] & 3) | ((v << 2) & 255);\
+  a[9] = (a[9] & 3) | ((v << 2) & 252);\
   a[8] = (v >> 6) & 255;\
   a[7] = (v >> 14) & 255;\
-  a[6] = (a[6] & 252) | ((v >> 22) & 255);}  
-  
+  a[6] = (a[6] & 252) | ((v >> 22) & 3);}
+
 #define SET_OTS_BIT(a, b) {\
-  a[9] = (a[9] & 253) | (b << 1);}
+  a[9] = (a[9] & 253) | ((b << 1) & 2);}
 
 #define SET_OTS_ADDRESS(a, v) {\
-  a[12] = (a[12] & 1) | ((v << 1) & 255);\
+  a[12] = (a[12] & 1) | ((v << 1) & 254);\
   a[11] = (v >> 7) & 255;\
   a[10] = (v >> 15) & 255;\
-  a[9] = (a[9] & 254) | ((v >> 23) & 1);}  
-  
+  a[9] = (a[9] & 254) | ((v >> 23) & 1);}
+
 #define ZEROISE_OTS_ADDR(a) {\
   a[12] = (a[12] & 254);\
   a[13] = 0;\
   a[14] = 0;\
   a[15] = 0;}
-  
+
 #define SET_LTREE_BIT(a, b) {\
-  a[9] = (a[9] & 254) | b;}
+  a[9] = (a[9] & 254) | (b & 1);}
 
 #define SET_LTREE_ADDRESS(a, v) {\
   a[12] = v & 255;\
@@ -57,23 +57,23 @@ Public domain.
   a[10] = (v >> 16) & 255;}
 
 #define SET_LTREE_TREE_HEIGHT(a, v) {\
-  a[13] = (a[13] & 3) | ((v << 2) & 255);}
+  a[13] = (a[13] & 3) | ((v << 2) & 252);}
 
 #define SET_LTREE_TREE_INDEX(a, v) {\
-  a[15] = (a[15] & 3) | ((v << 2) & 255);\
+  a[15] = (a[15] & 3) | ((v << 2) & 252);\
   a[14] = (v >> 6) & 255;\
   a[13] = (a[13] & 252) | ((v >> 14) & 3);}
-  
+
 #define SET_NODE_PADDING(a) {\
   a[10] = 0;\
-  a[11] = a[11] & 3;}  
+  a[11] = a[11] & 3;}
 
 #define SET_NODE_TREE_HEIGHT(a, v) {\
-  a[12] = (a[12] & 3) | ((v << 2) & 255);\
+  a[12] = (a[12] & 3) | ((v << 2) & 252);\
   a[11] = (a[11] & 252) | ((v >> 6) & 3);}
 
 #define SET_NODE_TREE_INDEX(a, v) {\
-  a[15] = (a[15] & 3) | ((v << 2) & 255);\
+  a[15] = (a[15] & 3) | ((v << 2) & 252);\
   a[14] = (v >> 6) & 255;\
   a[13] = (v >> 14) & 255;\
   a[12] = (a[12] & 252) | ((v >> 22) & 3);}
@@ -81,7 +81,7 @@ Public domain.
 /**
  * Used for pseudorandom keygeneration,
  * generates the seed for the WOTS keypair at address addr
- * 
+ *
  * takes n byte sk_seed and returns n byte seed using 16 byte address addr.
  */
 static void get_seed(unsigned char *seed, const unsigned char *sk_seed, int n, unsigned char addr[16])
@@ -99,7 +99,7 @@ static void get_seed(unsigned char *seed, const unsigned char *sk_seed, int n, u
  */
 int xmss_set_params(xmss_params *params, int m, int n, int h, int w, int k)
 {
-  if(k >= h || k < 2 || (h - k) % 2){
+  if (k >= h || k < 2 || (h - k) % 2) {
     fprintf(stderr, "For BDS traversal, H - K must be even, with H > K >= 2!\n");
     return 1;
   }
@@ -132,12 +132,12 @@ void xmss_set_bds_state(bds_state *state, unsigned char *stack, int stackoffset,
 /**
  * Initialize xmssmt_params struct
  * parameter names are the same as in the draft
- * 
+ *
  * Especially h is the total tree height, i.e. the XMSS trees have height h/d
  */
 int xmssmt_set_params(xmssmt_params *params, int m, int n, int h, int d, int w, int k)
 {
-  if(h % d){
+  if (h % d) {
     fprintf(stderr, "d must divide h without remainder!\n");
     return 1;
   }
@@ -158,29 +158,27 @@ int xmssmt_set_params(xmssmt_params *params, int m, int n, int h, int d, int w, 
  * Computes a leaf from a WOTS public key using an L-tree.
  */
 static void l_tree(unsigned char *leaf, unsigned char *wots_pk, const xmss_params *params, const unsigned char *pub_seed, unsigned char addr[16])
-{ 
+{
   unsigned int l = params->wots_par.len;
   unsigned int n = params->n;
   unsigned long i = 0;
   unsigned int height = 0;
-  
+
   //ADRS.setTreeHeight(0);
-  SET_LTREE_TREE_HEIGHT(addr,height);
+  SET_LTREE_TREE_HEIGHT(addr, height);
   unsigned long bound;
-  while ( l > 1 ) 
-  {
-     bound = l >> 1; //floor(l / 2); 
-     for ( i = 0; i < bound; i = i + 1 ) {
+  while (l > 1) {
+     bound = l >> 1; //floor(l / 2);
+     for (i = 0; i < bound; i = i + 1) {
        //ADRS.setTreeIndex(i);
-       SET_LTREE_TREE_INDEX(addr,i);
+       SET_LTREE_TREE_INDEX(addr, i);
        //wots_pk[i] = RAND_HASH(pk[2i], pk[2i + 1], SEED, ADRS);
-       hash_2n_n(wots_pk+i*n,wots_pk+i*2*n, pub_seed, addr, n);
+       hash_2n_n(wots_pk+i*n, wots_pk+i*2*n, pub_seed, addr, n);
      }
      //if ( l % 2 == 1 ) {
-     if(l&1)
-     {
+     if (l & 1) {
        //pk[floor(l / 2) + 1] = pk[l];
-       memcpy(wots_pk+(l>>1)*n,wots_pk+(l-1)*n, n);
+       memcpy(wots_pk+(l>>1)*n, wots_pk+(l-1)*n, n);
        //l = ceil(l / 2);
        l=(l>>1)+1;
      }
@@ -188,13 +186,13 @@ static void l_tree(unsigned char *leaf, unsigned char *wots_pk, const xmss_param
      {
        //l = ceil(l / 2);
        l=(l>>1);
-     }     
+     }
      //ADRS.setTreeHeight(ADRS.getTreeHeight() + 1);
      height++;
-     SET_LTREE_TREE_HEIGHT(addr,height);
+     SET_LTREE_TREE_HEIGHT(addr, height);
    }
    //return pk[0];
-   memcpy(leaf,wots_pk,n);
+   memcpy(leaf, wots_pk, n);
 }
 
 /**
@@ -208,11 +206,11 @@ static void gen_leaf_wots(unsigned char *leaf, const unsigned char *sk_seed, con
   get_seed(seed, sk_seed, params->n, ots_addr);
   wots_pkgen(pk, seed, &(params->wots_par), pub_seed, ots_addr);
 
-  l_tree(leaf, pk, params, pub_seed, ltree_addr); 
+  l_tree(leaf, pk, params, pub_seed, ltree_addr);
 }
 
 static int treehash_minheight_on_stack(bds_state* state, const xmss_params *params, const treehash_inst *treehash) {
-  int r = params->h, i;
+  unsigned int r = params->h, i;
   for (i = 0; i < treehash->stackusage; i++) {
     if (state->stacklevels[state->stackoffset - i - 1] < r) {
       r = state->stacklevels[state->stackoffset - i - 1];
@@ -224,7 +222,7 @@ static int treehash_minheight_on_stack(bds_state* state, const xmss_params *para
 /**
  * Merkle's TreeHash algorithm. The address only needs to initialize the first 78 bits of addr. Everything else will be set by treehash.
  * Currently only used for key generation.
- * 
+ *
  */
 static void treehash_setup(unsigned char *node, int height, int index, bds_state *state, const unsigned char *sk_seed, const xmss_params *params, const unsigned char *pub_seed, const unsigned char addr[16])
 {
@@ -244,34 +242,32 @@ static void treehash_setup(unsigned char *node, int height, int index, bds_state
   memcpy(node_addr, ltree_addr, 10);
   SET_LTREE_BIT(node_addr, 0);
   SET_NODE_PADDING(node_addr);
-  
-  int lastnode,i;
+
+  unsigned int lastnode, i;
   unsigned char stack[(height+1)*n];
-  unsigned int  stacklevels[height+1];
-  unsigned int  stackoffset=0;
-  
-  int nodeh;
+  unsigned int stacklevels[height+1];
+  unsigned int stackoffset=0;
+  unsigned int nodeh;
 
   lastnode = idx+(1<<height);
 
-  for(i = 0; i < h-k; i++) {
+  for (i = 0; i < h-k; i++) {
     state->treehash[i].h = i;
     state->treehash[i].completed = 1;
     state->treehash[i].stackusage = 0;
   }
 
   i = 0;
-  for(;idx<lastnode;idx++) 
-  {
-    SET_LTREE_ADDRESS(ltree_addr,idx);
-    SET_OTS_ADDRESS(ots_addr,idx);
-    gen_leaf_wots(stack+stackoffset*n,sk_seed,params, pub_seed, ltree_addr, ots_addr);
+  for (; idx < lastnode; idx++) {
+    SET_LTREE_ADDRESS(ltree_addr, idx);
+    SET_OTS_ADDRESS(ots_addr, idx);
+    gen_leaf_wots(stack+stackoffset*n, sk_seed, params, pub_seed, ltree_addr, ots_addr);
     stacklevels[stackoffset] = 0;
     stackoffset++;
     if (h - k > 0 && i == 3) {
       memcpy(state->treehash[0].node, stack+stackoffset*n, n);
     }
-    while(stackoffset>1 && stacklevels[stackoffset-1] == stacklevels[stackoffset-2])
+    while (stackoffset>1 && stacklevels[stackoffset-1] == stacklevels[stackoffset-2])
     {
       nodeh = stacklevels[stackoffset-1];
       if (i >> nodeh == 1) {
@@ -285,9 +281,9 @@ static void treehash_setup(unsigned char *node, int height, int index, bds_state
           memcpy(state->retain + ((1 << (h - 1 - nodeh)) + nodeh - h + (((i >> nodeh) - 3) >> 1)) * n, stack+(stackoffset-1)*n, n);
         }
       }
-      SET_NODE_TREE_HEIGHT(node_addr,stacklevels[stackoffset-1]);
+      SET_NODE_TREE_HEIGHT(node_addr, stacklevels[stackoffset-1]);
       SET_NODE_TREE_INDEX(node_addr, (idx >> (stacklevels[stackoffset-1]+1)));
-      hash_2n_n(stack+(stackoffset-2)*n,stack+(stackoffset-2)*n, pub_seed,
+      hash_2n_n(stack+(stackoffset-2)*n, stack+(stackoffset-2)*n, pub_seed,
           node_addr, n);
       stacklevels[stackoffset-2]++;
       stackoffset--;
@@ -295,7 +291,7 @@ static void treehash_setup(unsigned char *node, int height, int index, bds_state
     i++;
   }
 
-  for(i=0;i<n;i++)
+  for (i = 0; i < n; i++)
     node[i] = stack[i];
 }
 
@@ -350,43 +346,38 @@ static void treehash_update(treehash_inst *treehash, bds_state *state, const uns
 static void validate_authpath(unsigned char *root, const unsigned char *leaf, unsigned long leafidx, const unsigned char *authpath, const xmss_params *params, const unsigned char *pub_seed, unsigned char addr[16])
 {
   unsigned int n = params->n;
-  
-  int i,j;
+
+  unsigned int i, j;
   unsigned char buffer[2*n];
 
   // If leafidx is odd (last bit = 1), current path element is a right child and authpath has to go to the left.
   // Otherwise, it is the other way around
-  if(leafidx&1)
-  {
-    for(j=0;j<n;j++)
+  if (leafidx & 1) {
+    for (j = 0; j < n; j++)
       buffer[n+j] = leaf[j];
-    for(j=0;j<n;j++)
+    for (j = 0; j < n; j++)
       buffer[j] = authpath[j];
   }
-  else
-  {
-    for(j=0;j<n;j++)
+  else {
+    for (j = 0; j < n; j++)
       buffer[j] = leaf[j];
-    for(j=0;j<n;j++)
+    for (j = 0; j < n; j++)
       buffer[n+j] = authpath[j];
   }
   authpath += n;
 
-  for(i=0;i<params->h-1;i++)
-  {
-    SET_NODE_TREE_HEIGHT(addr,i);
+  for (i = 0; i < params->h-1; i++) {
+    SET_NODE_TREE_HEIGHT(addr, i);
     leafidx >>= 1;
     SET_NODE_TREE_INDEX(addr, leafidx);
-    if(leafidx&1)
-    {
-      hash_2n_n(buffer+n,buffer,pub_seed, addr, n);
-      for(j=0;j<n;j++)
+    if (leafidx & 1) {
+      hash_2n_n(buffer+n, buffer, pub_seed, addr, n);
+      for (j = 0; j < n; j++)
         buffer[j] = authpath[j];
     }
-    else
-    {
-      hash_2n_n(buffer,buffer,pub_seed, addr, n);
-      for(j=0;j<n;j++)
+    else {
+      hash_2n_n(buffer, buffer, pub_seed, addr, n);
+      for (j = 0; j < n; j++)
         buffer[j+n] = authpath[j];
     }
     authpath += n;
@@ -394,41 +385,45 @@ static void validate_authpath(unsigned char *root, const unsigned char *leaf, un
   SET_NODE_TREE_HEIGHT(addr, (params->h-1));
   leafidx >>= 1;
   SET_NODE_TREE_INDEX(addr, leafidx);
-  hash_2n_n(root,buffer,pub_seed,addr,n);
+  hash_2n_n(root, buffer, pub_seed, addr, n);
 }
 
 /**
  * Performs one treehash update on the instance that needs it the most.
  * Returns 1 if such an instance was not found
  **/
-static char bds_treehash_update(bds_state *state, const unsigned char *sk_seed, const xmss_params *params, unsigned char *pub_seed, const unsigned char addr[16]) {
-  unsigned int i;
-  int level, l_min, low;
-  int h = params->h;
-  int k = params->k;
+static char bds_treehash_update(bds_state *state, unsigned int updates, const unsigned char *sk_seed, const xmss_params *params, unsigned char *pub_seed, const unsigned char addr[16]) {
+  unsigned int i, j;
+  unsigned int level, l_min, low;
+  unsigned int h = params->h;
+  unsigned int k = params->k;
+  unsigned int used = 0;
 
-  l_min = h;
-  level = h - k;
-  for (i = 0; i < h - k; i++) {
-    if (state->treehash[i].completed) {
-      low = h;
+  for (j = 0; j < updates; j++) {
+    l_min = h;
+    level = h - k;
+    for (i = 0; i < h - k; i++) {
+      if (state->treehash[i].completed) {
+        low = h;
+      }
+      else if (state->treehash[i].stackusage == 0) {
+        low = i;
+      }
+      else {
+        low = treehash_minheight_on_stack(state, params, &(state->treehash[i]));
+      }
+      if (low < l_min) {
+        level = i;
+        l_min = low;
+      }
     }
-    else if (state->treehash[i].stackusage == 0) {
-      low = i;
+    if (level == h - k) {
+      break;
     }
-    else {
-      low = treehash_minheight_on_stack(state, params, &(state->treehash[i]));
-    }
-    if (low < l_min) {
-      level = i;
-      l_min = low;
-    }
+    treehash_update(&(state->treehash[level]), state, sk_seed, params, pub_seed, addr);
+    used++;
   }
-  if (level == h - k) {
-    return 1;
-  }
-  treehash_update(&(state->treehash[level]), state, sk_seed, params, pub_seed, addr);
-  return 0;
+  return updates - used;
 }
 
 /**
@@ -464,15 +459,14 @@ static char bds_state_update(bds_state *state, const unsigned char *sk_seed, con
   SET_OTS_BIT(node_addr, 0);
   SET_NODE_PADDING(node_addr);
 
-  gen_leaf_wots(state->stack+state->stackoffset*n,sk_seed,params, pub_seed, ltree_addr, ots_addr);
+  gen_leaf_wots(state->stack+state->stackoffset*n, sk_seed, params, pub_seed, ltree_addr, ots_addr);
 
   state->stacklevels[state->stackoffset] = 0;
   state->stackoffset++;
   if (h - k > 0 && idx == 3) {
     memcpy(state->treehash[0].node, state->stack+state->stackoffset*n, n);
   }
-  while(state->stackoffset>1 && state->stacklevels[state->stackoffset-1] == state->stacklevels[state->stackoffset-2])
-  {
+  while (state->stackoffset>1 && state->stacklevels[state->stackoffset-1] == state->stacklevels[state->stackoffset-2]) {
     nodeh = state->stacklevels[state->stackoffset-1];
     if (idx >> nodeh == 1) {
       memcpy(state->auth + nodeh*n, state->stack+(state->stackoffset-1)*n, n);
@@ -487,7 +481,7 @@ static char bds_state_update(bds_state *state, const unsigned char *sk_seed, con
     }
     SET_NODE_TREE_HEIGHT(node_addr, state->stacklevels[state->stackoffset-1]);
     SET_NODE_TREE_INDEX(node_addr, (idx >> (state->stacklevels[state->stackoffset-1]+1)));
-    hash_2n_n(state->stack+(state->stackoffset-2)*n,state->stack+(state->stackoffset-2)*n, pub_seed, node_addr, n);
+    hash_2n_n(state->stack+(state->stackoffset-2)*n, state->stack+(state->stackoffset-2)*n, pub_seed, node_addr, n);
 
     state->stacklevels[state->stackoffset-2]++;
     state->stackoffset--;
@@ -501,22 +495,22 @@ static char bds_state_update(bds_state *state, const unsigned char *sk_seed, con
  * next leaf node, using the algorithm described by Buchmann, Dahmen and Szydlo
  * in "Post Quantum Cryptography", Springer 2009.
  */
-static int bds_round(bds_state *state, const unsigned long leaf_idx, const unsigned char *sk_seed, const xmss_params *params, const int updates, unsigned char *pub_seed, unsigned char addr[16])
+static void bds_round(bds_state *state, const unsigned long leaf_idx, const unsigned char *sk_seed, const xmss_params *params, unsigned char *pub_seed, unsigned char addr[16])
 {
   unsigned int i;
-  int n = params->n;
-  int h = params->h;
-  int k = params->k;
+  unsigned int n = params->n;
+  unsigned int h = params->h;
+  unsigned int k = params->k;
 
-  int tau = h;
-  int startidx;
-  int offset, rowidx;
+  unsigned int tau = h;
+  unsigned int startidx;
+  unsigned int offset, rowidx;
   unsigned char buf[2 * n];
 
   unsigned char ots_addr[16];
   unsigned char ltree_addr[16];
   unsigned char node_addr[16];
-  
+
   memcpy(ots_addr, addr, 10);
   SET_OTS_BIT(ots_addr, 1);
   memcpy(ltree_addr, addr, 10);
@@ -542,8 +536,8 @@ static int bds_round(bds_state *state, const unsigned long leaf_idx, const unsig
     memcpy(state->keep + (tau >> 1)*n, state->auth + tau*n, n);
   }
   if (tau == 0) {
-    SET_LTREE_ADDRESS(ltree_addr,leaf_idx);
-    SET_OTS_ADDRESS(ots_addr,leaf_idx);
+    SET_LTREE_ADDRESS(ltree_addr, leaf_idx);
+    SET_OTS_ADDRESS(ots_addr, leaf_idx);
     gen_leaf_wots(state->auth, sk_seed, params, pub_seed, ltree_addr, ots_addr);
   }
   else {
@@ -563,7 +557,7 @@ static int bds_round(bds_state *state, const unsigned long leaf_idx, const unsig
 
     for (i = 0; i < ((tau < h - k) ? tau : (h - k)); i++) {
       startidx = leaf_idx + 1 + 3 * (1 << i);
-      if (startidx < 1 << h) {
+      if (startidx < 1U << h) {
         state->treehash[i].h = i;
         state->treehash[i].next_idx = startidx;
         state->treehash[i].completed = 0;
@@ -571,13 +565,6 @@ static int bds_round(bds_state *state, const unsigned long leaf_idx, const unsig
       }
     }
   }
-  int remaining = 0;
-  for (i = 0; i < updates; i++) {
-    if (bds_treehash_update(state, sk_seed, params, pub_seed, addr)) {
-      remaining++;
-    }
-  }
-  return remaining;
 }
 
 /*
@@ -595,11 +582,11 @@ int xmss_keypair(unsigned char *pk, unsigned char *sk, bds_state *state, xmss_pa
   sk[2] = 0;
   sk[3] = 0;
   // Init SK_SEED (n byte), SK_PRF (m byte), and PUB_SEED (n byte)
-  randombytes(sk+4,2*n+m);
+  randombytes(sk+4, 2*n+m);
   // Copy PUB_SEED to public key
-  memcpy(pk+n, sk+4+n+m,n);
+  memcpy(pk+n, sk+4+n+m, n);
 
-  unsigned char addr[16] = {0,0,0,0};
+  unsigned char addr[16] = {0, 0, 0, 0};
   // Compute root
   treehash_setup(pk, params->h, 0, state, sk+4, params, sk+4+n+m, addr);
   return 0;
@@ -607,10 +594,10 @@ int xmss_keypair(unsigned char *pk, unsigned char *sk, bds_state *state, xmss_pa
 
 /**
  * Signs a message.
- * Returns 
+ * Returns
  * 1. an array containing the signature followed by the message AND
  * 2. an updated secret key!
- * 
+ *
  */
 int xmss_sign(unsigned char *sk, bds_state *state, unsigned char *sig_msg, unsigned long long *sig_msg_len, const unsigned char *msg, unsigned long long msglen, const xmss_params *params)
 {
@@ -618,41 +605,41 @@ int xmss_sign(unsigned char *sk, bds_state *state, unsigned char *sig_msg, unsig
   unsigned int n = params->n;
   unsigned int m = params->m;
   unsigned int k = params->k;
-  
+
   // Extract SK
   unsigned long idx = ((unsigned long)sk[0] << 24) | ((unsigned long)sk[1] << 16) | ((unsigned long)sk[2] << 8) | sk[3];
   unsigned char sk_seed[n];
-  memcpy(sk_seed,sk+4,n);
+  memcpy(sk_seed, sk+4, n);
   unsigned char sk_prf[m];
-  memcpy(sk_prf,sk+4+n,m);
+  memcpy(sk_prf, sk+4+n, m);
   unsigned char pub_seed[n];
-  memcpy(pub_seed,sk+4+n+m,n);  
-  
+  memcpy(pub_seed, sk+4+n+m, n);
+
   // Update SK
   sk[0] = ((idx + 1) >> 24) & 255;
   sk[1] = ((idx + 1) >> 16) & 255;
   sk[2] = ((idx + 1) >> 8) & 255;
   sk[3] = (idx + 1) & 255;
-  // -- Secret key for this non-forward-secure version is now updated. 
-  // -- A productive implementation should use a file handle instead and write the updated secret key at this point! 
-  
+  // -- Secret key for this non-forward-secure version is now updated.
+  // -- A productive implementation should use a file handle instead and write the updated secret key at this point!
+
   // Init working params
   unsigned long long i;
   unsigned char R[m];
   unsigned char msg_h[m];
   unsigned char ots_seed[n];
-  unsigned char ots_addr[16] = {0,0,0,0};
-  
+  unsigned char ots_addr[16] = {0, 0, 0, 0};
+
   // ---------------------------------
   // Message Hashing
   // ---------------------------------
-  
-  // Message Hash: 
+
+  // Message Hash:
   // First compute pseudorandom key
-  prf_m(R, msg, msglen, sk_prf, m); 
+  prf_m(R, msg, msglen, sk_prf, m);
   // Then use it for message digest
   hash_m(msg_h, msg, msglen, R, m, m);
-  
+
   // Start collecting signature
   *sig_msg_len = 0;
 
@@ -661,48 +648,49 @@ int xmss_sign(unsigned char *sk, bds_state *state, unsigned char *sig_msg, unsig
   sig_msg[1] = (idx >> 16) & 255;
   sig_msg[2] = (idx >> 8) & 255;
   sig_msg[3] = idx & 255;
-  
+
   sig_msg += 4;
   *sig_msg_len += 4;
-  
+
   // Copy R to signature
-  for(i=0; i<m; i++)
+  for (i = 0; i < m; i++)
     sig_msg[i] = R[i];
 
   sig_msg += m;
   *sig_msg_len += m;
-  
+
   // ----------------------------------
-  // Now we start to "really sign" 
+  // Now we start to "really sign"
   // ----------------------------------
-  
+
   // Prepare Address
-  SET_OTS_BIT(ots_addr,1);
-  SET_OTS_ADDRESS(ots_addr,idx);
-  
+  SET_OTS_BIT(ots_addr, 1);
+  SET_OTS_ADDRESS(ots_addr, idx);
+
   // Compute seed for OTS key pair
   get_seed(ots_seed, sk_seed, n, ots_addr);
-     
+
   // Compute WOTS signature
   wots_sign(sig_msg, msg_h, ots_seed, &(params->wots_par), pub_seed, ots_addr);
-  
+
   sig_msg += params->wots_par.keysize;
   *sig_msg_len += params->wots_par.keysize;
 
   // the auth path was already computed during the previous round
   memcpy(sig_msg, state->auth, h*n);
 
-  if (idx < (1 << h) - 1) {
-    bds_round(state, idx, sk_seed, params, (h - k) >> 1, pub_seed, ots_addr);
+  if (idx < (1U << h) - 1) {
+    bds_round(state, idx, sk_seed, params, pub_seed, ots_addr);
+    bds_treehash_update(state, (h - k) >> 1, sk_seed, params, pub_seed, ots_addr);
   }
 
   sig_msg += params->h*n;
   *sig_msg_len += params->h*n;
-  
-  //Whipe secret elements?  
+
+  //Whipe secret elements?
   //zerobytes(tsk, CRYPTO_SECRETKEYBYTES);
 
-  memcpy(sig_msg,msg,msglen);
+  memcpy(sig_msg, msg, msglen);
   *sig_msg_len += msglen;
 
   return 0;
@@ -715,38 +703,38 @@ int xmss_sign_open(unsigned char *msg, unsigned long long *msglen, const unsigne
 {
   unsigned int n = params->n;
   unsigned int m = params->m;
-    
+
   unsigned long long i, m_len;
   unsigned long idx=0;
   unsigned char wots_pk[params->wots_par.keysize];
   unsigned char pkhash[n];
   unsigned char root[n];
   unsigned char msg_h[m];
-  
+
   unsigned char pub_seed[n];
-  memcpy(pub_seed,pk+n,n);  
-  
+  memcpy(pub_seed, pk+n, n);
+
   // Init addresses
-  unsigned char ots_addr[16] = {0,0,0,0};
+  unsigned char ots_addr[16] = {0, 0, 0, 0};
   unsigned char ltree_addr[16];
   unsigned char node_addr[16];
-  
+
   SET_OTS_BIT(ots_addr, 1);
-  
+
   memcpy(ltree_addr, ots_addr, 10);
   SET_OTS_BIT(ltree_addr, 0);
   SET_LTREE_BIT(ltree_addr, 1);
-  
+
   memcpy(node_addr, ltree_addr, 10);
   SET_LTREE_BIT(node_addr, 0);
-  SET_NODE_PADDING(node_addr);  
-  
+  SET_NODE_PADDING(node_addr);
+
   // Extract index
   idx = ((unsigned long)sig_msg[0] << 24) | ((unsigned long)sig_msg[1] << 16) | ((unsigned long)sig_msg[2] << 8) | sig_msg[3];
-  printf("verify:: idx = %lu\n",idx);
+  printf("verify:: idx = %lu\n", idx);
   sig_msg += 4;
   sig_msg_len -= 4;
-  
+
   // hash message (recall, R is now on pole position at sig_msg
   unsigned long long tmp_sig_len = m+params->wots_par.keysize+params->h*n;
   m_len = sig_msg_len - tmp_sig_len;
@@ -754,43 +742,43 @@ int xmss_sign_open(unsigned char *msg, unsigned long long *msglen, const unsigne
 
   sig_msg += m;
   sig_msg_len -= m;
-  
+
   //-----------------------
   // Verify signature
   //-----------------------
-  
+
   // Prepare Address
-  SET_OTS_ADDRESS(ots_addr,idx);
-  // Check WOTS signature 
+  SET_OTS_ADDRESS(ots_addr, idx);
+  // Check WOTS signature
   wots_pkFromSig(wots_pk, sig_msg, msg_h, &(params->wots_par), pub_seed, ots_addr);
 
   sig_msg += params->wots_par.keysize;
   sig_msg_len -= params->wots_par.keysize;
-  
+
   // Compute Ltree
-  SET_LTREE_ADDRESS(ltree_addr, idx); 
+  SET_LTREE_ADDRESS(ltree_addr, idx);
   l_tree(pkhash, wots_pk, params, pub_seed, ltree_addr);
-  
+
   // Compute root
-  validate_authpath(root, pkhash, idx, sig_msg, params, pub_seed, node_addr);  
+  validate_authpath(root, pkhash, idx, sig_msg, params, pub_seed, node_addr);
 
   sig_msg += params->h*n;
   sig_msg_len -= params->h*n;
-  
-  for(i=0;i<n;i++)
-    if(root[i] != pk[i])
+
+  for (i = 0; i < n; i++)
+    if (root[i] != pk[i])
       goto fail;
-  
+
   *msglen = sig_msg_len;
-  for(i=0;i<*msglen;i++)
+  for (i = 0; i < *msglen; i++)
     msg[i] = sig_msg[i];
 
   return 0;
-  
-  
+
+
 fail:
   *msglen = sig_msg_len;
-  for(i=0;i<*msglen;i++)
+  for (i = 0; i < *msglen; i++)
     msg[i] = 0;
   *msglen = -1;
   return -1;
@@ -808,25 +796,22 @@ int xmssmt_keypair(unsigned char *pk, unsigned char *sk, bds_state *states, unsi
   unsigned int i;
   unsigned char ots_seed[params->n];
   // Set idx = 0
-  for (i = 0; i < params->index_len; i++){
+  for (i = 0; i < params->index_len; i++) {
     sk[i] = 0;
   }
   // Init SK_SEED (n byte), SK_PRF (m byte), and PUB_SEED (n byte)
-  randombytes(sk+params->index_len,2*n+m);
+  randombytes(sk+params->index_len, 2*n+m);
   // Copy PUB_SEED to public key
-  memcpy(pk+n, sk+params->index_len+n+m,n);
+  memcpy(pk+n, sk+params->index_len+n+m, n);
 
   // Set address to point on the single tree on layer d-1
-  unsigned char addr[16] = {0,0,0,0};
-  SET_OTS_BIT(addr,1);
+  unsigned char addr[16] = {0, 0, 0, 0};
+  SET_OTS_BIT(addr, 1);
   SET_TREE_ADDRESS(addr, 0);
   SET_OTS_ADDRESS(addr, 0);
   SET_LAYER_ADDRESS(addr, 0);
   // Set up state and compute wots signatures for all but topmost tree root
   for (i = 0; i < params->d - 1; i++) {
-    SET_LAYER_ADDRESS(addr, i);
-    SET_TREE_ADDRESS(addr, 0);
-    SET_OTS_ADDRESS(addr, 0);
     // Compute seed for OTS key pair
     treehash_setup(pk, params->xmss_par.h, 0, states + i, sk+params->index_len, &(params->xmss_par), pk+n, addr);
     SET_LAYER_ADDRESS(addr, (i+1));
@@ -839,10 +824,10 @@ int xmssmt_keypair(unsigned char *pk, unsigned char *sk, bds_state *states, unsi
 
 /**
  * Signs a message.
- * Returns 
+ * Returns
  * 1. an array containing the signature followed by the message AND
  * 2. an updated secret key!
- * 
+ *
  */
 int xmssmt_sign(unsigned char *sk, bds_state *states, unsigned char *wots_sigs, unsigned char *sig_msg, unsigned long long *sig_msg_len, const unsigned char *msg, unsigned long long msglen, const xmssmt_params *params)
 {
@@ -855,8 +840,8 @@ int xmssmt_sign(unsigned char *sk, bds_state *states, unsigned char *wots_sigs, 
   unsigned long long idx_tree;
   unsigned long long idx_leaf;
   unsigned long long i, j;
+  int needswap_upto = -1;
   unsigned int updates;
-  unsigned int first_nonwots;
 
   unsigned char sk_seed[n];
   unsigned char sk_prf[m];
@@ -865,72 +850,73 @@ int xmssmt_sign(unsigned char *sk, bds_state *states, unsigned char *wots_sigs, 
   unsigned char R[m];
   unsigned char msg_h[m];
   unsigned char ots_seed[n];
-  unsigned char ots_addr[16] = {0,0,0,0};
+  unsigned char addr[16] = {0, 0, 0, 0};
+  unsigned char ots_addr[16] = {0, 0, 0, 0};
   bds_state tmp;
 
   // Extract SK
   unsigned long long idx = 0;
-  for(i = 0; i < idx_len; i++){
+  for (i = 0; i < idx_len; i++) {
     idx |= ((unsigned long long)sk[i]) << 8*(idx_len - 1 - i);
   }
-  
-  memcpy(sk_seed,sk+idx_len,n);
-  memcpy(sk_prf,sk+idx_len+n,m);
-  memcpy(pub_seed,sk+idx_len+n+m,n);  
-  
+
+  memcpy(sk_seed, sk+idx_len, n);
+  memcpy(sk_prf, sk+idx_len+n, m);
+  memcpy(pub_seed, sk+idx_len+n+m, n);
+
   // Update SK
-  for(i = 0; i < idx_len; i++){
+  for (i = 0; i < idx_len; i++) {
     sk[i] = ((idx + 1) >> 8*(idx_len - 1 - i)) & 255;
   }
-  // -- Secret key for this non-forward-secure version is now updated. 
-  // -- A productive implementation should use a file handle instead and write the updated secret key at this point! 
-  
-  
+  // -- Secret key for this non-forward-secure version is now updated.
+  // -- A productive implementation should use a file handle instead and write the updated secret key at this point!
+
+
   // ---------------------------------
   // Message Hashing
   // ---------------------------------
-  
-  // Message Hash: 
+
+  // Message Hash:
   // First compute pseudorandom key
-  prf_m(R, msg, msglen, sk_prf, m); 
+  prf_m(R, msg, msglen, sk_prf, m);
   // Then use it for message digest
   hash_m(msg_h, msg, msglen, R, m, m);
-  
+
   // Start collecting signature
   *sig_msg_len = 0;
 
   // Copy index to signature
-  for(i = 0; i < idx_len; i++){
+  for (i = 0; i < idx_len; i++) {
     sig_msg[i] = (idx >> 8*(idx_len - 1 - i)) & 255;
   }
-  
+
   sig_msg += idx_len;
   *sig_msg_len += idx_len;
-  
+
   // Copy R to signature
-  for(i=0; i<m; i++)
+  for (i = 0; i < m; i++)
     sig_msg[i] = R[i];
 
   sig_msg += m;
   *sig_msg_len += m;
-  
+
   // ----------------------------------
-  // Now we start to "really sign" 
+  // Now we start to "really sign"
   // ----------------------------------
-  
+
   // Handle lowest layer separately as it is slightly different...
-  
+
   // Prepare Address
-  SET_OTS_BIT(ots_addr,1);
+  SET_OTS_BIT(ots_addr, 1);
   idx_tree = idx >> tree_h;
   idx_leaf = (idx & ((1 << tree_h)-1));
-  SET_LAYER_ADDRESS(ots_addr,0);
+  SET_LAYER_ADDRESS(ots_addr, 0);
   SET_TREE_ADDRESS(ots_addr, idx_tree);
   SET_OTS_ADDRESS(ots_addr, idx_leaf);
-  
+
   // Compute seed for OTS key pair
   get_seed(ots_seed, sk_seed, n, ots_addr);
-     
+
   // Compute WOTS signature
   wots_sign(sig_msg, msg_h, ots_seed, &(params->xmss_par.wots_par), pub_seed, ots_addr);
 
@@ -942,7 +928,7 @@ int xmssmt_sign(unsigned char *sk, bds_state *states, unsigned char *wots_sigs, 
   *sig_msg_len += tree_h*n;
 
   // prepare signature of remaining layers
-  for(i = 1; i < params->d; i++){
+  for (i = 1; i < params->d; i++) {
     // put WOTS signature in place
     memcpy(sig_msg, wots_sigs + (i-1)*params->xmss_par.wots_par.keysize, params->xmss_par.wots_par.keysize);
 
@@ -952,82 +938,64 @@ int xmssmt_sign(unsigned char *sk, bds_state *states, unsigned char *wots_sigs, 
     // put AUTH nodes in place
     memcpy(sig_msg, states[i].auth, tree_h*n);
     sig_msg += tree_h*n;
-    *sig_msg_len += tree_h*n;   
+    *sig_msg_len += tree_h*n;
   }
 
-  SET_LAYER_ADDRESS(ots_addr, 0);
-  SET_TREE_ADDRESS(ots_addr, (idx_tree + 1));
+  updates = (tree_h - k) >> 1;
 
-  updates = tree_h - k;
+  SET_TREE_ADDRESS(addr, (idx_tree + 1));
+  // mandatory update for NEXT_0 (does not count towards h-k/2) if NEXT_0 exists
+  if ((1 + idx_tree) * (1 << tree_h) + idx_leaf < (1ULL << h)) {
+    bds_state_update(&states[params->d], sk_seed, &(params->xmss_par), pub_seed, addr);
+  }
 
-  // if a NEXT-tree exists within the hypertree
-  if ((1 + idx_tree) * (1 << tree_h) + idx_leaf < (1 << h)) {
-    // mandatory update for NEXT_0 (does not count towards h-k)
-    bds_state_update(&states[params->d], sk_seed, &(params->xmss_par), pub_seed, ots_addr);
-
-    // check if we're at the end of a tree
-    for (i = 0; i < params->d; i++) {
-      if (((idx + 1) & ((1 << ((i+1)*tree_h)) - 1)) == 0) {
-        memcpy(&tmp, states+params->d + i, sizeof(bds_state));
-        memcpy(states+params->d + i, states + i, sizeof(bds_state));
-        memcpy(states + i, &tmp, sizeof(bds_state));
-
-        SET_TREE_ADDRESS(ots_addr, ((idx + 1) >> ((i+2) * tree_h)));
-        SET_OTS_ADDRESS(ots_addr, (((idx >> ((i+1) * tree_h)) + 1) & ((1 << tree_h)-1)));
-        SET_LAYER_ADDRESS(ots_addr, (i+1));
-
-        get_seed(ots_seed, sk+params->index_len, n, ots_addr);
-        wots_sign(wots_sigs + i*params->xmss_par.wots_par.keysize, states[i].stack, ots_seed, &(params->xmss_par.wots_par), pub_seed, ots_addr);
-
-        states[params->d + i].stackoffset = 0;
-        states[params->d + i].next_leaf = 0;
-
-        updates--; // WOTS-signing counts as one update
-
-        // this bds_round is needed to initialise the state, but should not perform updates
-        // note that one should still pass the (reduced) current idx, as bds_round sets up for idx+1
-        bds_round(&states[i+1], ((idx >> ((i+1)*tree_h))) & ((1 << tree_h)-1), sk_seed, &(params->xmss_par), 0, pub_seed, ots_addr);
-        for (j = 0; j < tree_h-k; j++) {
-          states[i].treehash[j].completed = 1;
+  for (i = 0; i < params->d; i++) {
+    // check if we're not at the end of a tree
+    if (! (((idx + 1) & ((1ULL << ((i+1)*tree_h)) - 1)) == 0)) {
+      idx_leaf = (idx >> (tree_h * i)) & ((1 << tree_h)-1);
+      idx_tree = (idx >> (tree_h * (i+1)));
+      SET_LAYER_ADDRESS(addr, i);
+      SET_TREE_ADDRESS(addr, idx_tree);
+      if (i == (unsigned int) (needswap_upto + 1)) {
+        bds_round(&states[i], idx_leaf, sk_seed, &(params->xmss_par), pub_seed, addr);
+      }
+      updates = bds_treehash_update(&states[i], updates, sk_seed, &(params->xmss_par), pub_seed, addr);
+      SET_TREE_ADDRESS(addr, (idx_tree + 1));
+      // if a NEXT-tree exists for this level;
+      if ((1 + idx_tree) * (1 << tree_h) + idx_leaf < (1ULL << (h - tree_h * i))) {
+        if (i > 0 && updates > 0 && states[params->d + i].next_leaf < (1ULL << h)) {
+          bds_state_update(&states[params->d + i], sk_seed, &(params->xmss_par), pub_seed, addr);
+          updates--;
         }
       }
     }
-  }
+    else if (idx < (1ULL << h) - 1) {
+      memcpy(&tmp, states+params->d + i, sizeof(bds_state));
+      memcpy(states+params->d + i, states + i, sizeof(bds_state));
+      memcpy(states + i, &tmp, sizeof(bds_state));
 
-  SET_LAYER_ADDRESS(ots_addr, 0);
-  SET_TREE_ADDRESS(ots_addr, idx_tree);
+      SET_LAYER_ADDRESS(ots_addr, (i+1));
+      SET_TREE_ADDRESS(ots_addr, ((idx + 1) >> ((i+2) * tree_h)));
+      SET_OTS_ADDRESS(ots_addr, (((idx >> ((i+1) * tree_h)) + 1) & ((1 << tree_h)-1)));
 
-  first_nonwots = (tree_h - k) - updates;
+      get_seed(ots_seed, sk+params->index_len, n, ots_addr);
+      wots_sign(wots_sigs + i*params->xmss_par.wots_par.keysize, states[i].stack, ots_seed, &(params->xmss_par.wots_par), pub_seed, ots_addr);
 
-  if (first_nonwots == 0) {
-    updates = bds_round(&states[0], idx_leaf, sk_seed, &(params->xmss_par), (tree_h - k) >> 1, pub_seed, ots_addr);
-  }
+      states[params->d + i].stackoffset = 0;
+      states[params->d + i].next_leaf = 0;
 
-  for (i = 1; updates > 0 && i < params->d; i++) {
-    idx_leaf = (idx_tree & ((1 << tree_h)-1));
-    idx_tree = idx_tree >> tree_h;
-    if (first_nonwots > i) {
-      continue;
-    }
-    SET_LAYER_ADDRESS(ots_addr, i);
-    SET_TREE_ADDRESS(ots_addr, idx_tree);
-    SET_OTS_ADDRESS(ots_addr, idx_leaf);
-    while (updates > 0 && !bds_treehash_update(&states[i], sk_seed, &(params->xmss_par), pub_seed, ots_addr)) {
-      updates--;
-    }
-    SET_TREE_ADDRESS(ots_addr, (idx_tree + 1));
-    // if a NEXT-tree exists for this level;
-    if ((1 + idx_tree) * (1 << tree_h) + idx_leaf < (1 << (h - tree_h * i))) {
-      while (updates > 0 && !bds_state_update(&states[params->d + i], sk_seed, &(params->xmss_par), pub_seed, ots_addr)) {
-        updates--;
+      updates--; // WOTS-signing counts as one update
+      needswap_upto = i;
+      for (j = 0; j < tree_h-k; j++) {
+        states[i].treehash[j].completed = 1;
       }
     }
   }
-  
-  //Whipe secret elements?  
+
+  //Whipe secret elements?
   //zerobytes(tsk, CRYPTO_SECRETKEYBYTES);
 
-  memcpy(sig_msg,msg,msglen);
+  memcpy(sig_msg, msg, msglen);
   *sig_msg_len += msglen;
 
   return 0;
@@ -1040,35 +1008,35 @@ int xmssmt_sign_open(unsigned char *msg, unsigned long long *msglen, const unsig
 {
   unsigned int n = params->n;
   unsigned int m = params->m;
-  
+
   unsigned int tree_h = params->xmss_par.h;
   unsigned int idx_len = params->index_len;
   unsigned long long idx_tree;
   unsigned long long idx_leaf;
-  
+
   unsigned long long i, m_len;
   unsigned long long idx=0;
   unsigned char wots_pk[params->xmss_par.wots_par.keysize];
   unsigned char pkhash[n];
   unsigned char root[n];
   unsigned char msg_h[m];
-  
+
   unsigned char pub_seed[n];
-  memcpy(pub_seed,pk+n,n);  
-  
+  memcpy(pub_seed, pk+n, n);
+
   // Init addresses
-  unsigned char ots_addr[16] = {0,0,0,0};
+  unsigned char ots_addr[16] = {0, 0, 0, 0};
   unsigned char ltree_addr[16];
   unsigned char node_addr[16];
-  
+
   // Extract index
-  for(i = 0; i < idx_len; i++){
+  for (i = 0; i < idx_len; i++) {
     idx |= ((unsigned long long)sig_msg[i]) << (8*(idx_len - 1 - i));
   }
-  printf("verify:: idx = %llu\n",idx);
+  printf("verify:: idx = %llu\n", idx);
   sig_msg += idx_len;
   sig_msg_len -= idx_len;
-  
+
   // hash message (recall, R is now on pole position at sig_msg
   unsigned long long tmp_sig_len = m+ (params->d * params->xmss_par.wots_par.keysize) + (params->h * n);
   m_len = sig_msg_len - tmp_sig_len;
@@ -1076,95 +1044,95 @@ int xmssmt_sign_open(unsigned char *msg, unsigned long long *msglen, const unsig
 
   sig_msg += m;
   sig_msg_len -= m;
-  
+
   //-----------------------
   // Verify signature
   //-----------------------
-  
+
   // Prepare Address
   idx_tree = idx >> tree_h;
   idx_leaf = (idx & ((1 << tree_h)-1));
-  SET_LAYER_ADDRESS(ots_addr,0);
+  SET_LAYER_ADDRESS(ots_addr, 0);
   SET_TREE_ADDRESS(ots_addr, idx_tree);
   SET_OTS_BIT(ots_addr, 1);
-  
+
   memcpy(ltree_addr, ots_addr, 10);
   SET_OTS_BIT(ltree_addr, 0);
   SET_LTREE_BIT(ltree_addr, 1);
-  
+
   memcpy(node_addr, ltree_addr, 10);
   SET_LTREE_BIT(node_addr, 0);
-  SET_NODE_PADDING(node_addr);  
-  
-  SET_OTS_ADDRESS(ots_addr,idx_leaf);
-  
-  // Check WOTS signature 
+  SET_NODE_PADDING(node_addr);
+
+  SET_OTS_ADDRESS(ots_addr, idx_leaf);
+
+  // Check WOTS signature
   wots_pkFromSig(wots_pk, sig_msg, msg_h, &(params->xmss_par.wots_par), pub_seed, ots_addr);
 
   sig_msg += params->xmss_par.wots_par.keysize;
   sig_msg_len -= params->xmss_par.wots_par.keysize;
-  
+
   // Compute Ltree
-  SET_LTREE_ADDRESS(ltree_addr, idx_leaf); 
+  SET_LTREE_ADDRESS(ltree_addr, idx_leaf);
   l_tree(pkhash, wots_pk, &(params->xmss_par), pub_seed, ltree_addr);
-  
+
   // Compute root
-  validate_authpath(root, pkhash, idx_leaf, sig_msg, &(params->xmss_par), pub_seed, node_addr);  
+  validate_authpath(root, pkhash, idx_leaf, sig_msg, &(params->xmss_par), pub_seed, node_addr);
 
   sig_msg += tree_h*n;
   sig_msg_len -= tree_h*n;
-  
-  for(i = 1; i < params->d; i++){
+
+  for (i = 1; i < params->d; i++) {
     // Prepare Address
     idx_leaf = (idx_tree & ((1 << tree_h)-1));
     idx_tree = idx_tree >> tree_h;
-    
-    SET_LAYER_ADDRESS(ots_addr,i);
+
+    SET_LAYER_ADDRESS(ots_addr, i);
     SET_TREE_ADDRESS(ots_addr, idx_tree);
     SET_OTS_BIT(ots_addr, 1);
-    
+
     memcpy(ltree_addr, ots_addr, 10);
     SET_OTS_BIT(ltree_addr, 0);
     SET_LTREE_BIT(ltree_addr, 1);
-    
+
     memcpy(node_addr, ltree_addr, 10);
     SET_LTREE_BIT(node_addr, 0);
-    SET_NODE_PADDING(node_addr);  
-    
-    SET_OTS_ADDRESS(ots_addr,idx_leaf);
-    
-    // Check WOTS signature 
+    SET_NODE_PADDING(node_addr);
+
+    SET_OTS_ADDRESS(ots_addr, idx_leaf);
+
+    // Check WOTS signature
     wots_pkFromSig(wots_pk, sig_msg, root, &(params->xmss_par.wots_par), pub_seed, ots_addr);
 
     sig_msg += params->xmss_par.wots_par.keysize;
     sig_msg_len -= params->xmss_par.wots_par.keysize;
-    
+
     // Compute Ltree
-    SET_LTREE_ADDRESS(ltree_addr, idx_leaf); 
+    SET_LTREE_ADDRESS(ltree_addr, idx_leaf);
     l_tree(pkhash, wots_pk, &(params->xmss_par), pub_seed, ltree_addr);
-    
+
     // Compute root
-    validate_authpath(root, pkhash, idx_leaf, sig_msg, &(params->xmss_par), pub_seed, node_addr);  
+    validate_authpath(root, pkhash, idx_leaf, sig_msg, &(params->xmss_par), pub_seed, node_addr);
 
     sig_msg += tree_h*n;
     sig_msg_len -= tree_h*n;
-    
+
   }
-  
-  for(i=0;i<n;i++)
-    if(root[i] != pk[i])
+
+  for (i = 0; i < n; i++)
+    if (root[i] != pk[i])
       goto fail;
-  
+
   *msglen = sig_msg_len;
-  for(i=0;i<*msglen;i++)
+  for (i = 0; i < *msglen; i++)
     msg[i] = sig_msg[i];
 
   return 0;
-  
-  
+
+
 fail:
   *msglen = sig_msg_len;
-  for(i=0;i<*msglen;i++)
+  for (i = 0; i < *msglen; i++)
     msg[i] = 0;
   *msglen = -1;
   return -1;

@@ -9,25 +9,25 @@ Public domain.
 #ifndef XMSS_H
 #define XMSS_H
 typedef struct{
-  int level;
+  unsigned int level;
   unsigned long long subtree;
-  int subleaf;
+  unsigned int subleaf;
 } leafaddr;
 
 typedef struct{
   wots_params wots_par;
-  int n;
-  int m;
-  int h;
+  unsigned int n;
+  unsigned int m;
+  unsigned int h;
 } xmss_params;
 
 typedef struct{
   xmss_params xmss_par;
-  int n;
-  int m;
-  int h;
-  int d;
-  int index_len;
+  unsigned int n;
+  unsigned int m;
+  unsigned int h;
+  unsigned int d;
+  unsigned int index_len;
 } xmssmt_params;
 /**
  * Initializes parameter set.

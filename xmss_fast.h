@@ -9,45 +9,45 @@ Public domain.
 #ifndef XMSS_H
 #define XMSS_H
 typedef struct{
-  int level;
+  unsigned int level;
   unsigned long long subtree;
-  int subleaf;
+  unsigned int subleaf;
 } leafaddr;
 
 typedef struct{
   wots_params wots_par;
-  int n;
-  int m;
-  int h;
-  int k;
+  unsigned int n;
+  unsigned int m;
+  unsigned int h;
+  unsigned int k;
 } xmss_params;
 
 typedef struct{
   xmss_params xmss_par;
-  int n;
-  int m;
-  int h;
-  int d;
-  int index_len;
+  unsigned int n;
+  unsigned int m;
+  unsigned int h;
+  unsigned int d;
+  unsigned int index_len;
 } xmssmt_params;
 
 typedef struct{
-  int h;
-  int next_idx;
-  int stackusage;
+  unsigned int h;
+  unsigned int next_idx;
+  unsigned int stackusage;
   unsigned char completed;
   unsigned char *node;
 } treehash_inst;
 
 typedef struct {
   unsigned char *stack;
-  int stackoffset;
+  unsigned int stackoffset;
   unsigned char *stacklevels;
   unsigned char *auth;
   unsigned char *keep;
   treehash_inst *treehash;
   unsigned char *retain;
-  int next_leaf;
+  unsigned int next_leaf;
 } bds_state;
 
 /**

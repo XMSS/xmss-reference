@@ -14,7 +14,7 @@ int main()
   int n = 32;
   unsigned char seed[32] = {0};
 //   unsigned char seed[64] = {0,0};
-  
+
   unsigned char out[2*n];
   unsigned char addr[16] = {2};
 
@@ -24,7 +24,7 @@ int main()
   printf("\n");
   hexdump(out, 2*n);
   printf("\n");
-  
+
   printf("Case 2: key = 1\n");
   seed[31] = 1;
   prg_with_counter(out, seed, n, addr);

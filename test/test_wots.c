@@ -36,9 +36,8 @@ int main()
   wots_sign(sig, msg, seed, &params, pub_seed, addr);
   wots_pkFromSig(pk2, sig, msg, &params, pub_seed, addr);
 
-  for(i=0;i<sig_len;i++)
-    if(pk1[i] != pk2[i])
-    {
+  for (i = 0; i < sig_len; i++)
+    if (pk1[i] != pk2[i]) {
       printf("pk1 != pk2 %d\n",i);
       return -1;
     }
@@ -49,6 +48,6 @@ int main()
   printf("\nsig: ");
   hexdump(sig, sig_len);
   printf("\n");
-  
+
   return 0;
 }

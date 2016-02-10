@@ -1,7 +1,7 @@
 /*
- * This code is based on an OpenSSL implementation of chacha20. 
+ * This code is based on an OpenSSL implementation of chacha20.
  * Hence, the copyright below applies.
- * 
+ *
  */
 /* ====================================================================
  * Copyright (c) 2011-2013 The OpenSSL Project.  All rights reserved.
@@ -84,13 +84,12 @@ static const char sigma[16] = "expand 32-byte k";
  * |input| and writes the 64 output bytes to |output|. */
 static void chacha_core(unsigned char output[64], const uint32_t input[16],
 			int num_rounds)
-	{
+{
 	uint32_t x[16];
 	int i;
 
 	memcpy(x, input, sizeof(uint32_t) * 16);
-	for (i = 20; i > 0; i -= 2)
-		{
+	for (i = num_rounds; i > 0; i -= 2) {
 		QUARTERROUND( 0, 4, 8,12)
 		QUARTERROUND( 1, 5, 9,13)
 		QUARTERROUND( 2, 6,10,14)
@@ -99,20 +98,20 @@ static void chacha_core(unsigned char output[64], const uint32_t input[16],
 		QUARTERROUND( 1, 6,11,12)
 		QUARTERROUND( 2, 7, 8,13)
 		QUARTERROUND( 3, 4, 9,14)
-		}
+	}
 
 	for (i = 0; i < 16; ++i)
 		x[i] = PLUS(x[i], input[i]);
 	for (i = 0; i < 16; ++i)
 		U32TO8_LITTLE(output + 4 * i, x[i]);
-	}
+}
 
 void CRYPTO_chacha_20(unsigned char *out,
 		      const unsigned char *in, size_t in_len,
 		      const unsigned char key[32],
 		      const unsigned char nonce[12],
 		      uint32_t counter)
-	{
+{
 	uint32_t input[16];
 	unsigned char buf[64];
 	size_t todo, i;
@@ -137,8 +136,7 @@ void CRYPTO_chacha_20(unsigned char *out,
 	input[14] = U8TO32_LITTLE(nonce + 4);
 	input[15] = U8TO32_LITTLE(nonce + 8);
 
-	while (in_len > 0)
-		{
+	while (in_len > 0) {
 		todo = sizeof(buf);
 		if (in_len < todo)
 			todo = in_len;
@@ -154,15 +152,15 @@ void CRYPTO_chacha_20(unsigned char *out,
 		input[12]++;
 		if (input[12] == 0)
 			input[13]++;
-		}
 	}
-	
+}
+
 void CRYPTO_chacha_20_keystream(unsigned char *out,
 		      size_t out_len,
 		      const unsigned char key[32],
 		      const unsigned char nonce[12],
 		      uint32_t counter)
-	{
+{
 	uint32_t input[16];
 	unsigned char buf[64];
 	size_t todo, i;
@@ -187,8 +185,7 @@ void CRYPTO_chacha_20_keystream(unsigned char *out,
 	input[14] = U8TO32_LITTLE(nonce + 4);
 	input[15] = U8TO32_LITTLE(nonce + 8);
 
-	while (out_len > 0)
-		{
+	while (out_len > 0) {
 		todo = sizeof(buf);
 		if (out_len < todo)
 			todo = out_len;
@@ -203,6 +200,5 @@ void CRYPTO_chacha_20_keystream(unsigned char *out,
 		input[12]++;
 		if (input[12] == 0)
 			input[13]++;
-		}
 	}
-  
+}

@@ -12,15 +12,15 @@ Public domain.
  * 
  * Meaning as defined in draft-irtf-cfrg-xmss-hash-based-signatures-02
  */
-typedef struct{
-  int len_1;
-  int len_2;
-  int len;
-  int m;
-  int n;
-  int w;
-  int log_w;
-  int keysize;
+typedef struct {
+  unsigned int len_1;
+  unsigned int len_2;
+  unsigned int len;
+  unsigned int m;
+  unsigned int n;
+  unsigned int w;
+  unsigned int log_w;
+  unsigned int keysize;
 } wots_params;
 
 /**

@@ -1,5 +1,5 @@
 CC = /usr/bin/gcc
-CFLAGS = -Wall -g -O3 
+CFLAGS = -Wall -g -O3 -Wextra
 
 all: test/test_chacha \
 test/test_wots \
