@@ -1,6 +1,7 @@
 /*
-xmss_commons.c version 20151120
+xmss_commons.c 20160210
 Andreas Hülsing
+Joost Rijneveld
 Public domain.
 */
 

@@ -1,6 +1,7 @@
 /*
-wots.h version 20151120
+wots.h version 20160210
 Andreas Hülsing
+Joost Rijneveld
 Public domain.
 */
 

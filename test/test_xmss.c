@@ -14,8 +14,8 @@ int main()
 {
   int r;
   unsigned long long i;
-  unsigned int m = 64;
-  unsigned int n = 64;
+  unsigned int m = 32;
+  unsigned int n = 32;
   unsigned int h = 8;
   unsigned int w = 16;
 

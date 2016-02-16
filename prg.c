@@ -1,6 +1,7 @@
 /*
-prg.c version 20151120
+prg.c version 20160210
 Andreas Hülsing
+Joost Rijneveld
 Public domain.
 */
 #include "chacha.h"

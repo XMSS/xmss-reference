@@ -1,6 +1,7 @@
 /*
-xmss.h version 20151120
+xmss.h version 20160210
 Andreas Hülsing
+Joost Rijneveld
 Public domain.
 */
 

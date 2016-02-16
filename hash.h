@@ -1,6 +1,7 @@
 /*
-hash.h version 20151120
+hash.h version 20160210
 Andreas Hülsing
+Joost Rijneveld
 Public domain.
 */
 

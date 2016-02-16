@@ -1,6 +1,7 @@
 /*
-wots.c version 20151120
+wots.c version 20160210
 Andreas Hülsing
+Joost Rijneveld
 Public domain.
 */
 
@@ -11,19 +12,7 @@ Public domain.
 #include "prg.h"
 #include "hash.h"
 #include "wots.h"
-
-/**
- * Macros used to manipulate the respective fields
- * in the 16byte hash address
- */
-#define SET_HASH_ADDRESS(a, v) {\
-  a[15] = (a[15] & 1) | ((v << 1) & 254);\
-  a[14] = (a[14] & 254) | ((v >> 7) & 1);}
-
-#define SET_CHAIN_ADDRESS(a, v) {\
-  a[14] = (a[14] & 1) | ((v << 1) & 254);\
-  a[13] = (v >> 7) & 255;\
-  a[12] = (a[12] & 254) | ((v >> 15) & 1);}
+#include "hash_address.h"
 
 
 void wots_set_params(wots_params *params, int m, int n, int w)

@@ -1,6 +1,7 @@
 /*
-xmss_fast.c version 20151120
-Andreas Hülsing and Joost Rijneveld
+xmss_fast.c version 20160210
+Andreas Hülsing
+Joost Rijneveld
 Public domain.
 */
 
@@ -15,68 +16,11 @@ Public domain.
 #include "hash.h"
 #include "prg.h"
 #include "xmss_commons.h"
-
+#include "hash_address.h"
 // For testing
 #include "stdio.h"
 
-/**
- * Macros used to manipulate the respective fields
- * in the 16byte hash address
- */
-#define SET_LAYER_ADDRESS(a, v) {\
-  a[6] = (a[6] & 3) | ((v << 2) & 252);\
-  a[5] = (a[5] & 252) | ((v >> 6) & 3);}
 
-#define SET_TREE_ADDRESS(a, v) {\
-  a[9] = (a[9] & 3) | ((v << 2) & 252);\
-  a[8] = (v >> 6) & 255;\
-  a[7] = (v >> 14) & 255;\
-  a[6] = (a[6] & 252) | ((v >> 22) & 3);}
-
-#define SET_OTS_BIT(a, b) {\
-  a[9] = (a[9] & 253) | ((b << 1) & 2);}
-
-#define SET_OTS_ADDRESS(a, v) {\
-  a[12] = (a[12] & 1) | ((v << 1) & 254);\
-  a[11] = (v >> 7) & 255;\
-  a[10] = (v >> 15) & 255;\
-  a[9] = (a[9] & 254) | ((v >> 23) & 1);}
-
-#define ZEROISE_OTS_ADDR(a) {\
-  a[12] = (a[12] & 254);\
-  a[13] = 0;\
-  a[14] = 0;\
-  a[15] = 0;}
-
-#define SET_LTREE_BIT(a, b) {\
-  a[9] = (a[9] & 254) | (b & 1);}
-
-#define SET_LTREE_ADDRESS(a, v) {\
-  a[12] = v & 255;\
-  a[11] = (v >> 8) & 255;\
-  a[10] = (v >> 16) & 255;}
-
-#define SET_LTREE_TREE_HEIGHT(a, v) {\
-  a[13] = (a[13] & 3) | ((v << 2) & 252);}
-
-#define SET_LTREE_TREE_INDEX(a, v) {\
-  a[15] = (a[15] & 3) | ((v << 2) & 252);\
-  a[14] = (v >> 6) & 255;\
-  a[13] = (a[13] & 252) | ((v >> 14) & 3);}
-
-#define SET_NODE_PADDING(a) {\
-  a[10] = 0;\
-  a[11] = a[11] & 3;}
-
-#define SET_NODE_TREE_HEIGHT(a, v) {\
-  a[12] = (a[12] & 3) | ((v << 2) & 252);\
-  a[11] = (a[11] & 252) | ((v >> 6) & 3);}
-
-#define SET_NODE_TREE_INDEX(a, v) {\
-  a[15] = (a[15] & 3) | ((v << 2) & 252);\
-  a[14] = (v >> 6) & 255;\
-  a[13] = (v >> 14) & 255;\
-  a[12] = (a[12] & 252) | ((v >> 22) & 3);}
 
 /**
  * Used for pseudorandom keygeneration,
@@ -614,6 +558,16 @@ int xmss_sign(unsigned char *sk, bds_state *state, unsigned char *sig_msg, unsig
   memcpy(sk_prf, sk+4+n, m);
   unsigned char pub_seed[n];
   memcpy(pub_seed, sk+4+n+m, n);
+  
+  unsigned char hash_key[2*m]; 
+  unsigned long long i;
+  for(i = 0; i < m-4; i++){
+    hash_key[i] = 0;
+  }
+  for(i = 0; i < 4; i++){
+    hash_key[i+m-4] = sk[i];
+  }
+  
 
   // Update SK
   sk[0] = ((idx + 1) >> 24) & 255;
@@ -624,7 +578,6 @@ int xmss_sign(unsigned char *sk, bds_state *state, unsigned char *sig_msg, unsig
   // -- A productive implementation should use a file handle instead and write the updated secret key at this point!
 
   // Init working params
-  unsigned long long i;
   unsigned char R[m];
   unsigned char msg_h[m];
   unsigned char ots_seed[n];
@@ -637,8 +590,10 @@ int xmss_sign(unsigned char *sk, bds_state *state, unsigned char *sig_msg, unsig
   // Message Hash:
   // First compute pseudorandom key
   prf_m(R, msg, msglen, sk_prf, m);
+  // Generate hash key (idx || R)
+  memcpy(hash_key+m, R, m);
   // Then use it for message digest
-  hash_m(msg_h, msg, msglen, R, m, m);
+  hash_m(msg_h, msg, msglen, hash_key, 2*m, m);
 
   // Start collecting signature
   *sig_msg_len = 0;
@@ -710,6 +665,7 @@ int xmss_sign_open(unsigned char *msg, unsigned long long *msglen, const unsigne
   unsigned char pkhash[n];
   unsigned char root[n];
   unsigned char msg_h[m];
+  unsigned char hash_key[2*m];
 
   unsigned char pub_seed[n];
   memcpy(pub_seed, pk+n, n);
@@ -732,16 +688,19 @@ int xmss_sign_open(unsigned char *msg, unsigned long long *msglen, const unsigne
   // Extract index
   idx = ((unsigned long)sig_msg[0] << 24) | ((unsigned long)sig_msg[1] << 16) | ((unsigned long)sig_msg[2] << 8) | sig_msg[3];
   printf("verify:: idx = %lu\n", idx);
-  sig_msg += 4;
-  sig_msg_len -= 4;
+  for(i = 0; i < m-4; i++){
+    hash_key[i] = 0;
+  }
+  for(i = 0; i < m+4; i++){
+    hash_key[i+m-4] = sig_msg[i];
+  }
+  sig_msg += (m+4);
+  sig_msg_len -= (m+4);
 
-  // hash message (recall, R is now on pole position at sig_msg
-  unsigned long long tmp_sig_len = m+params->wots_par.keysize+params->h*n;
+  // hash message 
+  unsigned long long tmp_sig_len = params->wots_par.keysize+params->h*n;
   m_len = sig_msg_len - tmp_sig_len;
-  hash_m(msg_h, sig_msg + tmp_sig_len, m_len, sig_msg, m, m);
-
-  sig_msg += m;
-  sig_msg_len -= m;
+  hash_m(msg_h, sig_msg + tmp_sig_len, m_len, hash_key, 2*m, m);
 
   //-----------------------
   // Verify signature
@@ -807,7 +766,7 @@ int xmssmt_keypair(unsigned char *pk, unsigned char *sk, bds_state *states, unsi
   // Set address to point on the single tree on layer d-1
   unsigned char addr[16] = {0, 0, 0, 0};
   SET_OTS_BIT(addr, 1);
-  SET_TREE_ADDRESS(addr, 0);
+  SET_TREE_ADDRESS(addr, (unsigned long long)0);
   SET_OTS_ADDRESS(addr, 0);
   SET_LAYER_ADDRESS(addr, 0);
   // Set up state and compute wots signatures for all but topmost tree root
@@ -849,15 +808,20 @@ int xmssmt_sign(unsigned char *sk, bds_state *states, unsigned char *wots_sigs, 
   // Init working params
   unsigned char R[m];
   unsigned char msg_h[m];
+  unsigned char hash_key[2*m];
   unsigned char ots_seed[n];
   unsigned char addr[16] = {0, 0, 0, 0};
   unsigned char ots_addr[16] = {0, 0, 0, 0};
   bds_state tmp;
 
   // Extract SK
+  for(i = 0; i < m-idx_len; i++){
+    hash_key[i] = 0;
+  }
   unsigned long long idx = 0;
   for (i = 0; i < idx_len; i++) {
     idx |= ((unsigned long long)sk[i]) << 8*(idx_len - 1 - i);
+    hash_key[m-idx_len+i] = sk[i];
   }
 
   memcpy(sk_seed, sk+idx_len, n);
@@ -879,8 +843,12 @@ int xmssmt_sign(unsigned char *sk, bds_state *states, unsigned char *wots_sigs, 
   // Message Hash:
   // First compute pseudorandom key
   prf_m(R, msg, msglen, sk_prf, m);
+  
+  // Generate hash key (idx || R)
+  memcpy(hash_key+m, R, m);
+  
   // Then use it for message digest
-  hash_m(msg_h, msg, msglen, R, m, m);
+  hash_m(msg_h, msg, msglen, hash_key, 2*m, m);
 
   // Start collecting signature
   *sig_msg_len = 0;
@@ -1020,6 +988,7 @@ int xmssmt_sign_open(unsigned char *msg, unsigned long long *msglen, const unsig
   unsigned char pkhash[n];
   unsigned char root[n];
   unsigned char msg_h[m];
+  unsigned char hash_key[2*m];
 
   unsigned char pub_seed[n];
   memcpy(pub_seed, pk+n, n);
@@ -1030,21 +999,31 @@ int xmssmt_sign_open(unsigned char *msg, unsigned long long *msglen, const unsig
   unsigned char node_addr[16];
 
   // Extract index
+  for(i = 0; i < m-idx_len; i++){
+    hash_key[i] = 0;
+  }
   for (i = 0; i < idx_len; i++) {
     idx |= ((unsigned long long)sig_msg[i]) << (8*(idx_len - 1 - i));
+    hash_key[m-idx_len+i] = sig_msg[i];
   }
   printf("verify:: idx = %llu\n", idx);
   sig_msg += idx_len;
   sig_msg_len -= idx_len;
-
-  // hash message (recall, R is now on pole position at sig_msg
-  unsigned long long tmp_sig_len = m+ (params->d * params->xmss_par.wots_par.keysize) + (params->h * n);
-  m_len = sig_msg_len - tmp_sig_len;
-  hash_m(msg_h, sig_msg + tmp_sig_len, m_len, sig_msg, m, m);
+  
+  for(i = 0; i < m; i++){
+    hash_key[m+i] = sig_msg[i];
+  }
 
   sig_msg += m;
   sig_msg_len -= m;
+  
 
+  // hash message (recall, R is now on pole position at sig_msg
+  unsigned long long tmp_sig_len = (params->d * params->xmss_par.wots_par.keysize) + (params->h * n);
+  m_len = sig_msg_len - tmp_sig_len;
+  hash_m(msg_h, sig_msg + tmp_sig_len, m_len, hash_key, 2*m, m);
+
+  
   //-----------------------
   // Verify signature
   //-----------------------

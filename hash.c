@@ -1,10 +1,12 @@
 /*
-hash.c version 20151120
+hash.c version 20160210
 Andreas Hülsing
+Joost Rijneveld
 Public domain.
 */
 
 #include "prg.h"
+#include "hash_address.h"
 
 #include <stddef.h>
 #include <stdio.h>
@@ -13,12 +15,6 @@ Public domain.
 #include <openssl/hmac.h>
 #include <openssl/evp.h>
 
-
-#define SET_KEY_BIT(a, b) (a[15] = (a[15] & 253) | ((b << 1) & 2))
-#define SET_BLOCK_BIT(a, b) (a[15] = (a[15] & 254) | (b & 1))
-
-#define WOTS_SELECT_KEY(a) (a[15] = (a[15] & 254) | 1)
-#define WOTS_SELECT_BLOCK(a) (a[15] = (a[15] & 254) | 0)
 
 /**
  * Implements PRF_m
@@ -51,29 +47,27 @@ int prf_m(unsigned char *out, const unsigned char *in, size_t inlen, const unsig
 int hash_m(unsigned char *out, const unsigned char *in, unsigned long long inlen, const unsigned char *key, const unsigned int keylen, const unsigned int m)
 {
   unsigned int i;
-  unsigned char buf[inlen + keylen + m];
+  unsigned char buf[inlen + keylen];
 
-  if (keylen != m){
-    fprintf(stderr, "H_m takes m-bit keys, we got m=%d but a keylength of %d.\n", m, keylen);
+  if (keylen != 2*m){
+    fprintf(stderr, "H_m takes 2m-bit keys, we got m=%d but a keylength of %d.\n", m, keylen);
     return 1;
   }
-  for (i=0; i < m; i++) {
-    buf[i] = 0x00;
-  }
+  
   for (i=0; i < keylen; i++) {
-    buf[m + i] = key[i];
+    buf[i] = key[i];
   }
   for (i=0; i < inlen; i++) {
-    buf[m + keylen + i] = in[i];
+    buf[keylen + i] = in[i];
   }
 
   if (m == 32) {
-    SHA256(buf, inlen + keylen + m, out);
+    SHA256(buf, inlen + keylen, out);
     return 0;
   }
   else {
     if (m == 64) {
-      SHA512(buf, inlen + keylen + m, out);
+      SHA512(buf, inlen + keylen, out);
       return 0;
     }
   }
