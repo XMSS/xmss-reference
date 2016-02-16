@@ -71,7 +71,7 @@ static void base_w(int *output, const unsigned char *input, int in_len, const wo
 
   for (consumed = 0; consumed < 8 * in_len; consumed += params->log_w) {
     if (bits == 0) {
-      total = input[in_len - 1 - in];
+      total = input[in];
       in++;
       bits += 8;
     }
