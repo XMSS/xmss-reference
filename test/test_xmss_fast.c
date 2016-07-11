@@ -11,11 +11,19 @@ unsigned char mi[MLEN];
 unsigned long long smlen;
 unsigned long long mlen;
 
+unsigned long long t1, t2;
+
+unsigned long long cpucycles(void)
+{
+  unsigned long long result;
+  asm volatile(".byte 15;.byte 49;shlq $32,%%rdx;orq %%rdx,%%rax" : "=a" (result) ::  "%rdx");
+  return result;
+}
+
 int main()
 {
   int r;
   unsigned long long i;
-  unsigned int m = 32;
   unsigned int n = 32;
   unsigned int h = 8;
   unsigned int w = 16;
@@ -23,12 +31,12 @@ int main()
 
   unsigned long errors = 0;
 
-  unsigned char sk[3*n+4];
+  unsigned char sk[4*n+4];
   unsigned char pk[2*n];
 
   xmss_params p;
   xmss_params *params = &p;
-  xmss_set_params(params, m, n, h, w, k);
+  xmss_set_params(params, n, h, w, k);
 
   // TODO should we hide this into xmss_fast.c and just allocate a large enough chunk of memory here?
   unsigned char stack[(h+1)*n];
@@ -45,7 +53,7 @@ int main()
     treehash[i].node = &th_nodes[n*i];
   xmss_set_bds_state(state, stack, stackoffset, stacklevels, auth, keep, treehash, retain, 0);
 
-  unsigned long long signature_length = 4+m+params->wots_par.keysize+h*n;
+  unsigned long long signature_length = 4+n+params->wots_par.keysize+h*n;
   unsigned char mo[MLEN+signature_length];
   unsigned char sm[MLEN+signature_length];
 
@@ -53,10 +61,18 @@ int main()
   for (i = 0; i < MLEN; i++) mi[i] = fgetc(urandom);
 
   printf("keypair\n");
+  t1 = cpucycles();
   xmss_keypair(pk, sk, state, params);
+  t2 = cpucycles();
+  printf("cycles = %llu\n", (t2-t1));
+  double sec = (t2-t1)/3500000;
+  printf("ms = %f\n", sec);
+  int read;
+  read = fgetc(stdin);
   // check pub_seed in SK
   for (i = 0; i < n; i++) {
-    if (pk[n+i] != sk[4+m+n+i]) printf("pk.pub_seed != sk.pub_seed %llu",i);
+    if (pk[n+i] != sk[4+2*n+i]) printf("pk.pub_seed != sk.pub_seed %llu",i);
+    if (pk[i] != sk[4+3*n+i]) printf("pk.root != sk.root %llu",i);
   }
 
   // check index

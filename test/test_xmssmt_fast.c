@@ -14,7 +14,6 @@ int main()
 {
   int r;
   unsigned long long i,j;
-  unsigned int m = 32;
   unsigned int n = 32;
   unsigned int h = 12;
   unsigned int d = 3;
@@ -23,7 +22,7 @@ int main()
 
   xmssmt_params p;
   xmssmt_params *params = &p;
-  if (xmssmt_set_params(params, m, n, h, d, w, k)) {
+  if (xmssmt_set_params(params, n, h, d, w, k)) {
     return 1;
   }
 
@@ -54,10 +53,10 @@ int main()
     );
   }
 
-  unsigned char sk[(params->index_len+2*n+m)];
+  unsigned char sk[(params->index_len+4*n)];
   unsigned char pk[2*n];
 
-  unsigned long long signature_length = params->index_len + m + (d*params->xmss_par.wots_par.keysize) + h*n;
+  unsigned long long signature_length = params->index_len + n + (d*params->xmss_par.wots_par.keysize) + h*n;
   unsigned char mo[MLEN+signature_length];
   unsigned char sm[MLEN+signature_length];
 
@@ -68,7 +67,8 @@ int main()
   xmssmt_keypair(pk, sk, states, wots_sigs, params);
   // check pub_seed in SK
   for (i = 0; i < n; i++) {
-    if (pk[n+i] != sk[params->index_len+m+n+i]) printf("pk.pub_seed != sk.pub_seed %llu",i);
+    if (pk[n+i] != sk[params->index_len+2*n+i]) printf("pk.pub_seed != sk.pub_seed %llu",i);
+    if (pk[i] != sk[4+3*n+i]) printf("pk.root != sk.root %llu",i);
   }
   printf("pk checked\n");
 

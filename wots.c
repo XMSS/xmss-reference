@@ -1,5 +1,5 @@
 /*
-wots.c version 20160210
+wots.c version 20160217
 Andreas Hülsing
 Joost Rijneveld
 Public domain.
@@ -7,21 +7,21 @@ Public domain.
 
 #include "math.h"
 #include "stdio.h"
+#include "stdint.h"
 #include "xmss_commons.h"
 //#include "params.h"
-#include "prg.h"
+//#include "prg.h"
 #include "hash.h"
 #include "wots.h"
 #include "hash_address.h"
 
 
-void wots_set_params(wots_params *params, int m, int n, int w)
+void wots_set_params(wots_params *params, int n, int w)
 {
-  params->m = m;
   params->n = n;
   params->w = w;
   params->log_w = (int) log2(w);
-  params->len_1 = (int) ceil(((8*m) / params->log_w));
+  params->len_1 = (int) ceil(((8*n) / params->log_w));
   params->len_2 = (int) floor(log2(params->len_1*(w-1)) / params->log_w) + 1;
   params->len = params->len_1 + params->len_2;
   params->keysize = params->len*params->n;
@@ -30,11 +30,16 @@ void wots_set_params(wots_params *params, int m, int n, int w)
 /**
  * Helper method for pseudorandom key generation
  * Expands an n-byte array into a len*n byte array
- * this is done using chacha20 with nonce 0 and counter 0
+ * this is done using PRF
  */
 static void expand_seed(unsigned char *outseeds, const unsigned char *inseed, const wots_params *params)
 {
-  prg(outseeds, params->keysize, inseed, params->n);
+  uint32_t i = 0;
+  unsigned char ctr[32];
+  for(i = 0; i < params->len; i++){
+    to_byte(ctr, i, 32);
+    prf((outseeds + (i*params->n)), ctr, inseed, params->n);
+  }
 }
 
 /**
@@ -44,15 +49,15 @@ static void expand_seed(unsigned char *outseeds, const unsigned char *inseed, co
  * interpretes in as start-th value of the chain
  * addr has to contain the address of the chain
  */
-static void gen_chain(unsigned char *out, const unsigned char *in, unsigned int start, unsigned int steps, const wots_params *params, const unsigned char *pub_seed, unsigned char addr[16])
+static void gen_chain(unsigned char *out, const unsigned char *in, unsigned int start, unsigned int steps, const wots_params *params, const unsigned char *pub_seed, uint32_t addr[8])
 {
-  unsigned int i, j;
+  uint32_t i, j;
   for (j = 0; j < params->n; j++)
     out[j] = in[j];
 
   for (i = start; i < (start+steps) && i < params->w; i++) {
-    SET_HASH_ADDRESS(addr, i);
-    hash_n_n(out, out, pub_seed, addr, params->n);
+    setHashADRS(addr, i);
+    hash_f(out, out, pub_seed, addr, params->n);
   }
 }
 
@@ -61,15 +66,15 @@ static void gen_chain(unsigned char *out, const unsigned char *in, unsigned int 
  *
  *
  */
-static void base_w(int *output, const unsigned char *input, int in_len, const wots_params *params)
+static void base_w(int *output, const int out_len, const unsigned char *input, const wots_params *params)
 {
   int in = 0;
   int out = 0;
-  int total = 0;
+  uint32_t total = 0;
   int bits = 0;
   int consumed = 0;
 
-  for (consumed = 0; consumed < 8 * in_len; consumed += params->log_w) {
+  for (consumed = 0; consumed < out_len; consumed++) {
     if (bits == 0) {
       total = input[in];
       in++;
@@ -81,24 +86,24 @@ static void base_w(int *output, const unsigned char *input, int in_len, const wo
   }
 }
 
-void wots_pkgen(unsigned char *pk, const unsigned char *sk, const wots_params *params, const unsigned char *pub_seed, unsigned char addr[16])
+void wots_pkgen(unsigned char *pk, const unsigned char *sk, const wots_params *params, const unsigned char *pub_seed, uint32_t addr[8])
 {
-  unsigned int i;
+  uint32_t i;
   expand_seed(pk, sk, params);
   for (i=0; i < params->len; i++) {
-    SET_CHAIN_ADDRESS(addr, i);
+    setChainADRS(addr, i);
     gen_chain(pk+i*params->n, pk+i*params->n, 0, params->w-1, params, pub_seed, addr);
   }
 }
 
 
-void wots_sign(unsigned char *sig, const unsigned char *msg, const unsigned char *sk, const wots_params *params, const unsigned char *pub_seed, unsigned char addr[16])
+void wots_sign(unsigned char *sig, const unsigned char *msg, const unsigned char *sk, const wots_params *params, const unsigned char *pub_seed, uint32_t addr[8])
 {
   int basew[params->len];
   int csum = 0;
-  unsigned int i = 0;
+  uint32_t i = 0;
 
-  base_w(basew, msg, params->m, params);
+  base_w(basew, params->len_1, msg, params);
 
   for (i=0; i < params->len_1; i++) {
     csum += params->w - 1 - basew[i];
@@ -112,7 +117,7 @@ void wots_sign(unsigned char *sig, const unsigned char *msg, const unsigned char
   to_byte(csum_bytes, csum, len_2_bytes);
 
   int csum_basew[len_2_bytes / params->log_w];
-  base_w(csum_basew, csum_bytes, len_2_bytes, params);
+  base_w(csum_basew, params->len_2, csum_bytes, params);
 
   for (i = 0; i < params->len_2; i++) {
     basew[params->len_1 + i] = csum_basew[i];
@@ -121,18 +126,18 @@ void wots_sign(unsigned char *sig, const unsigned char *msg, const unsigned char
   expand_seed(sig, sk, params);
 
   for (i = 0; i < params->len; i++) {
-    SET_CHAIN_ADDRESS(addr, i);
+    setChainADRS(addr, i);
     gen_chain(sig+i*params->n, sig+i*params->n, 0, basew[i], params, pub_seed, addr);
   }
 }
 
-void wots_pkFromSig(unsigned char *pk, const unsigned char *sig, const unsigned char *msg, const wots_params *params, const unsigned char *pub_seed, unsigned char addr[16])
+void wots_pkFromSig(unsigned char *pk, const unsigned char *sig, const unsigned char *msg, const wots_params *params, const unsigned char *pub_seed, uint32_t addr[8])
 {
   int basew[params->len];
   int csum = 0;
-  unsigned int i = 0;
+  uint32_t i = 0;
 
-  base_w(basew, msg, params->m, params);
+  base_w(basew, params->len_1, msg, params);
 
   for (i=0; i < params->len_1; i++) {
     csum += params->w - 1 - basew[i];
@@ -146,13 +151,13 @@ void wots_pkFromSig(unsigned char *pk, const unsigned char *sig, const unsigned 
   to_byte(csum_bytes, csum, len_2_bytes);
 
   int csum_basew[len_2_bytes / params->log_w];
-  base_w(csum_basew, csum_bytes, len_2_bytes, params);
+  base_w(csum_basew, params->len_2, csum_bytes, params);
 
   for (i = 0; i < params->len_2; i++) {
     basew[params->len_1 + i] = csum_basew[i];
   }
   for (i=0; i < params->len; i++) {
-    SET_CHAIN_ADDRESS(addr, i);
+    setChainADRS(addr, i);
     gen_chain(pk+i*params->n, sig+i*params->n, basew[i], params->w-1-basew[i], params, pub_seed, addr);
   }
 }

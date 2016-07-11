@@ -1,5 +1,5 @@
 /*
-xmss_commons.h 20160210
+xmss_commons.h 20160217
 Andreas Hülsing
 Joost Rijneveld
 Public domain.
@@ -8,7 +8,8 @@ Public domain.
 #define XMSS_COMMONS_H
 
 #include <stdlib.h>
+#include <stdint.h>
 
-void to_byte(unsigned char *output, unsigned int in, int bytes);
+void to_byte(unsigned char *output, unsigned long long in, uint32_t bytes);
 void hexdump(const unsigned char *a, size_t len);
 #endif

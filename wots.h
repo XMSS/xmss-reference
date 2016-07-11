@@ -1,5 +1,5 @@
 /*
-wots.h version 20160210
+wots.h version 20160217
 Andreas Hülsing
 Joost Rijneveld
 Public domain.
@@ -8,20 +8,21 @@ Public domain.
 #ifndef WOTS_H
 #define WOTS_H
 
+#include "stdint.h"
+
 /**
  * WOTS parameter set
  * 
  * Meaning as defined in draft-irtf-cfrg-xmss-hash-based-signatures-02
  */
 typedef struct {
-  unsigned int len_1;
-  unsigned int len_2;
-  unsigned int len;
-  unsigned int m;
-  unsigned int n;
-  unsigned int w;
-  unsigned int log_w;
-  unsigned int keysize;
+  uint32_t len_1;
+  uint32_t len_2;
+  uint32_t len;
+  uint32_t n;
+  uint32_t w;
+  uint32_t log_w;
+  uint32_t keysize;
 } wots_params;
 
 /**
@@ -31,7 +32,7 @@ typedef struct {
  *
  * Assumes w is a power of 2
  */
-void wots_set_params(wots_params *params, int m, int n, int w);
+void wots_set_params(wots_params *params, int n, int w);
 
 /**
  * WOTS key generation. Takes a 32byte seed for the secret key, expands it to a full WOTS secret key and computes the corresponding public key. 
@@ -41,18 +42,18 @@ void wots_set_params(wots_params *params, int m, int n, int w);
  * 
  * Places the computed public key at address pk.
  */
-void wots_pkgen(unsigned char *pk, const unsigned char *sk, const wots_params *params, const unsigned char *pub_seed, unsigned char addr[16]);
+void wots_pkgen(unsigned char *pk, const unsigned char *sk, const wots_params *params, const unsigned char *pub_seed, uint32_t addr[8]);
 
 /**
  * Takes a m-byte message and the 32-byte seed for the secret key to compute a signature that is placed at "sig".
  *  
  */
-void wots_sign(unsigned char *sig, const unsigned char *msg, const unsigned char *sk, const wots_params *params, const unsigned char *pub_seed, unsigned char addr[16]);
+void wots_sign(unsigned char *sig, const unsigned char *msg, const unsigned char *sk, const wots_params *params, const unsigned char *pub_seed, uint32_t addr[8]);
 
 /**
  * Takes a WOTS signature, a m-byte message and computes a WOTS public key that it places at pk.
  * 
  */
-void wots_pkFromSig(unsigned char *pk, const unsigned char *sig, const unsigned char *msg, const wots_params *params, const unsigned char *pub_seed, unsigned char addr[16]);
+void wots_pkFromSig(unsigned char *pk, const unsigned char *sig, const unsigned char *msg, const wots_params *params, const unsigned char *pub_seed, uint32_t addr[8]);
 
 #endif

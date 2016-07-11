@@ -1,5 +1,5 @@
 /*
-xmss_commons.c 20160210
+xmss_commons.c 20160217
 Andreas Hülsing
 Joost Rijneveld
 Public domain.
@@ -8,10 +8,11 @@ Public domain.
 #include "xmss_commons.h"
 #include <stdlib.h>
 #include <stdio.h>
+#include <stdint.h>
 
-void to_byte(unsigned char *out, unsigned int in, int bytes)
+void to_byte(unsigned char *out, unsigned long long in, uint32_t bytes)
 {
-  int i;
+  int32_t i;
   for (i = bytes-1; i >= 0; i--) {
     out[i] = in & 0xff;
     in = in >> 8;

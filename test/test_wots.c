@@ -1,4 +1,6 @@
 #include <stdio.h>
+#include <math.h>
+#include <stdint.h>
 #include "../wots.h"
 #include "../randombytes.h"
 
@@ -15,14 +17,14 @@ int main()
   unsigned char seed[n];
   unsigned char pub_seed[n];
   wots_params params;
-  wots_set_params(&params, n, n, 16);
+  wots_set_params(&params, n, 16);
 
   int sig_len = params.len*params.n;
 
   unsigned char pk1[sig_len];
   unsigned char pk2[sig_len];
   unsigned char sig[sig_len];
-  unsigned char addr[16] = {1,2,3,4};
+  uint32_t addr[8] = {1,2,3,4};
 
   unsigned char msg[n];
   int i;

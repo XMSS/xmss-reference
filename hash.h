@@ -1,5 +1,5 @@
 /*
-hash.h version 20160210
+hash.h version 20160217
 Andreas Hülsing
 Joost Rijneveld
 Public domain.
@@ -8,9 +8,9 @@ Public domain.
 #ifndef HASH_H
 #define HASH_H
 
-int prf_m(unsigned char *out, const unsigned char *in, size_t inlen, const unsigned char *key, int keylen);
-int hash_m(unsigned char *out,const unsigned char *in,unsigned long long inlen, const unsigned char *key, const int keylen, const int m);
-int hash_2n_n(unsigned char *out,const unsigned char *in, const unsigned char *pub_seed, unsigned char addr[16], const int n);
-int hash_n_n(unsigned char *out,const unsigned char *in, const unsigned char *pub_seed, unsigned char addr[16], const int n);
+int prf(unsigned char *out, const unsigned char *in, const unsigned char *key, int keylen);
+int h_msg(unsigned char *out,const unsigned char *in,unsigned long long inlen, const unsigned char *key, const int keylen, const int n);
+int hash_h(unsigned char *out, const unsigned char *in, const unsigned char *pub_seed, uint32_t addr[8], const unsigned int n);
+int hash_f(unsigned char *out, const unsigned char *in, const unsigned char *pub_seed, uint32_t addr[8], const unsigned int n);
 
 #endif

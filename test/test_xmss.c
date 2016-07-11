@@ -14,20 +14,19 @@ int main()
 {
   int r;
   unsigned long long i;
-  unsigned int m = 32;
   unsigned int n = 32;
   unsigned int h = 8;
   unsigned int w = 16;
 
   unsigned long errors = 0;
 
-  unsigned char sk[3*n+4];
+  unsigned char sk[4*n+4];
   unsigned char pk[2*n];
 
   xmss_params p;
   xmss_params *params = &p;
-  xmss_set_params(params, m, n, h, w);
-  unsigned long long signature_length = 4+m+params->wots_par.keysize+h*n;
+  xmss_set_params(params, n, h, w);
+  unsigned long long signature_length = 4+n+params->wots_par.keysize+h*n;
   unsigned char mo[MLEN+signature_length];
   unsigned char sm[MLEN+signature_length];
 
@@ -38,7 +37,8 @@ int main()
   xmss_keypair(pk, sk, params);
   // check pub_seed in SK
   for (i = 0; i < n; i++) {
-    if (pk[n+i] != sk[4+m+n+i]) printf("pk.pub_seed != sk.pub_seed %llu",i);
+    if (pk[n+i] != sk[4+2*n+i]) printf("pk.pub_seed != sk.pub_seed %llu",i);
+    if (pk[i] != sk[4+3*n+i]) printf("pk.root != sk.root %llu",i);
   }
 
   // check index
