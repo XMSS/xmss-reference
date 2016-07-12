@@ -30,12 +30,14 @@ Public domain.
  */
 static void get_seed(unsigned char *seed, const unsigned char *sk_seed, int n, uint32_t addr[8])
 {
+  unsigned char bytes[32];
   // Make sure that chain addr, hash addr, and key bit are 0!
   setChainADRS(addr,0);
   setHashADRS(addr,0);
   setKeyAndMask(addr,0);
   // Generate pseudorandom value
-  prf(seed, (unsigned char*) addr, sk_seed, n);
+  addr_to_byte(bytes, addr);
+  prf(seed, bytes, sk_seed, n);
 }
 
 /**

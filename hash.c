@@ -7,6 +7,7 @@ Public domain.
 
 #include "hash_address.h"
 #include "xmss_commons.h"
+#include "hash.h"
 
 #include <stddef.h>
 #include <stdint.h>
@@ -16,6 +17,17 @@ Public domain.
 #include <openssl/hmac.h>
 #include <openssl/evp.h>
 
+unsigned char* addr_to_byte(unsigned char *bytes, const uint32_t addr[8]){
+#if IS_LITTLE_ENDIAN==1 
+  int i = 0;
+  for(i=0;i<8;i++)
+    to_byte(bytes+i*4, addr[i],4);
+  return bytes;  
+#else
+  memcpy(bytes, addr, 32);
+  return bytes; 
+#endif   
+}
 
 int core_hash_SHA2(unsigned char *out, const unsigned int type, const unsigned char *key, unsigned int keylen, const unsigned char *in, unsigned long long inlen, unsigned int n){  
   unsigned long long i = 0;
@@ -51,9 +63,8 @@ int core_hash_SHA2(unsigned char *out, const unsigned int type, const unsigned c
  * Implements PRF
  */
 int prf(unsigned char *out, const unsigned char *in, const unsigned char *key, unsigned int keylen)
-{
-  size_t inlen = 32;  
-  return core_hash_SHA2(out, 3, key, keylen, in, inlen, keylen);
+{ 
+  return core_hash_SHA2(out, 3, key, keylen, in, 32, keylen);
 }
 
 /*
@@ -77,15 +88,19 @@ int hash_h(unsigned char *out, const unsigned char *in, const unsigned char *pub
   unsigned char buf[2*n];
   unsigned char key[n];
   unsigned char bitmask[2*n];
+  unsigned char byte_addr[32];
   unsigned int i;
 
   setKeyAndMask(addr, 0);
-  prf(key, (unsigned char *)addr, pub_seed, n);
+  addr_to_byte(byte_addr, addr);
+  prf(key, byte_addr, pub_seed, n);
   // Use MSB order
   setKeyAndMask(addr, 1);
-  prf(bitmask, (unsigned char *)addr, pub_seed, n);
+  addr_to_byte(byte_addr, addr);
+  prf(bitmask, byte_addr, pub_seed, n);
   setKeyAndMask(addr, 2);
-  prf(bitmask+n, (unsigned char *)addr, pub_seed, n);
+  addr_to_byte(byte_addr, addr);
+  prf(bitmask+n, byte_addr, pub_seed, n);
   for (i = 0; i < 2*n; i++) {
     buf[i] = in[i] ^ bitmask[i];
   }
@@ -97,13 +112,23 @@ int hash_f(unsigned char *out, const unsigned char *in, const unsigned char *pub
   unsigned char buf[n];
   unsigned char key[n];
   unsigned char bitmask[n];
+  unsigned char byte_addr[32];
   unsigned int i;
 
   setKeyAndMask(addr, 0);
-  prf(key, (unsigned char *)addr, pub_seed, n);
+  printf("\naddr before: ");
+  for(i = 0; i< 8; i++){
+    printf("%08x",addr[i]);
+  }
+  addr_to_byte(byte_addr, addr);
+  printf("\naddr after: ");
+  hexdump(byte_addr,32);
+  printf("\n");
+  prf(key, byte_addr, pub_seed, n);
   // Use MSB order
   setKeyAndMask(addr, 1);
-  prf(bitmask, (unsigned char *)addr, pub_seed, n);
+  addr_to_byte(byte_addr, addr);
+  prf(bitmask, byte_addr, pub_seed, n);
   
   for (i = 0; i < n; i++) {
     buf[i] = in[i] ^ bitmask[i];

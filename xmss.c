@@ -30,12 +30,14 @@ Public domain.
  */
 static void get_seed(unsigned char *seed, const unsigned char *sk_seed, int n, uint32_t addr[8])
 {
+  unsigned char bytes[32];
   // Make sure that chain addr, hash addr, and key bit are 0!
   setChainADRS(addr,0);
   setHashADRS(addr,0);
   setKeyAndMask(addr,0);
   // Generate pseudorandom value
-  prf(seed, (unsigned char*) addr, sk_seed, n);
+  addr_to_byte(bytes, addr);
+  prf(seed, bytes, sk_seed, n);
 }
 
 /**
@@ -360,7 +362,7 @@ int xmss_sign(unsigned char *sk, unsigned char *sig_msg, unsigned long long *sig
   to_byte(hash_key+2*n, idx, n);
   // Then use it for message digest
   h_msg(msg_h, msg, msglen, hash_key, 3*n, n);
-
+  
   // Start collecting signature
   *sig_msg_len = 0;
 
@@ -454,7 +456,7 @@ int xmss_sign_open(unsigned char *msg, unsigned long long *msglen, const unsigne
   unsigned long long tmp_sig_len = params->wots_par.keysize+params->h*n;
   m_len = sig_msg_len - tmp_sig_len;
   h_msg(msg_h, sig_msg + tmp_sig_len, m_len, hash_key, 3*n, n);
-
+  
   //-----------------------
   // Verify signature
   //-----------------------
