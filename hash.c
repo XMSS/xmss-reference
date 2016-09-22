@@ -1,5 +1,5 @@
 /*
-hash.c version 20160708
+hash.c version 20160722
 Andreas Hülsing
 Joost Rijneveld
 Public domain.
@@ -115,17 +115,10 @@ int hash_f(unsigned char *out, const unsigned char *in, const unsigned char *pub
   unsigned char byte_addr[32];
   unsigned int i;
 
-  setKeyAndMask(addr, 0);
-  printf("\naddr before: ");
-  for(i = 0; i< 8; i++){
-    printf("%08x",addr[i]);
-  }
-  addr_to_byte(byte_addr, addr);
-  printf("\naddr after: ");
-  hexdump(byte_addr,32);
-  printf("\n");
+  setKeyAndMask(addr, 0);  
+  addr_to_byte(byte_addr, addr);  
   prf(key, byte_addr, pub_seed, n);
-  // Use MSB order
+  
   setKeyAndMask(addr, 1);
   addr_to_byte(byte_addr, addr);
   prf(bitmask, byte_addr, pub_seed, n);

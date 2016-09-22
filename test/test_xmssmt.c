@@ -38,7 +38,7 @@ int main()
   // check pub_seed in SK
   for (i = 0; i < n; i++) {
     if (pk[n+i] != sk[params->index_len+2*n+i]) printf("pk.pub_seed != sk.pub_seed %llu",i);
-    if (pk[i] != sk[4+3*n+i]) printf("pk.root != sk.root %llu",i);
+    if (pk[i] != sk[params->index_len+3*n+i]) printf("pk.root != sk.root %llu",i);
   }
   printf("pk checked\n");
 

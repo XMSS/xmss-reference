@@ -1,5 +1,5 @@
 /*
-xmss_commons.h 20160217
+xmss_commons.h 20160722
 Andreas Hülsing
 Joost Rijneveld
 Public domain.
