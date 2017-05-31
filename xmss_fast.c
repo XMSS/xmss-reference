@@ -753,9 +753,9 @@ int xmssmt_keypair(unsigned char *pk, unsigned char *sk, bds_state *states, unsi
   // Copy PUB_SEED to public key
   memcpy(pk+n, sk+params->index_len+2*n, n);
 
-  // Set address to point on the single tree on layer d-1
   uint32_t addr[8] = {0, 0, 0, 0, 0, 0, 0, 0};
-  setLayerADRS(addr, (params->d-1));
+  // Start with the bottom-most layer
+  setLayerADRS(addr, 0);
   // Set up state and compute wots signatures for all but topmost tree root
   for (i = 0; i < params->d - 1; i++) {
     // Compute seed for OTS key pair
@@ -764,6 +764,7 @@ int xmssmt_keypair(unsigned char *pk, unsigned char *sk, bds_state *states, unsi
     get_seed(ots_seed, sk+params->index_len, n, addr);
     wots_sign(wots_sigs + i*params->xmss_par.wots_par.keysize, pk, ots_seed, &(params->xmss_par.wots_par), pk+n, addr);
   }
+  // Address now points to the single tree on layer d-1
   treehash_setup(pk, params->xmss_par.h, 0, states + i, sk+params->index_len, &(params->xmss_par), pk+n, addr);
   memcpy(sk+params->index_len+3*n, pk, n);
   return 0;
