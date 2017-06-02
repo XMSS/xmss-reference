@@ -14,31 +14,20 @@ Public domain.
 #include "hash.h"
 #include "wots.h"
 #include "hash_address.h"
-
-
-void wots_set_params(wots_params *params, int n, int w)
-{
-  params->n = n;
-  params->w = w;
-  params->log_w = (int) log2(w);
-  params->len_1 = (int) ceil(((8*n) / params->log_w));
-  params->len_2 = (int) floor(log2(params->len_1*(w-1)) / params->log_w) + 1;
-  params->len = params->len_1 + params->len_2;
-  params->keysize = params->len*params->n;
-}
+#include "params.h"
 
 /**
  * Helper method for pseudorandom key generation
  * Expands an n-byte array into a len*n byte array
  * this is done using PRF
  */
-static void expand_seed(unsigned char *outseeds, const unsigned char *inseed, const wots_params *params)
+static void expand_seed(unsigned char *outseeds, const unsigned char *inseed)
 {
   uint32_t i = 0;
   unsigned char ctr[32];
-  for(i = 0; i < params->len; i++){
+  for(i = 0; i < XMSS_WOTS_LEN; i++){
     to_byte(ctr, i, 32);
-    prf((outseeds + (i*params->n)), ctr, inseed, params->n);
+    prf(outseeds + i*XMSS_N, ctr, inseed, XMSS_N);
   }
 }
 
@@ -49,15 +38,15 @@ static void expand_seed(unsigned char *outseeds, const unsigned char *inseed, co
  * interpretes in as start-th value of the chain
  * addr has to contain the address of the chain
  */
-static void gen_chain(unsigned char *out, const unsigned char *in, unsigned int start, unsigned int steps, const wots_params *params, const unsigned char *pub_seed, uint32_t addr[8])
+static void gen_chain(unsigned char *out, const unsigned char *in, unsigned int start, unsigned int steps, const unsigned char *pub_seed, uint32_t addr[8])
 {
   uint32_t i, j;
-  for (j = 0; j < params->n; j++)
+  for (j = 0; j < XMSS_N; j++)
     out[j] = in[j];
 
-  for (i = start; i < (start+steps) && i < params->w; i++) {
+  for (i = start; i < (start+steps) && i < XMSS_WOTS_W; i++) {
     setHashADRS(addr, i);
-    hash_f(out, out, pub_seed, addr, params->n);
+    hash_f(out, out, pub_seed, addr, XMSS_N);
   }
 }
 
@@ -66,7 +55,7 @@ static void gen_chain(unsigned char *out, const unsigned char *in, unsigned int 
  *
  *
  */
-static void base_w(int *output, const int out_len, const unsigned char *input, const wots_params *params)
+static void base_w(int *output, const int out_len, const unsigned char *input)
 {
   int in = 0;
   int out = 0;
@@ -80,84 +69,84 @@ static void base_w(int *output, const int out_len, const unsigned char *input, c
       in++;
       bits += 8;
     }
-    bits -= params->log_w;
-    output[out] = (total >> bits) & (params->w - 1);
+    bits -= XMSS_WOTS_LOG_W;
+    output[out] = (total >> bits) & (XMSS_WOTS_W - 1);
     out++;
   }
 }
 
-void wots_pkgen(unsigned char *pk, const unsigned char *sk, const wots_params *params, const unsigned char *pub_seed, uint32_t addr[8])
+void wots_pkgen(unsigned char *pk, const unsigned char *sk, const unsigned char *pub_seed, uint32_t addr[8])
 {
   uint32_t i;
-  expand_seed(pk, sk, params);
-  for (i=0; i < params->len; i++) {
+  expand_seed(pk, sk);
+  for (i=0; i < XMSS_WOTS_LEN; i++) {
     setChainADRS(addr, i);
-    gen_chain(pk+i*params->n, pk+i*params->n, 0, params->w-1, params, pub_seed, addr);
+    gen_chain(pk+i*XMSS_N, pk+i*XMSS_N, 0, XMSS_WOTS_W-1, pub_seed, addr);
   }
 }
 
 
-void wots_sign(unsigned char *sig, const unsigned char *msg, const unsigned char *sk, const wots_params *params, const unsigned char *pub_seed, uint32_t addr[8])
+void wots_sign(unsigned char *sig, const unsigned char *msg, const unsigned char *sk, const unsigned char *pub_seed, uint32_t addr[8])
 {
-  int basew[params->len];
+  int basew[XMSS_WOTS_LEN];
   int csum = 0;
   uint32_t i = 0;
 
-  base_w(basew, params->len_1, msg, params);
+  base_w(basew, XMSS_WOTS_LEN1, msg);
 
-  for (i=0; i < params->len_1; i++) {
-    csum += params->w - 1 - basew[i];
+  for (i=0; i < XMSS_WOTS_LEN1; i++) {
+    csum += XMSS_WOTS_W - 1 - basew[i];
   }
 
-  csum = csum << (8 - ((params->len_2 * params->log_w) % 8));
+  csum = csum << (8 - ((XMSS_WOTS_LEN2 * XMSS_WOTS_LOG_W) % 8));
 
-  int len_2_bytes = ((params->len_2 * params->log_w) + 7) / 8;
+  int len_2_bytes = ((XMSS_WOTS_LEN2 * XMSS_WOTS_LOG_W) + 7) / 8;
 
   unsigned char csum_bytes[len_2_bytes];
   to_byte(csum_bytes, csum, len_2_bytes);
 
-  int csum_basew[len_2_bytes / params->log_w];
-  base_w(csum_basew, params->len_2, csum_bytes, params);
+  int csum_basew[len_2_bytes / XMSS_WOTS_LOG_W];
+  base_w(csum_basew, XMSS_WOTS_LEN2, csum_bytes);
 
-  for (i = 0; i < params->len_2; i++) {
-    basew[params->len_1 + i] = csum_basew[i];
+  for (i = 0; i < XMSS_WOTS_LEN2; i++) {
+    basew[XMSS_WOTS_LEN1 + i] = csum_basew[i];
   }
 
-  expand_seed(sig, sk, params);
+  expand_seed(sig, sk);
 
-  for (i = 0; i < params->len; i++) {
+  for (i = 0; i < XMSS_WOTS_LEN; i++) {
     setChainADRS(addr, i);
-    gen_chain(sig+i*params->n, sig+i*params->n, 0, basew[i], params, pub_seed, addr);
+    gen_chain(sig+i*XMSS_N, sig+i*XMSS_N, 0, basew[i], pub_seed, addr);
   }
 }
 
-void wots_pkFromSig(unsigned char *pk, const unsigned char *sig, const unsigned char *msg, const wots_params *params, const unsigned char *pub_seed, uint32_t addr[8])
+void wots_pkFromSig(unsigned char *pk, const unsigned char *sig, const unsigned char *msg, const unsigned char *pub_seed, uint32_t addr[8])
 {
-  int basew[params->len];
+  int basew[XMSS_WOTS_LEN];
   int csum = 0;
   uint32_t i = 0;
 
-  base_w(basew, params->len_1, msg, params);
+  base_w(basew, XMSS_WOTS_LEN1, msg);
 
-  for (i=0; i < params->len_1; i++) {
-    csum += params->w - 1 - basew[i];
+  for (i=0; i < XMSS_WOTS_LEN1; i++) {
+    csum += XMSS_WOTS_W - 1 - basew[i];
   }
 
-  csum = csum << (8 - ((params->len_2 * params->log_w) % 8));
+  csum = csum << (8 - ((XMSS_WOTS_LEN2 * XMSS_WOTS_LOG_W) % 8));
 
-  int len_2_bytes = ((params->len_2 * params->log_w) + 7) / 8;
+  int len_2_bytes = ((XMSS_WOTS_LEN2 * XMSS_WOTS_LOG_W) + 7) / 8;
 
   unsigned char csum_bytes[len_2_bytes];
   to_byte(csum_bytes, csum, len_2_bytes);
 
-  int csum_basew[len_2_bytes / params->log_w];
-  base_w(csum_basew, params->len_2, csum_bytes, params);
+  int csum_basew[len_2_bytes / XMSS_WOTS_LOG_W];
+  base_w(csum_basew, XMSS_WOTS_LEN2, csum_bytes);
 
-  for (i = 0; i < params->len_2; i++) {
-    basew[params->len_1 + i] = csum_basew[i];
+  for (i = 0; i < XMSS_WOTS_LEN2; i++) {
+    basew[XMSS_WOTS_LEN1 + i] = csum_basew[i];
   }
-  for (i=0; i < params->len; i++) {
+  for (i=0; i < XMSS_WOTS_LEN; i++) {
     setChainADRS(addr, i);
-    gen_chain(pk+i*params->n, sig+i*params->n, basew[i], params->w-1-basew[i], params, pub_seed, addr);
+    gen_chain(pk+i*XMSS_N, sig+i*XMSS_N, basew[i], XMSS_WOTS_W-1-basew[i], pub_seed, addr);
   }
 }

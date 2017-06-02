@@ -2,29 +2,33 @@
 #include <string.h>
 
 #include "../xmss_fast.h"
+#include "../params.h"
+#include "../randombytes.h"
 
 #define MLEN 3491
-#define SIGNATURES 4096
+#define SIGNATURES 128
 
 unsigned char mi[MLEN];
 unsigned long long smlen;
 unsigned long long mlen;
 
+unsigned long long t1, t2;
+
+unsigned long long cpucycles(void)
+{
+  unsigned long long result;
+  asm volatile(".byte 15;.byte 49;shlq $32,%%rdx;orq %%rdx,%%rax" : "=a" (result) ::  "%rdx");
+  return result;
+}
+
 int main()
 {
   int r;
   unsigned long long i,j;
-  unsigned int n = 32;
-  unsigned int h = 12;
-  unsigned int d = 3;
-  unsigned int w = 16;
-  unsigned int k = 2;
-
-  xmssmt_params p;
-  xmssmt_params *params = &p;
-  if (xmssmt_set_params(params, n, h, d, w, k)) {
-    return 1;
-  }
+  unsigned int n = XMSS_N;
+  unsigned int h = XMSS_FULLHEIGHT;
+  unsigned int d = XMSS_D;
+  unsigned int k = XMSS_BDS_K;
 
   unsigned int tree_h = h / d;
 
@@ -36,7 +40,7 @@ int main()
   treehash_inst treehash[(2*d-1) * (tree_h-k)];
   unsigned char th_nodes[(2*d-1) * (tree_h-k)*n];
   unsigned char retain[(2*d-1) * ((1 << k) - k - 1)*n];
-  unsigned char wots_sigs[d * params->xmss_par.wots_par.keysize];
+  unsigned char wots_sigs[d * XMSS_WOTS_KEYSIZE];
   // first d are 'regular' states, second d are 'next'; top tree has no 'next'
   bds_state states[2*d-1];
 
@@ -53,26 +57,25 @@ int main()
     );
   }
 
-  unsigned char sk[(params->index_len+4*n)];
+  unsigned char sk[(XMSS_INDEX_LEN+4*n)];
   unsigned char pk[2*n];
 
-  unsigned long long signature_length = params->index_len + n + (d*params->xmss_par.wots_par.keysize) + h*n;
+  unsigned long long signature_length = XMSS_INDEX_LEN + n + (d*XMSS_WOTS_KEYSIZE) + h*n;
   unsigned char mo[MLEN+signature_length];
   unsigned char sm[MLEN+signature_length];
 
-  FILE *urandom = fopen("/dev/urandom", "r");
-  for (i = 0; i < MLEN; i++) mi[i] = fgetc(urandom);
+  randombytes(mi, MLEN);
 
   printf("keypair\n");
-  xmssmt_keypair(pk, sk, states, wots_sigs, params);
+  xmssmt_keypair(pk, sk, states, wots_sigs);
   // check pub_seed in SK
   for (i = 0; i < n; i++) {
-    if (pk[n+i] != sk[params->index_len+2*n+i]) printf("pk.pub_seed != sk.pub_seed %llu",i);
-    if (pk[i] != sk[params->index_len+3*n+i]) printf("pk.root != sk.root %llu",i);
+    if (pk[n+i] != sk[XMSS_INDEX_LEN+2*n+i]) printf("pk.pub_seed != sk.pub_seed %llu",i);
+    if (pk[i] != sk[XMSS_INDEX_LEN+3*n+i]) printf("pk.root != sk.root %llu",i);
   }
   printf("pk checked\n");
 
-  unsigned int idx_len = params->index_len;
+  unsigned int idx_len = XMSS_INDEX_LEN;
   // check index
   unsigned long long idx = 0;
   for (i = 0; i < idx_len; i++) {
@@ -83,7 +86,10 @@ int main()
 
   for (i = 0; i < SIGNATURES; i++) {
     printf("sign\n");
-    xmssmt_sign(sk, states, wots_sigs, sm, &smlen, mi, MLEN, params);
+    t1 = cpucycles();
+    xmssmt_sign(sk, states, wots_sigs, sm, &smlen, mi, MLEN);
+    t2 = cpucycles();
+    printf("signing cycles = %llu\n", (t2-t1));
 
     idx = 0;
     for (j = 0; j < idx_len; j++) {
@@ -95,7 +101,10 @@ int main()
 
     /* Test valid signature */
     printf("verify\n");
-    r = xmssmt_sign_open(mo, &mlen, sm, smlen, pk, params);
+    t1 = cpucycles();
+    r = xmssmt_sign_open(mo, &mlen, sm, smlen, pk);
+    t2 = cpucycles();
+    printf("verification cycles = %llu\n", (t2-t1));
     printf("%d\n", r);
     r = memcmp(mi,mo,MLEN);
     printf("%d\n", r);
@@ -103,7 +112,7 @@ int main()
 
     /* Test with modified message */
     sm[52] ^= 1;
-    r = xmssmt_sign_open(mo, &mlen, sm, smlen, pk, params);
+    r = xmssmt_sign_open(mo, &mlen, sm, smlen, pk);
     printf("%d\n", r+1);
     r = memcmp(mi,mo,MLEN);
     printf("%d\n", (r!=0) - 1);
@@ -113,13 +122,12 @@ int main()
     sm[260] ^= 1;
     sm[52] ^= 1;
     sm[2] ^= 1;
-    r = xmssmt_sign_open(mo, &mlen, sm, smlen, pk, params);
+    r = xmssmt_sign_open(mo, &mlen, sm, smlen, pk);
     printf("%d\n", r+1);
     r = memcmp(mi,mo,MLEN);
     printf("%d\n", (r!=0) - 1);
     printf("%llu\n", mlen+1);
 
   }
-  fclose(urandom);
   return 0;
 }

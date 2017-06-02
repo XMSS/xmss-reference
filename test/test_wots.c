@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include "../wots.h"
 #include "../randombytes.h"
+#include "../params.h"
 
 static void hexdump(unsigned char *a, size_t len)
 {
@@ -13,30 +14,27 @@ static void hexdump(unsigned char *a, size_t len)
 
 int main()
 {
-  int n = 32;
-  unsigned char seed[n];
-  unsigned char pub_seed[n];
-  wots_params params;
-  wots_set_params(&params, n, 16);
+  unsigned char seed[XMSS_N];
+  unsigned char pub_seed[XMSS_N];
 
-  int sig_len = params.len*params.n;
+  int sig_len = XMSS_WOTS_LEN*XMSS_N;
 
   unsigned char pk1[sig_len];
   unsigned char pk2[sig_len];
   unsigned char sig[sig_len];
   uint32_t addr[8] = {1,2,3,4};
 
-  unsigned char msg[n];
+  unsigned char msg[XMSS_N];
   int i;
 
-  randombytes(seed, n);
-  randombytes(pub_seed, n);
-  randombytes(msg, n);
+  randombytes(seed, XMSS_N);
+  randombytes(pub_seed, XMSS_N);
+  randombytes(msg, XMSS_N);
   //randombytes(addr, 16);
 
-  wots_pkgen(pk1, seed, &params, pub_seed, addr);
-  wots_sign(sig, msg, seed, &params, pub_seed, addr);
-  wots_pkFromSig(pk2, sig, msg, &params, pub_seed, addr);
+  wots_pkgen(pk1, seed, pub_seed, addr);
+  wots_sign(sig, msg, seed, pub_seed, addr);
+  wots_pkFromSig(pk2, sig, msg, pub_seed, addr);
 
   for (i = 0; i < sig_len; i++)
     if (pk1[i] != pk2[i]) {

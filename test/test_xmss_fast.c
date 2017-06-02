@@ -3,13 +3,11 @@
 #include <stdlib.h>
 
 #include "../xmss_fast.h"
+#include "../params.h"
+#include "../randombytes.h"
 
 #define MLEN 3491
 #define SIGNATURES 256
-
-unsigned char mi[MLEN];
-unsigned long long smlen;
-unsigned long long mlen;
 
 unsigned long long t1, t2;
 
@@ -24,55 +22,48 @@ int main()
 {
   int r;
   unsigned long long i;
-  unsigned int n = 32;
-  unsigned int h = 8;
-  unsigned int w = 16;
-  unsigned int k = 2;
+  unsigned int k = XMSS_BDS_K;
 
   unsigned long errors = 0;
 
-  unsigned char sk[4*n+4];
-  unsigned char pk[2*n];
-
-  xmss_params p;
-  xmss_params *params = &p;
-  xmss_set_params(params, n, h, w, k);
+  unsigned char sk[4*XMSS_N+4];
+  unsigned char pk[2*XMSS_N];
 
   // TODO should we hide this into xmss_fast.c and just allocate a large enough chunk of memory here?
-  unsigned char stack[(h+1)*n];
+  unsigned char stack[(XMSS_TREEHEIGHT+1)*XMSS_N];
   unsigned int stackoffset = 0;
-  unsigned char stacklevels[h+1];
-  unsigned char auth[(h)*n];
-  unsigned char keep[(h >> 1)*n];
-  treehash_inst treehash[h-k];
-  unsigned char th_nodes[(h-k)*n];
-  unsigned char retain[((1 << k) - k - 1)*n];
+  unsigned char stacklevels[XMSS_TREEHEIGHT+1];
+  unsigned char auth[(XMSS_TREEHEIGHT)*XMSS_N];
+  unsigned char keep[(XMSS_TREEHEIGHT >> 1)*XMSS_N];
+  treehash_inst treehash[XMSS_TREEHEIGHT-k];
+  unsigned char th_nodes[(XMSS_TREEHEIGHT-k)*XMSS_N];
+  unsigned char retain[((1 << k) - k - 1)*XMSS_N];
   bds_state s;
   bds_state *state = &s;
-  for (i = 0; i < h-k; i++)
-    treehash[i].node = &th_nodes[n*i];
+  for (i = 0; i < XMSS_TREEHEIGHT-k; i++)
+    treehash[i].node = &th_nodes[XMSS_N*i];
   xmss_set_bds_state(state, stack, stackoffset, stacklevels, auth, keep, treehash, retain, 0);
 
-  unsigned long long signature_length = 4+n+params->wots_par.keysize+h*n;
+  unsigned long long signature_length = 4+XMSS_N+XMSS_WOTS_KEYSIZE+XMSS_TREEHEIGHT*XMSS_N;
+  unsigned char mi[MLEN];
   unsigned char mo[MLEN+signature_length];
   unsigned char sm[MLEN+signature_length];
+  unsigned long long smlen;
+  unsigned long long mlen;
 
-  FILE *urandom = fopen("/dev/urandom", "r");
-  for (i = 0; i < MLEN; i++) mi[i] = fgetc(urandom);
+  randombytes(mi, MLEN);
 
   printf("keypair\n");
   t1 = cpucycles();
-  xmss_keypair(pk, sk, state, params);
+  xmss_keypair(pk, sk, state);
   t2 = cpucycles();
   printf("cycles = %llu\n", (t2-t1));
   double sec = (t2-t1)/3500000;
   printf("ms = %f\n", sec);
-  int read;
-  read = fgetc(stdin);
   // check pub_seed in SK
-  for (i = 0; i < n; i++) {
-    if (pk[n+i] != sk[4+2*n+i]) printf("pk.pub_seed != sk.pub_seed %llu",i);
-    if (pk[i] != sk[4+3*n+i]) printf("pk.root != sk.root %llu",i);
+  for (i = 0; i < XMSS_N; i++) {
+    if (pk[XMSS_N+i] != sk[4+2*XMSS_N+i]) printf("pk.pub_seed != sk.pub_seed %llu",i);
+    if (pk[i] != sk[4+3*XMSS_N+i]) printf("pk.root != sk.root %llu",i);
   }
 
   // check index
@@ -81,7 +72,7 @@ int main()
 
   for (i = 0; i < SIGNATURES; i++) {
     printf("sign\n");
-    xmss_sign(sk, state, sm, &smlen, mi, MLEN, params);
+    xmss_sign(sk, state, sm, &smlen, mi, MLEN);
     idx = ((unsigned long)sm[0] << 24) | ((unsigned long)sm[1] << 16) | ((unsigned long)sm[2] << 8) | sm[3];
     printf("\nidx = %lu\n",idx);
 
@@ -90,7 +81,7 @@ int main()
 
         /* Test valid signature */
     printf("verify\n");
-    r = xmss_sign_open(mo, &mlen, sm, smlen, pk, params);
+    r = xmss_sign_open(mo, &mlen, sm, smlen, pk);
     printf("%d\n", r);
     if (r != 0) errors++;
     r = memcmp(mi,mo,MLEN);
@@ -99,7 +90,7 @@ int main()
 
     /* Test with modified message */
     sm[signature_length+10] ^= 1;
-    r = xmss_sign_open(mo, &mlen, sm, smlen, pk, params);
+    r = xmss_sign_open(mo, &mlen, sm, smlen, pk);
     printf("%d\n", r+1);
     if (r == 0) errors++;
     r = memcmp(mi,mo,MLEN);
@@ -110,7 +101,7 @@ int main()
     /* Modified index */
     sm[signature_length+10] ^= 1;
     sm[2] ^= 1;
-    r = xmss_sign_open(mo, &mlen, sm, smlen, pk, params);
+    r = xmss_sign_open(mo, &mlen, sm, smlen, pk);
     printf("%d\n", r+1);
     if (r == 0) errors++;
     r = memcmp(mi,mo,MLEN);
@@ -120,7 +111,7 @@ int main()
     /* Modified R */
     sm[2] ^= 1;
     sm[5] ^= 1;
-    r = xmss_sign_open(mo, &mlen, sm, smlen, pk, params);
+    r = xmss_sign_open(mo, &mlen, sm, smlen, pk);
     printf("%d\n", r+1);
     if (r == 0) errors++;
     r = memcmp(mi,mo,MLEN);
@@ -130,7 +121,7 @@ int main()
     /* Modified OTS sig */
     sm[5] ^= 1;
     sm[240] ^= 1;
-    r = xmss_sign_open(mo, &mlen, sm, smlen, pk, params);
+    r = xmss_sign_open(mo, &mlen, sm, smlen, pk);
     printf("%d\n", r+1);
     if (r == 0) errors++;
     r = memcmp(mi,mo,MLEN);
@@ -140,7 +131,7 @@ int main()
     /* Modified AUTH */
     sm[240] ^= 1;
     sm[signature_length - 10] ^= 1;
-    r = xmss_sign_open(mo, &mlen, sm, smlen, pk, params);
+    r = xmss_sign_open(mo, &mlen, sm, smlen, pk);
     printf("%d\n", r+1);
     if (r == 0) errors++;
     r = memcmp(mi,mo,MLEN);
@@ -150,7 +141,5 @@ int main()
 
   printf("#errors = %lu\n", errors);
   printf("finished loop\n");
-  fclose(urandom);
-  printf("closed urandom\n");
   return 0;
 }
