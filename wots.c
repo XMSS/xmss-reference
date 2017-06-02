@@ -9,8 +9,6 @@ Public domain.
 #include "stdio.h"
 #include "stdint.h"
 #include "xmss_commons.h"
-//#include "params.h"
-//#include "prg.h"
 #include "hash.h"
 #include "wots.h"
 #include "hash_address.h"
@@ -46,7 +44,7 @@ static void gen_chain(unsigned char *out, const unsigned char *in, unsigned int 
 
   for (i = start; i < (start+steps) && i < XMSS_WOTS_W; i++) {
     setHashADRS(addr, i);
-    hash_f(out, out, pub_seed, addr, XMSS_N);
+    hash_f(out, out, pub_seed, addr);
   }
 }
 

@@ -8,7 +8,7 @@ Public domain.
 #ifndef WOTS_H
 #define WOTS_H
 
-#include "stdint.h"
+#include <stdint.h>
 
 /**
  * WOTS key generation. Takes a 32byte seed for the secret key, expands it to a full WOTS secret key and computes the corresponding public key. 

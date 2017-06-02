@@ -6,7 +6,7 @@
 #include "../randombytes.h"
 
 #define MLEN 3491
-#define SIGNATURES 50
+#define SIGNATURES 5
 
 unsigned char mi[MLEN];
 unsigned long long smlen;

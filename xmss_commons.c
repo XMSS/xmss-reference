@@ -9,7 +9,6 @@ Public domain.
 
 #include <stdlib.h>
 #include <string.h>
-#include <stdio.h>
 #include <stdint.h>
 
 #include "wots.h"
@@ -77,7 +76,7 @@ void l_tree(unsigned char *leaf, unsigned char *wots_pk, const unsigned char *pu
        //ADRS.setTreeIndex(i);
        setTreeIndex(addr, i);
        //wots_pk[i] = RAND_HASH(pk[2i], pk[2i + 1], SEED, ADRS);
-       hash_h(wots_pk+i*XMSS_N, wots_pk+i*2*XMSS_N, pub_seed, addr, XMSS_N);
+       hash_h(wots_pk+i*XMSS_N, wots_pk+i*2*XMSS_N, pub_seed, addr);
      }
      //if ( l % 2 == 1 ) {
      if (l & 1) {
@@ -122,17 +121,17 @@ static void validate_authpath(unsigned char *root, const unsigned char *leaf, un
   }
   authpath += XMSS_N;
 
-  for (i=0; i < XMSS_TREEHEIGHT-1; i++) {
+  for (i = 0; i < XMSS_TREEHEIGHT-1; i++) {
     setTreeHeight(addr, i);
     leafidx >>= 1;
     setTreeIndex(addr, leafidx);
     if (leafidx&1) {
-      hash_h(buffer+XMSS_N, buffer, pub_seed, addr, XMSS_N);
+      hash_h(buffer+XMSS_N, buffer, pub_seed, addr);
       for (j = 0; j < XMSS_N; j++)
         buffer[j] = authpath[j];
     }
     else {
-      hash_h(buffer, buffer, pub_seed, addr, XMSS_N);
+      hash_h(buffer, buffer, pub_seed, addr);
       for (j = 0; j < XMSS_N; j++)
         buffer[j+XMSS_N] = authpath[j];
     }
@@ -141,15 +140,14 @@ static void validate_authpath(unsigned char *root, const unsigned char *leaf, un
   setTreeHeight(addr, (XMSS_TREEHEIGHT-1));
   leafidx >>= 1;
   setTreeIndex(addr, leafidx);
-  hash_h(root, buffer, pub_seed, addr, XMSS_N);
+  hash_h(root, buffer, pub_seed, addr);
 }
 
 /**
  * Verifies a given message signature pair under a given public key.
  */
-int xmss_sign_open(unsigned char *msg, unsigned long long *msglen, const unsigned char *sig_msg, unsigned long long sig_msg_len, const unsigned char *pk)
+int xmss_sign_open(unsigned char *m, unsigned long long *mlen, const unsigned char *sm, unsigned long long smlen, const unsigned char *pk)
 {
-  
   unsigned long long i, m_len;
   unsigned long idx=0;
   unsigned char wots_pk[XMSS_WOTS_KEYSIZE];
@@ -169,25 +167,24 @@ int xmss_sign_open(unsigned char *msg, unsigned long long *msglen, const unsigne
   setType(ots_addr, 0);
   setType(ltree_addr, 1);
   setType(node_addr, 2);
-  
+
   // Extract index
-  idx = ((unsigned long)sig_msg[0] << 24) | ((unsigned long)sig_msg[1] << 16) | ((unsigned long)sig_msg[2] << 8) | sig_msg[3];
-  printf("verify:: idx = %lu\n", idx);
-  
+  idx = ((unsigned long)sm[0] << 24) | ((unsigned long)sm[1] << 16) | ((unsigned long)sm[2] << 8) | sm[3];
+
   // Generate hash key (R || root || idx)
-  memcpy(hash_key, sig_msg+4,XMSS_N);
+  memcpy(hash_key, sm+4,XMSS_N);
   memcpy(hash_key+XMSS_N, pk, XMSS_N);
   to_byte(hash_key+2*XMSS_N, idx, XMSS_N);
-  
-  sig_msg += (XMSS_N+4);
-  sig_msg_len -= (XMSS_N+4);
-  
 
-  // hash message 
+  sm += (XMSS_N+4);
+  smlen -= (XMSS_N+4);
+
+
+  // hash message
   unsigned long long tmp_sig_len = XMSS_WOTS_KEYSIZE+XMSS_TREEHEIGHT*XMSS_N;
-  m_len = sig_msg_len - tmp_sig_len;
-  h_msg(msg_h, sig_msg + tmp_sig_len, m_len, hash_key, 3*XMSS_N, XMSS_N);
-  
+  m_len = smlen - tmp_sig_len;
+  h_msg(msg_h, sm + tmp_sig_len, m_len, hash_key, 3*XMSS_N);
+
   //-----------------------
   // Verify signature
   //-----------------------
@@ -195,44 +192,44 @@ int xmss_sign_open(unsigned char *msg, unsigned long long *msglen, const unsigne
   // Prepare Address
   setOTSADRS(ots_addr, idx);
   // Check WOTS signature
-  wots_pkFromSig(wots_pk, sig_msg, msg_h, pub_seed, ots_addr);
+  wots_pkFromSig(wots_pk, sm, msg_h, pub_seed, ots_addr);
 
-  sig_msg += XMSS_WOTS_KEYSIZE;
-  sig_msg_len -= XMSS_WOTS_KEYSIZE;
+  sm += XMSS_WOTS_KEYSIZE;
+  smlen -= XMSS_WOTS_KEYSIZE;
 
   // Compute Ltree
   setLtreeADRS(ltree_addr, idx);
   l_tree(pkhash, wots_pk, pub_seed, ltree_addr);
 
   // Compute root
-  validate_authpath(root, pkhash, idx, sig_msg, pub_seed, node_addr);
+  validate_authpath(root, pkhash, idx, sm, pub_seed, node_addr);
 
-  sig_msg += XMSS_TREEHEIGHT*XMSS_N;
-  sig_msg_len -= XMSS_TREEHEIGHT*XMSS_N;
+  sm += XMSS_TREEHEIGHT*XMSS_N;
+  smlen -= XMSS_TREEHEIGHT*XMSS_N;
 
-  for (i=0; i < XMSS_N; i++)
+  for (i = 0; i < XMSS_N; i++)
     if (root[i] != pk[i])
       goto fail;
 
-  *msglen = sig_msg_len;
-  for (i=0; i < *msglen; i++)
-    msg[i] = sig_msg[i];
+  *mlen = smlen;
+  for (i = 0; i < *mlen; i++)
+    m[i] = sm[i];
 
   return 0;
 
 
 fail:
-  *msglen = sig_msg_len;
-  for (i=0; i < *msglen; i++)
-    msg[i] = 0;
-  *msglen = -1;
+  *mlen = smlen;
+  for (i = 0; i < *mlen; i++)
+    m[i] = 0;
+  *mlen = -1;
   return -1;
 }
 
 /**
  * Verifies a given message signature pair under a given public key.
  */
-int xmssmt_sign_open(unsigned char *msg, unsigned long long *msglen, const unsigned char *sig_msg, unsigned long long sig_msg_len, const unsigned char *pk)
+int xmssmt_sign_open(unsigned char *m, unsigned long long *mlen, const unsigned char *sm, unsigned long long smlen, const unsigned char *pk)
 {
   uint64_t idx_tree;
   uint32_t idx_leaf;
@@ -255,25 +252,23 @@ int xmssmt_sign_open(unsigned char *msg, unsigned long long *msglen, const unsig
 
   // Extract index
   for (i = 0; i < XMSS_INDEX_LEN; i++) {
-    idx |= ((unsigned long long)sig_msg[i]) << (8*(XMSS_INDEX_LEN - 1 - i));
+    idx |= ((unsigned long long)sm[i]) << (8*(XMSS_INDEX_LEN - 1 - i));
   }
-  printf("verify:: idx = %llu\n", idx);
-  sig_msg += XMSS_INDEX_LEN;
-  sig_msg_len -= XMSS_INDEX_LEN;
+  sm += XMSS_INDEX_LEN;
+  smlen -= XMSS_INDEX_LEN;
 
   // Generate hash key (R || root || idx)
-  memcpy(hash_key, sig_msg,XMSS_N);
+  memcpy(hash_key, sm,XMSS_N);
   memcpy(hash_key+XMSS_N, pk, XMSS_N);
   to_byte(hash_key+2*XMSS_N, idx, XMSS_N);
 
-  sig_msg += XMSS_N;
-  sig_msg_len -= XMSS_N;
-  
-  // hash message 
-  unsigned long long tmp_sig_len = (XMSS_D * XMSS_WOTS_KEYSIZE) + (XMSS_FULLHEIGHT * XMSS_N);
-  m_len = sig_msg_len - tmp_sig_len;
-  h_msg(msg_h, sig_msg + tmp_sig_len, m_len, hash_key, 3*XMSS_N, XMSS_N);
+  sm += XMSS_N;
+  smlen -= XMSS_N;
 
+  // hash message
+  unsigned long long tmp_sig_len = (XMSS_D * XMSS_WOTS_KEYSIZE) + (XMSS_FULLHEIGHT * XMSS_N);
+  m_len = smlen - tmp_sig_len;
+  h_msg(msg_h, sm + tmp_sig_len, m_len, hash_key, 3*XMSS_N);
 
   //-----------------------
   // Verify signature
@@ -291,24 +286,24 @@ int xmssmt_sign_open(unsigned char *msg, unsigned long long *msglen, const unsig
 
   memcpy(node_addr, ltree_addr, 12);
   setType(node_addr, 2);
-  
+
   setOTSADRS(ots_addr, idx_leaf);
 
   // Check WOTS signature
-  wots_pkFromSig(wots_pk, sig_msg, msg_h, pub_seed, ots_addr);
+  wots_pkFromSig(wots_pk, sm, msg_h, pub_seed, ots_addr);
 
-  sig_msg += XMSS_WOTS_KEYSIZE;
-  sig_msg_len -= XMSS_WOTS_KEYSIZE;
+  sm += XMSS_WOTS_KEYSIZE;
+  smlen -= XMSS_WOTS_KEYSIZE;
 
   // Compute Ltree
   setLtreeADRS(ltree_addr, idx_leaf);
   l_tree(pkhash, wots_pk, pub_seed, ltree_addr);
 
   // Compute root
-  validate_authpath(root, pkhash, idx_leaf, sig_msg, pub_seed, node_addr);
+  validate_authpath(root, pkhash, idx_leaf, sm, pub_seed, node_addr);
 
-  sig_msg += XMSS_TREEHEIGHT*XMSS_N;
-  sig_msg_len -= XMSS_TREEHEIGHT*XMSS_N;
+  sm += XMSS_TREEHEIGHT*XMSS_N;
+  smlen -= XMSS_TREEHEIGHT*XMSS_N;
 
   for (i = 1; i < XMSS_D; i++) {
     // Prepare Address
@@ -328,38 +323,38 @@ int xmssmt_sign_open(unsigned char *msg, unsigned long long *msglen, const unsig
     setOTSADRS(ots_addr, idx_leaf);
 
     // Check WOTS signature
-    wots_pkFromSig(wots_pk, sig_msg, root, pub_seed, ots_addr);
+    wots_pkFromSig(wots_pk, sm, root, pub_seed, ots_addr);
 
-    sig_msg += XMSS_WOTS_KEYSIZE;
-    sig_msg_len -= XMSS_WOTS_KEYSIZE;
+    sm += XMSS_WOTS_KEYSIZE;
+    smlen -= XMSS_WOTS_KEYSIZE;
 
     // Compute Ltree
     setLtreeADRS(ltree_addr, idx_leaf);
     l_tree(pkhash, wots_pk, pub_seed, ltree_addr);
 
     // Compute root
-    validate_authpath(root, pkhash, idx_leaf, sig_msg, pub_seed, node_addr);
+    validate_authpath(root, pkhash, idx_leaf, sm, pub_seed, node_addr);
 
-    sig_msg += XMSS_TREEHEIGHT*XMSS_N;
-    sig_msg_len -= XMSS_TREEHEIGHT*XMSS_N;
+    sm += XMSS_TREEHEIGHT*XMSS_N;
+    smlen -= XMSS_TREEHEIGHT*XMSS_N;
 
   }
 
-  for (i=0; i < XMSS_N; i++)
+  for (i = 0; i < XMSS_N; i++)
     if (root[i] != pk[i])
       goto fail;
 
-  *msglen = sig_msg_len;
-  for (i=0; i < *msglen; i++)
-    msg[i] = sig_msg[i];
+  *mlen = smlen;
+  for (i = 0; i < *mlen; i++)
+    m[i] = sm[i];
 
   return 0;
 
 
 fail:
-  *msglen = sig_msg_len;
-  for (i=0; i < *msglen; i++)
-    msg[i] = 0;
-  *msglen = -1;
+  *mlen = smlen;
+  for (i = 0; i < *mlen; i++)
+    m[i] = 0;
+  *mlen = -1;
   return -1;
 }

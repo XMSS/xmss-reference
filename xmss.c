@@ -9,25 +9,20 @@ Public domain.
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
-#include <math.h>
 
 #include "randombytes.h"
 #include "wots.h"
 #include "hash.h"
-//#include "prg.h"
 #include "xmss_commons.h"
 #include "hash_address.h"
 #include "params.h"
-
-// For testing
-#include "stdio.h"
 
 /**
  * Merkle's TreeHash algorithm. The address only needs to initialize the first 78 bits of addr. Everything else will be set by treehash.
  * Currently only used for key generation.
  *
  */
-static void treehash(unsigned char *node, uint16_t height, uint32_t index, const unsigned char *sk_seed, const unsigned char *pub_seed, const uint32_t addr[8])
+static void treehash(unsigned char *node, uint32_t index, const unsigned char *sk_seed, const unsigned char *pub_seed, const uint32_t addr[8])
 {
   uint32_t idx = index;
   // use three different addresses because at this point we use all three formats in parallel
@@ -44,11 +39,11 @@ static void treehash(unsigned char *node, uint16_t height, uint32_t index, const
   setType(node_addr, 2);
 
   uint32_t lastnode, i;
-  unsigned char stack[(height+1)*XMSS_N];
-  uint16_t stacklevels[height+1];
+  unsigned char stack[(XMSS_TREEHEIGHT+1)*XMSS_N];
+  uint16_t stacklevels[XMSS_TREEHEIGHT+1];
   unsigned int stackoffset=0;
 
-  lastnode = idx+(1 << height);
+  lastnode = idx+(1 << XMSS_TREEHEIGHT);
 
   for (; idx < lastnode; idx++) {
     setLtreeADRS(ltree_addr, idx);
@@ -59,13 +54,12 @@ static void treehash(unsigned char *node, uint16_t height, uint32_t index, const
     while (stackoffset>1 && stacklevels[stackoffset-1] == stacklevels[stackoffset-2]) {
       setTreeHeight(node_addr, stacklevels[stackoffset-1]);
       setTreeIndex(node_addr, (idx >> (stacklevels[stackoffset-1]+1)));
-      hash_h(stack+(stackoffset-2)*XMSS_N, stack+(stackoffset-2)*XMSS_N, pub_seed,
-          node_addr, XMSS_N);
+      hash_h(stack+(stackoffset-2)*XMSS_N, stack+(stackoffset-2)*XMSS_N, pub_seed, node_addr);
       stacklevels[stackoffset-2]++;
       stackoffset--;
     }
   }
-  for (i=0; i < XMSS_N; i++)
+  for (i = 0; i < XMSS_N; i++)
     node[i] = stack[i];
 }
 
@@ -107,13 +101,13 @@ static void compute_authpath_wots(unsigned char *root, unsigned char *authpath, 
     // Inner loop: for each pair of sibling nodes
     for (j = 0; j < i; j+=2) {
       setTreeIndex(node_addr, j>>1);
-      hash_h(tree + (i>>1)*XMSS_N + (j>>1) * XMSS_N, tree + i*XMSS_N + j*XMSS_N, pub_seed, node_addr, XMSS_N);
+      hash_h(tree + (i>>1)*XMSS_N + (j>>1) * XMSS_N, tree + i*XMSS_N + j*XMSS_N, pub_seed, node_addr);
     }
     level++;
   }
 
   // copy authpath
-  for (i=0; i < XMSS_TREEHEIGHT; i++)
+  for (i = 0; i < XMSS_TREEHEIGHT; i++)
     memcpy(authpath + i*XMSS_N, tree + ((1<<XMSS_TREEHEIGHT)>>i)*XMSS_N + ((leaf_idx >> i) ^ 1) * XMSS_N, XMSS_N);
 
   // copy root
@@ -140,7 +134,7 @@ int xmss_keypair(unsigned char *pk, unsigned char *sk)
 
   uint32_t addr[8] = {0, 0, 0, 0, 0, 0, 0, 0};
   // Compute root
-  treehash(pk, XMSS_TREEHEIGHT, 0, sk+4, sk+4+2*XMSS_N, addr);
+  treehash(pk, 0, sk+4, sk+4+2*XMSS_N, addr);
   // copy root to sk
   memcpy(sk+4+3*XMSS_N, pk, XMSS_N);
   return 0;
@@ -153,26 +147,25 @@ int xmss_keypair(unsigned char *pk, unsigned char *sk)
  * 2. an updated secret key!
  *
  */
-int xmss_sign(unsigned char *sk, unsigned char *sig_msg, unsigned long long *sig_msg_len, const unsigned char *msg, unsigned long long msglen)
+int xmss_sign(unsigned char *sk, unsigned char *sm, unsigned long long *smlen, const unsigned char *m, unsigned long long mlen)
 {
   uint16_t i = 0;
 
   // Extract SK
   uint32_t idx = ((unsigned long)sk[0] << 24) | ((unsigned long)sk[1] << 16) | ((unsigned long)sk[2] << 8) | sk[3];
   unsigned char sk_seed[XMSS_N];
-  memcpy(sk_seed, sk+4, XMSS_N);
   unsigned char sk_prf[XMSS_N];
-  memcpy(sk_prf, sk+4+XMSS_N, XMSS_N);
   unsigned char pub_seed[XMSS_N];
-  memcpy(pub_seed, sk+4+2*XMSS_N, XMSS_N);
-  
+  unsigned char hash_key[3*XMSS_N];
+
   // index as 32 bytes string
   unsigned char idx_bytes_32[32];
   to_byte(idx_bytes_32, idx, 32);
-  
-  
-  unsigned char hash_key[3*XMSS_N];
-  
+
+  memcpy(sk_seed, sk+4, XMSS_N);
+  memcpy(sk_prf, sk+4+XMSS_N, XMSS_N);
+  memcpy(pub_seed, sk+4+2*XMSS_N, XMSS_N);
+
   // Update SK
   sk[0] = ((idx + 1) >> 24) & 255;
   sk[1] = ((idx + 1) >> 16) & 255;
@@ -200,26 +193,26 @@ int xmss_sign(unsigned char *sk, unsigned char *sig_msg, unsigned long long *sig
   memcpy(hash_key+XMSS_N, sk+4+3*XMSS_N, XMSS_N);
   to_byte(hash_key+2*XMSS_N, idx, XMSS_N);
   // Then use it for message digest
-  h_msg(msg_h, msg, msglen, hash_key, 3*XMSS_N, XMSS_N);
-  
+  h_msg(msg_h, m, mlen, hash_key, 3*XMSS_N);
+
   // Start collecting signature
-  *sig_msg_len = 0;
+  *smlen = 0;
 
   // Copy index to signature
-  sig_msg[0] = (idx >> 24) & 255;
-  sig_msg[1] = (idx >> 16) & 255;
-  sig_msg[2] = (idx >> 8) & 255;
-  sig_msg[3] = idx & 255;
+  sm[0] = (idx >> 24) & 255;
+  sm[1] = (idx >> 16) & 255;
+  sm[2] = (idx >> 8) & 255;
+  sm[3] = idx & 255;
 
-  sig_msg += 4;
-  *sig_msg_len += 4;
+  sm += 4;
+  *smlen += 4;
 
   // Copy R to signature
   for (i = 0; i < XMSS_N; i++)
-    sig_msg[i] = R[i];
+    sm[i] = R[i];
 
-  sig_msg += XMSS_N;
-  *sig_msg_len += XMSS_N;
+  sm += XMSS_N;
+  *smlen += XMSS_N;
 
   // ----------------------------------
   // Now we start to "really sign"
@@ -233,20 +226,17 @@ int xmss_sign(unsigned char *sk, unsigned char *sig_msg, unsigned long long *sig
   get_seed(ots_seed, sk_seed, ots_addr);
 
   // Compute WOTS signature
-  wots_sign(sig_msg, msg_h, ots_seed, pub_seed, ots_addr);
+  wots_sign(sm, msg_h, ots_seed, pub_seed, ots_addr);
 
-  sig_msg += XMSS_WOTS_KEYSIZE;
-  *sig_msg_len += XMSS_WOTS_KEYSIZE;
+  sm += XMSS_WOTS_KEYSIZE;
+  *smlen += XMSS_WOTS_KEYSIZE;
 
-  compute_authpath_wots(root, sig_msg, idx, sk_seed, pub_seed, ots_addr);
-  sig_msg += XMSS_TREEHEIGHT*XMSS_N;
-  *sig_msg_len += XMSS_TREEHEIGHT*XMSS_N;
+  compute_authpath_wots(root, sm, idx, sk_seed, pub_seed, ots_addr);
+  sm += XMSS_TREEHEIGHT*XMSS_N;
+  *smlen += XMSS_TREEHEIGHT*XMSS_N;
 
-  //Whipe secret elements?
-  //zerobytes(tsk, CRYPTO_SECRETKEYBYTES);
-
-  memcpy(sig_msg, msg, msglen);
-  *sig_msg_len += msglen;
+  memcpy(sm, m, mlen);
+  *smlen += mlen;
 
   return 0;
 }
@@ -273,7 +263,7 @@ int xmssmt_keypair(unsigned char *pk, unsigned char *sk)
   setLayerADRS(addr, (XMSS_D-1));
 
   // Compute root
-  treehash(pk, XMSS_TREEHEIGHT, 0, sk+XMSS_INDEX_LEN, pk+XMSS_N, addr);
+  treehash(pk, 0, sk+XMSS_INDEX_LEN, pk+XMSS_N, addr);
   memcpy(sk+XMSS_INDEX_LEN+3*XMSS_N, pk, XMSS_N);
   return 0;
 }
@@ -285,7 +275,7 @@ int xmssmt_keypair(unsigned char *pk, unsigned char *sk)
  * 2. an updated secret key!
  *
  */
-int xmssmt_sign(unsigned char *sk, unsigned char *sig_msg, unsigned long long *sig_msg_len, const unsigned char *msg, unsigned long long msglen)
+int xmssmt_sign(unsigned char *sk, unsigned char *sm, unsigned long long *smlen, const unsigned char *m, unsigned long long mlen)
 {
   uint64_t idx_tree;
   uint32_t idx_leaf;
@@ -335,25 +325,25 @@ int xmssmt_sign(unsigned char *sk, unsigned char *sig_msg, unsigned long long *s
   to_byte(hash_key+2*XMSS_N, idx, XMSS_N);
 
   // Then use it for message digest
-  h_msg(msg_h, msg, msglen, hash_key, 3*XMSS_N, XMSS_N);
+  h_msg(msg_h, m, mlen, hash_key, 3*XMSS_N);
 
   // Start collecting signature
-  *sig_msg_len = 0;
+  *smlen = 0;
 
   // Copy index to signature
   for (i = 0; i < XMSS_INDEX_LEN; i++) {
-    sig_msg[i] = (idx >> 8*(XMSS_INDEX_LEN - 1 - i)) & 255;
+    sm[i] = (idx >> 8*(XMSS_INDEX_LEN - 1 - i)) & 255;
   }
 
-  sig_msg += XMSS_INDEX_LEN;
-  *sig_msg_len += XMSS_INDEX_LEN;
+  sm += XMSS_INDEX_LEN;
+  *smlen += XMSS_INDEX_LEN;
 
   // Copy R to signature
-  for (i=0; i < XMSS_N; i++)
-    sig_msg[i] = R[i];
+  for (i = 0; i < XMSS_N; i++)
+    sm[i] = R[i];
 
-  sig_msg += XMSS_N;
-  *sig_msg_len += XMSS_N;
+  sm += XMSS_N;
+  *smlen += XMSS_N;
 
   // ----------------------------------
   // Now we start to "really sign"
@@ -373,14 +363,14 @@ int xmssmt_sign(unsigned char *sk, unsigned char *sig_msg, unsigned long long *s
   get_seed(ots_seed, sk_seed, ots_addr);
 
   // Compute WOTS signature
-  wots_sign(sig_msg, msg_h, ots_seed, pub_seed, ots_addr);
+  wots_sign(sm, msg_h, ots_seed, pub_seed, ots_addr);
 
-  sig_msg += XMSS_WOTS_KEYSIZE;
-  *sig_msg_len += XMSS_WOTS_KEYSIZE;
+  sm += XMSS_WOTS_KEYSIZE;
+  *smlen += XMSS_WOTS_KEYSIZE;
 
-  compute_authpath_wots(root, sig_msg, idx_leaf, sk_seed, pub_seed, ots_addr);
-  sig_msg += XMSS_TREEHEIGHT*XMSS_N;
-  *sig_msg_len += XMSS_TREEHEIGHT*XMSS_N;
+  compute_authpath_wots(root, sm, idx_leaf, sk_seed, pub_seed, ots_addr);
+  sm += XMSS_TREEHEIGHT*XMSS_N;
+  *smlen += XMSS_TREEHEIGHT*XMSS_N;
 
   // Now loop over remaining layers...
   unsigned int j;
@@ -396,21 +386,18 @@ int xmssmt_sign(unsigned char *sk, unsigned char *sig_msg, unsigned long long *s
     get_seed(ots_seed, sk_seed, ots_addr);
 
     // Compute WOTS signature
-    wots_sign(sig_msg, root, ots_seed, pub_seed, ots_addr);
+    wots_sign(sm, root, ots_seed, pub_seed, ots_addr);
 
-    sig_msg += XMSS_WOTS_KEYSIZE;
-    *sig_msg_len += XMSS_WOTS_KEYSIZE;
+    sm += XMSS_WOTS_KEYSIZE;
+    *smlen += XMSS_WOTS_KEYSIZE;
 
-    compute_authpath_wots(root, sig_msg, idx_leaf, sk_seed, pub_seed, ots_addr);
-    sig_msg += XMSS_TREEHEIGHT*XMSS_N;
-    *sig_msg_len += XMSS_TREEHEIGHT*XMSS_N;
+    compute_authpath_wots(root, sm, idx_leaf, sk_seed, pub_seed, ots_addr);
+    sm += XMSS_TREEHEIGHT*XMSS_N;
+    *smlen += XMSS_TREEHEIGHT*XMSS_N;
   }
 
-  //Whipe secret elements?
-  //zerobytes(tsk, CRYPTO_SECRETKEYBYTES);
-
-  memcpy(sig_msg, msg, msglen);
-  *sig_msg_len += msglen;
+  memcpy(sm, m, mlen);
+  *smlen += mlen;
 
   return 0;
 }

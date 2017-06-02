@@ -23,16 +23,16 @@ typedef struct{
 int xmss_keypair(unsigned char *pk, unsigned char *sk);
 /**
  * Signs a message.
- * Returns 
+ * Returns
  * 1. an array containing the signature followed by the message AND
  * 2. an updated secret key!
- * 
+ *
  */
 int xmss_sign(unsigned char *sk, unsigned char *sig_msg, unsigned long long *sig_msg_len, const unsigned char *msg, unsigned long long msglen);
 /**
  * Verifies a given message signature pair under a given public key.
- * 
- * Note: msg and msglen are pure outputs which carry the message in case verification succeeds. The (input) message is assumed to be within sig_msg which has the form (sig||msg). 
+ *
+ * Note: msg and msglen are pure outputs which carry the message in case verification succeeds. The (input) message is assumed to be within sig_msg which has the form (sig||msg).
  */
 int xmss_sign_open(unsigned char *msg, unsigned long long *msglen, const unsigned char *sig_msg, unsigned long long sig_msg_len, const unsigned char *pk);
 
@@ -44,10 +44,10 @@ int xmss_sign_open(unsigned char *msg, unsigned long long *msglen, const unsigne
 int xmssmt_keypair(unsigned char *pk, unsigned char *sk);
 /**
  * Signs a message.
- * Returns 
+ * Returns
  * 1. an array containing the signature followed by the message AND
  * 2. an updated secret key!
- * 
+ *
  */
 int xmssmt_sign(unsigned char *sk, unsigned char *sig_msg, unsigned long long *sig_msg_len, const unsigned char *msg, unsigned long long msglen);
 /**
