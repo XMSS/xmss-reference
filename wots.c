@@ -70,7 +70,7 @@ static void base_w(int *output, const int out_len, const unsigned char *input, c
 {
   int in = 0;
   int out = 0;
-  uint32_t total = 0;
+  uint8_t total = 0;
   int bits = 0;
   int consumed = 0;
 
@@ -116,7 +116,7 @@ void wots_sign(unsigned char *sig, const unsigned char *msg, const unsigned char
   unsigned char csum_bytes[len_2_bytes];
   to_byte(csum_bytes, csum, len_2_bytes);
 
-  int csum_basew[len_2_bytes / params->log_w];
+  int csum_basew[params->len_2];
   base_w(csum_basew, params->len_2, csum_bytes, params);
 
   for (i = 0; i < params->len_2; i++) {
@@ -150,7 +150,7 @@ void wots_pkFromSig(unsigned char *pk, const unsigned char *sig, const unsigned 
   unsigned char csum_bytes[len_2_bytes];
   to_byte(csum_bytes, csum, len_2_bytes);
 
-  int csum_basew[len_2_bytes / params->log_w];
+  int csum_basew[params->len_2];
   base_w(csum_basew, params->len_2, csum_bytes, params);
 
   for (i = 0; i < params->len_2; i++) {

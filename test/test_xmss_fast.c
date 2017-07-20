@@ -25,7 +25,7 @@ int main()
   int r;
   unsigned long long i;
   unsigned int n = 32;
-  unsigned int h = 8;
+  unsigned int h = 20;
   unsigned int w = 16;
   unsigned int k = 2;
 
