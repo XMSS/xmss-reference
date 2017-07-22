@@ -2,6 +2,7 @@
 #include <string.h>
 
 #include "../xmss_fast.h"
+#include "../hash.h"
 
 #define MLEN 3491
 #define SIGNATURES 4096
@@ -19,10 +20,11 @@ int main()
   unsigned int d = 3;
   unsigned int w = 16;
   unsigned int k = 2;
+  unsigned char hash_alg = XMSS_SHA2;
 
   xmssmt_params p;
   xmssmt_params *params = &p;
-  if (xmssmt_set_params(params, n, h, d, w, k)) {
+  if (xmssmt_set_params(params, n, h, d, w, k, hash_alg)) {
     return 1;
   }
 

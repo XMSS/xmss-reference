@@ -3,6 +3,7 @@
 #include <stdlib.h>
 
 #include "../xmss_fast.h"
+#include "../hash.h"
 
 #define MLEN 3491
 #define SIGNATURES 256
@@ -28,6 +29,7 @@ int main()
   unsigned int h = 20;
   unsigned int w = 16;
   unsigned int k = 2;
+  unsigned char hash_alg = XMSS_SHA2;
 
   unsigned long errors = 0;
 
@@ -36,7 +38,7 @@ int main()
 
   xmss_params p;
   xmss_params *params = &p;
-  xmss_set_params(params, n, h, w, k);
+  xmss_set_params(params, n, h, w, k, hash_alg);
 
   // TODO should we hide this into xmss_fast.c and just allocate a large enough chunk of memory here?
   unsigned char stack[(h+1)*n];
@@ -67,8 +69,6 @@ int main()
   printf("cycles = %llu\n", (t2-t1));
   double sec = (t2-t1)/3500000;
   printf("ms = %f\n", sec);
-  int read;
-  read = fgetc(stdin);
   // check pub_seed in SK
   for (i = 0; i < n; i++) {
     if (pk[n+i] != sk[4+2*n+i]) printf("pk.pub_seed != sk.pub_seed %llu",i);

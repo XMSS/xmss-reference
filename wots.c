@@ -16,7 +16,7 @@ Public domain.
 #include "hash_address.h"
 
 
-void wots_set_params(wots_params *params, int n, int w)
+void wots_set_params(wots_params *params, int n, int w, unsigned char hash_alg)
 {
   params->n = n;
   params->w = w;
@@ -25,6 +25,7 @@ void wots_set_params(wots_params *params, int n, int w)
   params->len_2 = (int) floor(log2(params->len_1*(w-1)) / params->log_w) + 1;
   params->len = params->len_1 + params->len_2;
   params->keysize = params->len*params->n;
+  params->hash_alg = hash_alg;
 }
 
 /**
@@ -38,7 +39,7 @@ static void expand_seed(unsigned char *outseeds, const unsigned char *inseed, co
   unsigned char ctr[32];
   for(i = 0; i < params->len; i++){
     to_byte(ctr, i, 32);
-    prf((outseeds + (i*params->n)), ctr, inseed, params->n);
+    prf((outseeds + (i*params->n)), ctr, inseed, params->n, params->hash_alg);
   }
 }
 
@@ -57,7 +58,7 @@ static void gen_chain(unsigned char *out, const unsigned char *in, unsigned int 
 
   for (i = start; i < (start+steps) && i < params->w; i++) {
     setHashADRS(addr, i);
-    hash_f(out, out, pub_seed, addr, params->n);
+    hash_f(out, out, pub_seed, addr, params->n, params->hash_alg);
   }
 }
 

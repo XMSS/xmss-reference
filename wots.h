@@ -23,6 +23,7 @@ typedef struct {
   uint32_t w;
   uint32_t log_w;
   uint32_t keysize;
+  unsigned char hash_alg;
 } wots_params;
 
 /**
@@ -32,7 +33,7 @@ typedef struct {
  *
  * Assumes w is a power of 2
  */
-void wots_set_params(wots_params *params, int n, int w);
+void wots_set_params(wots_params *params, int n, int w, unsigned char hash_alg);
 
 /**
  * WOTS key generation. Takes a 32byte seed for the secret key, expands it to a full WOTS secret key and computes the corresponding public key. 

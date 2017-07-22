@@ -8,6 +8,7 @@ Public domain.
 #include "hash_address.h"
 #include "xmss_commons.h"
 #include "hash.h"
+#include "fips202.h"
 
 #include <stddef.h>
 #include <stdint.h>
@@ -29,7 +30,7 @@ unsigned char* addr_to_byte(unsigned char *bytes, const uint32_t addr[8]){
 #endif   
 }
 
-int core_hash_SHA2(unsigned char *out, const unsigned int type, const unsigned char *key, unsigned int keylen, const unsigned char *in, unsigned long long inlen, unsigned int n){  
+int core_hash(unsigned char *out, const unsigned int type, const unsigned char *key, unsigned int keylen, const unsigned char *in, unsigned long long inlen, unsigned int n, const unsigned char hash_alg){  
   unsigned long long i = 0;
   unsigned char buf[inlen + n + keylen];
   
@@ -46,43 +47,48 @@ int core_hash_SHA2(unsigned char *out, const unsigned int type, const unsigned c
     buf[keylen + n + i] = in[i];
   }
 
-  if (n == 32) {
+  if (n == 32 && hash_alg == XMSS_SHA2) {
     SHA256(buf, inlen + keylen + n, out);
-    return 0;
+  }
+  else if (n == 32 && hash_alg == XMSS_SHAKE) {
+    shake128(out, 32, buf, inlen + keylen + n);
+  }
+  else if (n == 64 && hash_alg == XMSS_SHA2) {
+    SHA512(buf, inlen + keylen + n, out);
+  }
+  else if (n == 64 && hash_alg == XMSS_SHAKE) {
+    shake256(out, 64, buf, inlen + keylen + n);
   }
   else {
-    if (n == 64) {
-      SHA512(buf, inlen + keylen + n, out);
-      return 0;
-    }
+    return 1;
   }
-  return 1;
+  return 0;
 }
 
 /**
  * Implements PRF
  */
-int prf(unsigned char *out, const unsigned char *in, const unsigned char *key, unsigned int keylen)
+int prf(unsigned char *out, const unsigned char *in, const unsigned char *key, unsigned int keylen, const unsigned char hash_alg)
 { 
-  return core_hash_SHA2(out, 3, key, keylen, in, 32, keylen);
+  return core_hash(out, 3, key, keylen, in, 32, keylen, hash_alg);
 }
 
 /*
  * Implemts H_msg
  */
-int h_msg(unsigned char *out, const unsigned char *in, unsigned long long inlen, const unsigned char *key, const unsigned int keylen, const unsigned int n)
+int h_msg(unsigned char *out, const unsigned char *in, unsigned long long inlen, const unsigned char *key, const unsigned int keylen, const unsigned int n, const unsigned char hash_alg)
 {
   if (keylen != 3*n){
     fprintf(stderr, "H_msg takes 3n-bit keys, we got n=%d but a keylength of %d.\n", n, keylen);
     return 1;
   }  
-  return core_hash_SHA2(out, 2, key, keylen, in, inlen, n);
+  return core_hash(out, 2, key, keylen, in, inlen, n, hash_alg);
 }
 
 /**
  * We assume the left half is in in[0]...in[n-1]
  */
-int hash_h(unsigned char *out, const unsigned char *in, const unsigned char *pub_seed, uint32_t addr[8], const unsigned int n)
+int hash_h(unsigned char *out, const unsigned char *in, const unsigned char *pub_seed, uint32_t addr[8], const unsigned int n, const unsigned char hash_alg)
 {
 
   unsigned char buf[2*n];
@@ -93,21 +99,21 @@ int hash_h(unsigned char *out, const unsigned char *in, const unsigned char *pub
 
   setKeyAndMask(addr, 0);
   addr_to_byte(byte_addr, addr);
-  prf(key, byte_addr, pub_seed, n);
+  prf(key, byte_addr, pub_seed, n, hash_alg);
   // Use MSB order
   setKeyAndMask(addr, 1);
   addr_to_byte(byte_addr, addr);
-  prf(bitmask, byte_addr, pub_seed, n);
+  prf(bitmask, byte_addr, pub_seed, n, hash_alg);
   setKeyAndMask(addr, 2);
   addr_to_byte(byte_addr, addr);
-  prf(bitmask+n, byte_addr, pub_seed, n);
+  prf(bitmask+n, byte_addr, pub_seed, n, hash_alg);
   for (i = 0; i < 2*n; i++) {
     buf[i] = in[i] ^ bitmask[i];
   }
-  return core_hash_SHA2(out, 1, key, n, buf, 2*n, n);
+  return core_hash(out, 1, key, n, buf, 2*n, n, hash_alg);
 }
 
-int hash_f(unsigned char *out, const unsigned char *in, const unsigned char *pub_seed, uint32_t addr[8], const unsigned int n)
+int hash_f(unsigned char *out, const unsigned char *in, const unsigned char *pub_seed, uint32_t addr[8], const unsigned int n, const unsigned char hash_alg)
 {
   unsigned char buf[n];
   unsigned char key[n];
@@ -117,14 +123,14 @@ int hash_f(unsigned char *out, const unsigned char *in, const unsigned char *pub
 
   setKeyAndMask(addr, 0);  
   addr_to_byte(byte_addr, addr);  
-  prf(key, byte_addr, pub_seed, n);
+  prf(key, byte_addr, pub_seed, n, hash_alg);
   
   setKeyAndMask(addr, 1);
   addr_to_byte(byte_addr, addr);
-  prf(bitmask, byte_addr, pub_seed, n);
+  prf(bitmask, byte_addr, pub_seed, n, hash_alg);
   
   for (i = 0; i < n; i++) {
     buf[i] = in[i] ^ bitmask[i];
   }
-  return core_hash_SHA2(out, 0, key, n, buf, n, n);
+  return core_hash(out, 0, key, n, buf, n, n, hash_alg);
 }

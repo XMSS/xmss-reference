@@ -28,7 +28,7 @@ Public domain.
  *
  * takes n byte sk_seed and returns n byte seed using 32 byte address addr.
  */
-static void get_seed(unsigned char *seed, const unsigned char *sk_seed, int n, uint32_t addr[8])
+static void get_seed(unsigned char *seed, const unsigned char *sk_seed, int n, uint32_t addr[8], unsigned char hash_alg)
 {
   unsigned char bytes[32];
   // Make sure that chain addr, hash addr, and key bit are 0!
@@ -37,7 +37,7 @@ static void get_seed(unsigned char *seed, const unsigned char *sk_seed, int n, u
   setKeyAndMask(addr,0);
   // Generate pseudorandom value
   addr_to_byte(bytes, addr);
-  prf(seed, bytes, sk_seed, n);
+  prf(seed, bytes, sk_seed, n, hash_alg);
 }
 
 /**
@@ -45,7 +45,7 @@ static void get_seed(unsigned char *seed, const unsigned char *sk_seed, int n, u
  * parameter names are the same as in the draft
  * parameter k is K as used in the BDS algorithm
  */
-int xmss_set_params(xmss_params *params, int n, int h, int w, int k)
+int xmss_set_params(xmss_params *params, int n, int h, int w, int k, unsigned char hash_alg)
 {
   if (k >= h || k < 2 || (h - k) % 2) {
     fprintf(stderr, "For BDS traversal, H - K must be even, with H > K >= 2!\n");
@@ -55,8 +55,9 @@ int xmss_set_params(xmss_params *params, int n, int h, int w, int k)
   params->n = n;
   params->k = k;
   wots_params wots_par;
-  wots_set_params(&wots_par, n, w);
+  wots_set_params(&wots_par, n, w, hash_alg);
   params->wots_par = wots_par;
+  params->hash_alg = hash_alg;
   return 0;
 }
 
@@ -82,7 +83,7 @@ void xmss_set_bds_state(bds_state *state, unsigned char *stack, int stackoffset,
  *
  * Especially h is the total tree height, i.e. the XMSS trees have height h/d
  */
-int xmssmt_set_params(xmssmt_params *params, int n, int h, int d, int w, int k)
+int xmssmt_set_params(xmssmt_params *params, int n, int h, int d, int w, int k, unsigned char hash_alg)
 {
   if (h % d) {
     fprintf(stderr, "d must divide h without remainder!\n");
@@ -93,7 +94,7 @@ int xmssmt_set_params(xmssmt_params *params, int n, int h, int d, int w, int k)
   params->n = n;
   params->index_len = (h + 7) / 8;
   xmss_params xmss_par;
-  if (xmss_set_params(&xmss_par, n, (h/d), w, k)) {
+  if (xmss_set_params(&xmss_par, n, (h/d), w, k, hash_alg)) {
     return 1;
   }
   params->xmss_par = xmss_par;
@@ -120,7 +121,7 @@ static void l_tree(unsigned char *leaf, unsigned char *wots_pk, const xmss_param
        //ADRS.setTreeIndex(i);
        setTreeIndex(addr, i);
        //wots_pk[i] = RAND_HASH(pk[2i], pk[2i + 1], SEED, ADRS);
-       hash_h(wots_pk+i*n, wots_pk+i*2*n, pub_seed, addr, n);
+       hash_h(wots_pk+i*n, wots_pk+i*2*n, pub_seed, addr, n, params->hash_alg);
      }
      //if ( l % 2 == 1 ) {
      if (l & 1) {
@@ -149,7 +150,7 @@ static void gen_leaf_wots(unsigned char *leaf, const unsigned char *sk_seed, con
   unsigned char seed[params->n];
   unsigned char pk[params->wots_par.keysize];
 
-  get_seed(seed, sk_seed, params->n, ots_addr);
+  get_seed(seed, sk_seed, params->n, ots_addr, params->hash_alg);
   wots_pkgen(pk, seed, &(params->wots_par), pub_seed, ots_addr);
 
   l_tree(leaf, pk, params, pub_seed, ltree_addr);
@@ -230,7 +231,7 @@ static void treehash_setup(unsigned char *node, int height, int index, bds_state
       setTreeHeight(node_addr, stacklevels[stackoffset-1]);
       setTreeIndex(node_addr, (idx >> (stacklevels[stackoffset-1]+1)));
       hash_h(stack+(stackoffset-2)*n, stack+(stackoffset-2)*n, pub_seed,
-          node_addr, n);
+          node_addr, n, params->hash_alg);
       stacklevels[stackoffset-2]++;
       stackoffset--;
     }
@@ -267,7 +268,7 @@ static void treehash_update(treehash_inst *treehash, bds_state *state, const uns
     memcpy(nodebuffer, state->stack + (state->stackoffset-1)*n, n);
     setTreeHeight(node_addr, nodeheight);
     setTreeIndex(node_addr, (treehash->next_idx >> (nodeheight+1)));
-    hash_h(nodebuffer, nodebuffer, pub_seed, node_addr, n);
+    hash_h(nodebuffer, nodebuffer, pub_seed, node_addr, n, params->hash_alg);
     nodeheight++;
     treehash->stackusage--;
     state->stackoffset--;
@@ -316,12 +317,12 @@ static void validate_authpath(unsigned char *root, const unsigned char *leaf, un
     leafidx >>= 1;
     setTreeIndex(addr, leafidx);
     if (leafidx&1) {
-      hash_h(buffer+n, buffer, pub_seed, addr, n);
+      hash_h(buffer+n, buffer, pub_seed, addr, n, params->hash_alg);
       for (j = 0; j < n; j++)
         buffer[j] = authpath[j];
     }
     else {
-      hash_h(buffer, buffer, pub_seed, addr, n);
+      hash_h(buffer, buffer, pub_seed, addr, n, params->hash_alg);
       for (j = 0; j < n; j++)
         buffer[j+n] = authpath[j];
     }
@@ -330,7 +331,7 @@ static void validate_authpath(unsigned char *root, const unsigned char *leaf, un
   setTreeHeight(addr, (params->h-1));
   leafidx >>= 1;
   setTreeIndex(addr, leafidx);
-  hash_h(root, buffer, pub_seed, addr, n);
+  hash_h(root, buffer, pub_seed, addr, n, params->hash_alg);
 }
 
 /**
@@ -424,7 +425,7 @@ static char bds_state_update(bds_state *state, const unsigned char *sk_seed, con
     }
     setTreeHeight(node_addr, state->stacklevels[state->stackoffset-1]);
     setTreeIndex(node_addr, (idx >> (state->stacklevels[state->stackoffset-1]+1)));
-    hash_h(state->stack+(state->stackoffset-2)*n, state->stack+(state->stackoffset-2)*n, pub_seed, node_addr, n);
+    hash_h(state->stack+(state->stackoffset-2)*n, state->stack+(state->stackoffset-2)*n, pub_seed, node_addr, n, params->hash_alg);
 
     state->stacklevels[state->stackoffset-2]++;
     state->stackoffset--;
@@ -485,7 +486,7 @@ static void bds_round(bds_state *state, const unsigned long leaf_idx, const unsi
   else {
     setTreeHeight(node_addr, (tau-1));
     setTreeIndex(node_addr, leaf_idx >> tau);
-    hash_h(state->auth + tau * n, buf, pub_seed, node_addr, n);
+    hash_h(state->auth + tau * n, buf, pub_seed, node_addr, n, params->hash_alg);
     for (i = 0; i < tau; i++) {
       if (i < h - k) {
         memcpy(state->auth + i * n, state->treehash[i].node, n);
@@ -585,13 +586,13 @@ int xmss_sign(unsigned char *sk, bds_state *state, unsigned char *sig_msg, unsig
 
   // Message Hash:
   // First compute pseudorandom value
-  prf(R, idx_bytes_32, sk_prf, n);
+  prf(R, idx_bytes_32, sk_prf, n, params->hash_alg);
   // Generate hash key (R || root || idx)
   memcpy(hash_key, R, n);
   memcpy(hash_key+n, sk+4+3*n, n);
   to_byte(hash_key+2*n, idx, n);
   // Then use it for message digest
-  h_msg(msg_h, msg, msglen, hash_key, 3*n, n);
+  h_msg(msg_h, msg, msglen, hash_key, 3*n, n, params->hash_alg);
 
   // Start collecting signature
   *sig_msg_len = 0;
@@ -621,7 +622,7 @@ int xmss_sign(unsigned char *sk, bds_state *state, unsigned char *sig_msg, unsig
   setOTSADRS(ots_addr, idx);
 
   // Compute seed for OTS key pair
-  get_seed(ots_seed, sk_seed, n, ots_addr);
+  get_seed(ots_seed, sk_seed, n, ots_addr, params->hash_alg);
 
   // Compute WOTS signature
   wots_sign(sig_msg, msg_h, ots_seed, &(params->wots_par), pub_seed, ots_addr);
@@ -691,7 +692,7 @@ int xmss_sign_open(unsigned char *msg, unsigned long long *msglen, const unsigne
   // hash message 
   unsigned long long tmp_sig_len = params->wots_par.keysize+params->h*n;
   m_len = sig_msg_len - tmp_sig_len;
-  h_msg(msg_h, sig_msg + tmp_sig_len, m_len, hash_key, 3*n, n);
+  h_msg(msg_h, sig_msg + tmp_sig_len, m_len, hash_key, 3*n, n, params->hash_alg);
 
   //-----------------------
   // Verify signature
@@ -761,7 +762,7 @@ int xmssmt_keypair(unsigned char *pk, unsigned char *sk, bds_state *states, unsi
     // Compute seed for OTS key pair
     treehash_setup(pk, params->xmss_par.h, 0, states + i, sk+params->index_len, &(params->xmss_par), pk+n, addr);
     setLayerADRS(addr, (i+1));
-    get_seed(ots_seed, sk+params->index_len, n, addr);
+    get_seed(ots_seed, sk+params->index_len, n, addr, params->xmss_par.hash_alg);
     wots_sign(wots_sigs + i*params->xmss_par.wots_par.keysize, pk, ots_seed, &(params->xmss_par.wots_par), pk+n, addr);
   }
   // Address now points to the single tree on layer d-1
@@ -829,14 +830,14 @@ int xmssmt_sign(unsigned char *sk, bds_state *states, unsigned char *wots_sigs, 
   // Message Hash:
   // First compute pseudorandom value
   to_byte(idx_bytes_32, idx, 32);
-  prf(R, idx_bytes_32, sk_prf, n);
+  prf(R, idx_bytes_32, sk_prf, n, params->xmss_par.hash_alg);
   // Generate hash key (R || root || idx)
   memcpy(hash_key, R, n);
   memcpy(hash_key+n, sk+idx_len+3*n, n);
   to_byte(hash_key+2*n, idx, n);
   
   // Then use it for message digest
-  h_msg(msg_h, msg, msglen, hash_key, 3*n, n);
+  h_msg(msg_h, msg, msglen, hash_key, 3*n, n, params->xmss_par.hash_alg);
 
   // Start collecting signature
   *sig_msg_len = 0;
@@ -871,7 +872,7 @@ int xmssmt_sign(unsigned char *sk, bds_state *states, unsigned char *wots_sigs, 
   setOTSADRS(ots_addr, idx_leaf);
 
   // Compute seed for OTS key pair
-  get_seed(ots_seed, sk_seed, n, ots_addr);
+  get_seed(ots_seed, sk_seed, n, ots_addr, params->xmss_par.hash_alg);
 
   // Compute WOTS signature
   wots_sign(sig_msg, msg_h, ots_seed, &(params->xmss_par.wots_par), pub_seed, ots_addr);
@@ -934,7 +935,7 @@ int xmssmt_sign(unsigned char *sk, bds_state *states, unsigned char *wots_sigs, 
       setTreeADRS(ots_addr, ((idx + 1) >> ((i+2) * tree_h)));
       setOTSADRS(ots_addr, (((idx >> ((i+1) * tree_h)) + 1) & ((1 << tree_h)-1)));
 
-      get_seed(ots_seed, sk+params->index_len, n, ots_addr);
+      get_seed(ots_seed, sk+params->index_len, n, ots_addr, params->xmss_par.hash_alg);
       wots_sign(wots_sigs + i*params->xmss_par.wots_par.keysize, states[i].stack, ots_seed, &(params->xmss_par.wots_par), pub_seed, ots_addr);
 
       states[params->d + i].stackoffset = 0;
@@ -1005,7 +1006,7 @@ int xmssmt_sign_open(unsigned char *msg, unsigned long long *msglen, const unsig
   // hash message (recall, R is now on pole position at sig_msg
   unsigned long long tmp_sig_len = (params->d * params->xmss_par.wots_par.keysize) + (params->h * n);
   m_len = sig_msg_len - tmp_sig_len;
-  h_msg(msg_h, sig_msg + tmp_sig_len, m_len, hash_key, 3*n, n);
+  h_msg(msg_h, sig_msg + tmp_sig_len, m_len, hash_key, 3*n, n, params->xmss_par.hash_alg);
 
   
   //-----------------------

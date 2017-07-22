@@ -2,6 +2,7 @@
 #include <string.h>
 
 #include "../xmss.h"
+#include "../hash.h"
 
 #define MLEN 3491
 #define SIGNATURES 50
@@ -17,6 +18,7 @@ int main()
   unsigned int n = 32;
   unsigned int h = 8;
   unsigned int w = 16;
+  unsigned char hash_alg = XMSS_SHA2;
 
   unsigned long errors = 0;
 
@@ -25,7 +27,7 @@ int main()
 
   xmss_params p;
   xmss_params *params = &p;
-  xmss_set_params(params, n, h, w);
+  xmss_set_params(params, n, h, w, hash_alg);
   unsigned long long signature_length = 4+n+params->wots_par.keysize+h*n;
   unsigned char mo[MLEN+signature_length];
   unsigned char sm[MLEN+signature_length];

@@ -19,6 +19,7 @@ typedef struct{
   wots_params wots_par;
   unsigned int n;
   unsigned int h;
+  unsigned char hash_alg;
 } xmss_params;
 
 typedef struct{
@@ -32,14 +33,14 @@ typedef struct{
  * Initializes parameter set.
  * Needed, for any of the other methods.
  */
-void xmss_set_params(xmss_params *params, int n, int h, int w);
+void xmss_set_params(xmss_params *params, int n, int h, int w, unsigned char hash_alg);
 /**
  * Initialize xmssmt_params struct
  * parameter names are the same as in the draft
  * 
  * Especially h is the total tree height, i.e. the XMSS trees have height h/d
  */
-void xmssmt_set_params(xmssmt_params *params, int n, int h, int d, int w);
+void xmssmt_set_params(xmssmt_params *params, int n, int h, int d, int w, unsigned char hash_alg);
 /**
  * Generates a XMSS key pair for a given parameter set.
  * Format sk: [(32bit) idx || SK_SEED || SK_PRF || PUB_SEED || root]

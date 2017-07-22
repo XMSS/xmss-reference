@@ -2,6 +2,7 @@
 #include <math.h>
 #include <stdint.h>
 #include "../wots.h"
+#include "../hash.h"
 #include "../randombytes.h"
 
 static void hexdump(unsigned char *a, size_t len)
@@ -17,7 +18,7 @@ int main()
   unsigned char seed[n];
   unsigned char pub_seed[n];
   wots_params params;
-  wots_set_params(&params, n, 16);
+  wots_set_params(&params, n, 16, XMSS_SHA2);
 
   int sig_len = params.len*params.n;
 
