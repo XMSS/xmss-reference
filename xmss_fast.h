@@ -9,11 +9,6 @@ Public domain.
 
 #ifndef XMSS_H
 #define XMSS_H
-typedef struct{
-  unsigned int level;
-  unsigned long long subtree;
-  unsigned int subleaf;
-} leafaddr;
 
 typedef struct{
   unsigned int h;
