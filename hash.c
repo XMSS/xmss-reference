@@ -48,16 +48,16 @@ static int core_hash(unsigned char *out, const unsigned int type, const unsigned
     buf[keylen + n + i] = in[i];
   }
 
-  if (n == 32 && XMSS_FUNC == XMSS_SHA2_256) {
+  if (n == 32 && XMSS_FUNC == XMSS_SHA2) {
     SHA256(buf, inlen + keylen + n, out);
   }
-  else if (n == 32 && XMSS_FUNC == XMSS_SHAKE128) {
+  else if (n == 32 && XMSS_FUNC == XMSS_SHAKE) {
     shake128(out, 32, buf, inlen + keylen + n);
   }
-  else if (n == 64 && XMSS_FUNC == XMSS_SHA2_512) {
+  else if (n == 64 && XMSS_FUNC == XMSS_SHA2) {
     SHA512(buf, inlen + keylen + n, out);
   }
-  else if (n == 64 && XMSS_FUNC == XMSS_SHAKE256) {
+  else if (n == 64 && XMSS_FUNC == XMSS_SHAKE) {
     shake256(out, 64, buf, inlen + keylen + n);
   }
   else {

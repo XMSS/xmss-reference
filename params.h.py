@@ -131,9 +131,9 @@ nvalues = {
     "SHAKE256": 64,
 }
 
-for i, func in enumerate(functions):
-    print("#define XMSS_{} {}".format(func.replace('-', '_'), i))
-print("#define XMSS_FUNC", functions.index(param[1]))
+print("#define XMSS_SHA2 0")
+print("#define XMSS_SHAKE 1")
+print("#define XMSS_FUNC", functions.index(param[1]) // 2)
 
 XMSS_N = int(nvalues[param[1]])
 print("#define XMSS_N", XMSS_N)
