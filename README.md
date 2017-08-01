@@ -2,6 +2,8 @@
 
 This repository contains the reference implementation that accompanies the Internet Draft _"XMSS: Extended Hash-Based Signatures"_, [`draft-irtf-cfrg-xmss-hash-based-signatures`](https://datatracker.ietf.org/doc/draft-irtf-cfrg-xmss-hash-based-signatures/).
 
-**Note:** while the behaviour of the code in this repository is supposed to be stable, the API will still vary. Notably, the current codebase does not account for the XDR definitions of the parameter sets as specified in the Internet Draft, but instead allows the user to set individual parameters.
+This reference implementation supports all parameter sets as defined in the Draft at run-time (specified by prefixing the public and private keys with a 32-bit `oid`), but also allows for compile-time parameters when directly using the internal `*_core*` functions.
 
-_In this branch of the repository, we evaluate the use of parameters based on `#define` clauses. This trivially enables compile-time parameter sets (as is illustrated by the [params.h.py](params.h.py) file), but may also make it easier to create a wrapper that parses the XDR definitions. This is work in progress._
+_While the behavior of the code in this repository is supposed to be stable, the API is not yet fully complete. In particular, the wrapper for run-time parameters does not yet support the back-end functions that make use of BDS traversal (TODO). We will also add more extensive test functionality, making it easier to compare to other XMSS implementations (TODO)._
+
+_When using the current code base, please be careful, expect changes and watch this document for further documentation._
