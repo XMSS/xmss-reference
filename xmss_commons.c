@@ -146,7 +146,7 @@ static void validate_authpath(unsigned char *root, const unsigned char *leaf, un
 /**
  * Verifies a given message signature pair under a given public key.
  */
-int xmss_sign_open(unsigned char *m, unsigned long long *mlen, const unsigned char *sm, unsigned long long smlen, const unsigned char *pk)
+int xmss_core_sign_open(unsigned char *m, unsigned long long *mlen, const unsigned char *sm, unsigned long long smlen, const unsigned char *pk)
 {
   unsigned long long i, m_len;
   unsigned long idx=0;
@@ -229,7 +229,7 @@ fail:
 /**
  * Verifies a given message signature pair under a given public key.
  */
-int xmssmt_sign_open(unsigned char *m, unsigned long long *mlen, const unsigned char *sm, unsigned long long smlen, const unsigned char *pk)
+int xmssmt_core_sign_open(unsigned char *m, unsigned long long *mlen, const unsigned char *sm, unsigned long long smlen, const unsigned char *pk)
 {
   uint64_t idx_tree;
   uint32_t idx_leaf;

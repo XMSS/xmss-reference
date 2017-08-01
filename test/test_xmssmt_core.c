@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "../xmss.h"
+#include "../xmss_core.h"
 #include "../params.h"
 #include "../randombytes.h"
 
@@ -25,7 +25,7 @@ int main()
   unsigned char sm[MLEN+signature_length];
 
   printf("keypair\n");
-  xmssmt_keypair(pk, sk);
+  xmssmt_core_keypair(pk, sk);
   // check pub_seed in SK
   for (i = 0; i < XMSS_N; i++) {
     if (pk[XMSS_N+i] != sk[XMSS_INDEX_LEN+2*XMSS_N+i]) printf("pk.pub_seed != sk.pub_seed %llu",i);
@@ -46,7 +46,7 @@ int main()
     randombytes(mi, MLEN);
 
     printf("sign\n");
-    xmssmt_sign(sk, sm, &smlen, mi, MLEN);
+    xmssmt_core_sign(sk, sm, &smlen, mi, MLEN);
     idx = 0;
     for (j = 0; j < idx_len; j++) {
       idx += ((unsigned long long)sm[j]) << 8*(idx_len - 1 - j);
@@ -62,7 +62,7 @@ int main()
 
     /* Test valid signature */
     printf("verify\n");
-    r = xmssmt_sign_open(mo, &mlen, sm, smlen, pk);
+    r = xmssmt_core_sign_open(mo, &mlen, sm, smlen, pk);
     printf("%d\n", r);
     r = memcmp(mi,mo,MLEN);
     printf("%d\n", r);
@@ -70,7 +70,7 @@ int main()
 
     /* Test with modified message */
     sm[52] ^= 1;
-    r = xmssmt_sign_open(mo, &mlen, sm, smlen, pk);
+    r = xmssmt_core_sign_open(mo, &mlen, sm, smlen, pk);
     printf("%d\n", r+1);
     r = memcmp(mi,mo,MLEN);
     printf("%d\n", (r!=0) - 1);
@@ -80,7 +80,7 @@ int main()
     sm[260] ^= 1;
     sm[52] ^= 1;
     sm[2] ^= 1;
-    r = xmssmt_sign_open(mo, &mlen, sm, smlen, pk);
+    r = xmssmt_core_sign_open(mo, &mlen, sm, smlen, pk);
     printf("%d\n", r+1);
     r = memcmp(mi,mo,MLEN);
     printf("%d\n", (r!=0) - 1);

@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "../xmss_fast.h"
+#include "../xmss_core_fast.h"
 #include "../params.h"
 #include "../randombytes.h"
 
@@ -67,7 +67,7 @@ int main()
   randombytes(mi, MLEN);
 
   printf("keypair\n");
-  xmssmt_keypair(pk, sk, states, wots_sigs);
+  xmssmt_core_keypair(pk, sk, states, wots_sigs);
   // check pub_seed in SK
   for (i = 0; i < n; i++) {
     if (pk[n+i] != sk[XMSS_INDEX_LEN+2*n+i]) printf("pk.pub_seed != sk.pub_seed %llu",i);
@@ -87,7 +87,7 @@ int main()
   for (i = 0; i < SIGNATURES; i++) {
     printf("sign\n");
     t1 = cpucycles();
-    xmssmt_sign(sk, states, wots_sigs, sm, &smlen, mi, MLEN);
+    xmssmt_core_sign(sk, states, wots_sigs, sm, &smlen, mi, MLEN);
     t2 = cpucycles();
     printf("signing cycles = %llu\n", (t2-t1));
 
@@ -102,7 +102,7 @@ int main()
     /* Test valid signature */
     printf("verify\n");
     t1 = cpucycles();
-    r = xmssmt_sign_open(mo, &mlen, sm, smlen, pk);
+    r = xmssmt_core_sign_open(mo, &mlen, sm, smlen, pk);
     t2 = cpucycles();
     printf("verification cycles = %llu\n", (t2-t1));
     printf("%d\n", r);
@@ -112,7 +112,7 @@ int main()
 
     /* Test with modified message */
     sm[52] ^= 1;
-    r = xmssmt_sign_open(mo, &mlen, sm, smlen, pk);
+    r = xmssmt_core_sign_open(mo, &mlen, sm, smlen, pk);
     printf("%d\n", r+1);
     r = memcmp(mi,mo,MLEN);
     printf("%d\n", (r!=0) - 1);
@@ -122,7 +122,7 @@ int main()
     sm[260] ^= 1;
     sm[52] ^= 1;
     sm[2] ^= 1;
-    r = xmssmt_sign_open(mo, &mlen, sm, smlen, pk);
+    r = xmssmt_core_sign_open(mo, &mlen, sm, smlen, pk);
     printf("%d\n", r+1);
     r = memcmp(mi,mo,MLEN);
     printf("%d\n", (r!=0) - 1);

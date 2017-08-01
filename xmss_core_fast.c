@@ -5,7 +5,7 @@ Joost Rijneveld
 Public domain.
 */
 
-#include "xmss_fast.h"
+#include "xmss_core_fast.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
@@ -331,7 +331,7 @@ static void bds_round(bds_state *state, const unsigned long leaf_idx, const unsi
  * Format sk: [(32bit) idx || SK_SEED || SK_PRF || PUB_SEED || root]
  * Format pk: [root || PUB_SEED] omitting algo oid.
  */
-int xmss_keypair(unsigned char *pk, unsigned char *sk, bds_state *state)
+int xmss_core_keypair(unsigned char *pk, unsigned char *sk, bds_state *state)
 {
   // Set idx = 0
   sk[0] = 0;
@@ -359,7 +359,7 @@ int xmss_keypair(unsigned char *pk, unsigned char *sk, bds_state *state)
  * 2. an updated secret key!
  *
  */
-int xmss_sign(unsigned char *sk, bds_state *state, unsigned char *sm, unsigned long long *smlen, const unsigned char *m, unsigned long long mlen)
+int xmss_core_sign(unsigned char *sk, bds_state *state, unsigned char *sm, unsigned long long *smlen, const unsigned char *m, unsigned long long mlen)
 {
   uint16_t i = 0;
 
@@ -464,7 +464,7 @@ int xmss_sign(unsigned char *sk, bds_state *state, unsigned char *sm, unsigned l
  * Format sk: [(ceil(h/8) bit) idx || SK_SEED || SK_PRF || PUB_SEED || root]
  * Format pk: [root || PUB_SEED] omitting algo oid.
  */
-int xmssmt_keypair(unsigned char *pk, unsigned char *sk, bds_state *states, unsigned char *wots_sigs)
+int xmssmt_core_keypair(unsigned char *pk, unsigned char *sk, bds_state *states, unsigned char *wots_sigs)
 {
   unsigned char ots_seed[XMSS_N];
   int i;
@@ -501,7 +501,7 @@ int xmssmt_keypair(unsigned char *pk, unsigned char *sk, bds_state *states, unsi
  * 2. an updated secret key!
  *
  */
-int xmssmt_sign(unsigned char *sk, bds_state *states, unsigned char *wots_sigs, unsigned char *sm, unsigned long long *smlen, const unsigned char *m, unsigned long long mlen)
+int xmssmt_core_sign(unsigned char *sk, bds_state *states, unsigned char *wots_sigs, unsigned char *sm, unsigned long long *smlen, const unsigned char *m, unsigned long long mlen)
 {
   uint64_t idx_tree;
   uint32_t idx_leaf;

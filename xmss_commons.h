@@ -15,6 +15,6 @@ void hexdump(const unsigned char *a, size_t len);
 void gen_leaf_wots(unsigned char *leaf, const unsigned char *sk_seed, const unsigned char *pub_seed, uint32_t ltree_addr[8], uint32_t ots_addr[8]);
 void get_seed(unsigned char *seed, const unsigned char *sk_seed, uint32_t addr[8]);
 void l_tree(unsigned char *leaf, unsigned char *wots_pk, const unsigned char *pub_seed, uint32_t addr[8]);
-int xmss_sign_open(unsigned char *msg, unsigned long long *msglen, const unsigned char *sig_msg, unsigned long long sig_msg_len, const unsigned char *pk);
-int xmssmt_sign_open(unsigned char *msg, unsigned long long *msglen, const unsigned char *sig_msg, unsigned long long sig_msg_len, const unsigned char *pk);
+int xmss_core_sign_open(unsigned char *msg, unsigned long long *msglen, const unsigned char *sig_msg, unsigned long long sig_msg_len, const unsigned char *pk);
+int xmssmt_core_sign_open(unsigned char *msg, unsigned long long *msglen, const unsigned char *sig_msg, unsigned long long sig_msg_len, const unsigned char *pk);
 #endif
