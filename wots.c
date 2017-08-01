@@ -57,7 +57,7 @@ static void base_w(int *output, const int out_len, const unsigned char *input)
 {
   int in = 0;
   int out = 0;
-  uint32_t total = 0;
+  uint8_t total = 0;
   int bits = 0;
   int consumed = 0;
 
@@ -103,7 +103,7 @@ void wots_sign(unsigned char *sig, const unsigned char *msg, const unsigned char
   unsigned char csum_bytes[len_2_bytes];
   to_byte(csum_bytes, csum, len_2_bytes);
 
-  int csum_basew[len_2_bytes / XMSS_WOTS_LOG_W];
+  int csum_basew[XMSS_WOTS_LEN2];
   base_w(csum_basew, XMSS_WOTS_LEN2, csum_bytes);
 
   for (i = 0; i < XMSS_WOTS_LEN2; i++) {
@@ -137,7 +137,7 @@ void wots_pkFromSig(unsigned char *pk, const unsigned char *sig, const unsigned 
   unsigned char csum_bytes[len_2_bytes];
   to_byte(csum_bytes, csum, len_2_bytes);
 
-  int csum_basew[len_2_bytes / XMSS_WOTS_LOG_W];
+  int csum_basew[XMSS_WOTS_LEN2];
   base_w(csum_basew, XMSS_WOTS_LEN2, csum_bytes);
 
   for (i = 0; i < XMSS_WOTS_LEN2; i++) {
