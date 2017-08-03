@@ -1,4 +1,5 @@
 #include <stdint.h>
+
 #include "params_runtime.h"
 #include "xmss_core.h"
 
@@ -23,8 +24,8 @@ int xmss_keypair(unsigned char *pk, unsigned char *sk, const uint32_t oid)
 }
 
 int xmss_sign(unsigned char *sk,
-                  unsigned char *sm, unsigned long long *smlen,
-                  const unsigned char *m, unsigned long long mlen)
+              unsigned char *sm, unsigned long long *smlen,
+              const unsigned char *m, unsigned long long mlen)
 {
     uint32_t oid = 0;
     unsigned int i;
@@ -39,8 +40,8 @@ int xmss_sign(unsigned char *sk,
 }
 
 int xmss_sign_open(unsigned char *m, unsigned long long *mlen,
-                       const unsigned char *sm, unsigned long long smlen,
-                       const unsigned char *pk)
+                   const unsigned char *sm, unsigned long long smlen,
+                   const unsigned char *pk)
 {
     uint32_t oid = 0;
     unsigned int i;
@@ -69,8 +70,8 @@ int xmssmt_keypair(unsigned char *pk, unsigned char *sk, const uint32_t oid)
 }
 
 int xmssmt_sign(unsigned char *sk,
-                    unsigned char *sm, unsigned long long *smlen,
-                    const unsigned char *m, unsigned long long mlen)
+                unsigned char *sm, unsigned long long *smlen,
+                const unsigned char *m, unsigned long long mlen)
 {
     uint32_t oid = 0;
     unsigned int i;
@@ -85,8 +86,8 @@ int xmssmt_sign(unsigned char *sk,
 }
 
 int xmssmt_sign_open(unsigned char *m, unsigned long long *mlen,
-                         const unsigned char *sm, unsigned long long smlen,
-                         const unsigned char *pk)
+                     const unsigned char *sm, unsigned long long smlen,
+                     const unsigned char *pk)
 {
     uint32_t oid = 0;
     unsigned int i;

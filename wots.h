@@ -16,18 +16,21 @@ Public domain.
  *
  * Places the computed public key at address pk.
  */
-void wots_pkgen(unsigned char *pk, const unsigned char *sk, const unsigned char *pub_seed, uint32_t addr[8]);
+void wots_pkgen(unsigned char *pk, const unsigned char *sk,
+                const unsigned char *pub_seed, uint32_t addr[8]);
 
 /**
  * Takes a m-byte message and the 32-byte seed for the secret key to compute a signature that is placed at "sig".
- *
  */
-void wots_sign(unsigned char *sig, const unsigned char *msg, const unsigned char *sk, const unsigned char *pub_seed, uint32_t addr[8]);
+void wots_sign(unsigned char *sig, const unsigned char *msg,
+               const unsigned char *sk, const unsigned char *pub_seed,
+               uint32_t addr[8]);
 
 /**
  * Takes a WOTS signature, a m-byte message and computes a WOTS public key that it places at pk.
- *
  */
-void wots_pkFromSig(unsigned char *pk, const unsigned char *sig, const unsigned char *msg, const unsigned char *pub_seed, uint32_t addr[8]);
+void wots_pk_from_sig(unsigned char *pk,
+                      const unsigned char *sig, const unsigned char *msg,
+                      const unsigned char *pub_seed, uint32_t addr[8]);
 
 #endif

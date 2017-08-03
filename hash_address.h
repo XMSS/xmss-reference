@@ -7,31 +7,28 @@ Public domain.
 
 #include <stdint.h>
 
-void setLayerADRS(uint32_t adrs[8], uint32_t layer);
+void set_layer_addr(uint32_t addr[8], uint32_t layer);
 
-void setTreeADRS(uint32_t adrs[8], uint64_t tree);
+void set_tree_addr(uint32_t addr[8], uint64_t tree);
 
-void setType(uint32_t adrs[8], uint32_t type);
+void set_type(uint32_t addr[8], uint32_t type);
 
-void setKeyAndMask(uint32_t adrs[8], uint32_t keyAndMask);
+void set_key_and_mask(uint32_t addr[8], uint32_t key_and_mask);
 
-// OTS
+/* These functions are used for OTS addresses. */
 
-void setOTSADRS(uint32_t adrs[8], uint32_t ots);
+void set_ots_addr(uint32_t addr[8], uint32_t ots);
 
-void setChainADRS(uint32_t adrs[8], uint32_t chain);
+void set_chain_addr(uint32_t addr[8], uint32_t chain);
 
-void setHashADRS(uint32_t adrs[8], uint32_t hash);
+void set_hash_addr(uint32_t addr[8], uint32_t hash);
 
-// L-tree
+/* This function is used for L-trees. */
 
-void setLtreeADRS(uint32_t adrs[8], uint32_t ltree);
+void set_ltree_addr(uint32_t addr[8], uint32_t ltree);
 
-// Hash Tree & L-tree
+/* These functions are used for hash tree addresses. */
 
-void setTreeHeight(uint32_t adrs[8], uint32_t treeHeight);
+void set_tree_height(uint32_t addr[8], uint32_t treeHeight);
 
-void setTreeIndex(uint32_t adrs[8], uint32_t treeIndex);
-
-
-
+void set_tree_index(uint32_t addr[8], uint32_t treeIndex);

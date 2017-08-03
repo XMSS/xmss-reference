@@ -34,7 +34,7 @@ int main()
 
   wots_pkgen(pk1, seed, pub_seed, addr);
   wots_sign(sig, msg, seed, pub_seed, addr);
-  wots_pkFromSig(pk2, sig, msg, pub_seed, addr);
+  wots_pk_from_sig(pk2, sig, msg, pub_seed, addr);
 
   for (i = 0; i < sig_len; i++)
     if (pk1[i] != pk2[i]) {

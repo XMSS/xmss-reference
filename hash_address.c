@@ -6,53 +6,54 @@ Public domain.
 */
 #include <stdint.h>
 
-void setLayerADRS(uint32_t adrs[8], uint32_t layer){
-  adrs[0] = layer;
+void set_layer_addr(uint32_t addr[8], uint32_t layer) {
+    addr[0] = layer;
 }
 
-void setTreeADRS(uint32_t adrs[8], uint64_t tree){
-  adrs[1] = (uint32_t) (tree >> 32);
-  adrs[2] = (uint32_t) tree;
+void set_tree_addr(uint32_t addr[8], uint64_t tree) {
+    addr[1] = (uint32_t) (tree >> 32);
+    addr[2] = (uint32_t) tree;
 }
 
-void setType(uint32_t adrs[8], uint32_t type){
-  adrs[3] = type;
-  int i;
-  for(i = 4; i < 8; i++){
-    adrs[i] = 0;
-  }
+void set_type(uint32_t addr[8], uint32_t type) {
+    int i;
+
+    addr[3] = type;
+    for (i = 4; i < 8; i++) {
+        addr[i] = 0;
+    }
 }
 
-void setKeyAndMask(uint32_t adrs[8], uint32_t keyAndMask){
-  adrs[7] = keyAndMask;
+void set_key_and_mask(uint32_t addr[8], uint32_t key_and_mask) {
+    addr[7] = key_and_mask;
 }
 
-// OTS
+/* These functions are used for OTS addresses. */
 
-void setOTSADRS(uint32_t adrs[8], uint32_t ots){
-  adrs[4] = ots;
+void set_ots_addr(uint32_t addr[8], uint32_t ots) {
+    addr[4] = ots;
 }
 
-void setChainADRS(uint32_t adrs[8], uint32_t chain){
-  adrs[5] = chain;
+void set_chain_addr(uint32_t addr[8], uint32_t chain) {
+    addr[5] = chain;
 }
 
-void setHashADRS(uint32_t adrs[8], uint32_t hash){
-  adrs[6] = hash;
+void set_hash_addr(uint32_t addr[8], uint32_t hash) {
+    addr[6] = hash;
 }
 
-// L-tree
+/* This function is used for L-trees. */
 
-void setLtreeADRS(uint32_t adrs[8], uint32_t ltree){
-  adrs[4] = ltree;
+void set_ltree_addr(uint32_t addr[8], uint32_t ltree) {
+    addr[4] = ltree;
 }
 
-// Hash Tree & L-tree
+/* These functions are used for hash tree addresses. */
 
-void setTreeHeight(uint32_t adrs[8], uint32_t treeHeight){
-  adrs[5] = treeHeight;
+void set_tree_height(uint32_t addr[8], uint32_t treeHeight) {
+    addr[5] = treeHeight;
 }
 
-void setTreeIndex(uint32_t adrs[8], uint32_t treeIndex){
-  adrs[6] = treeIndex;
+void set_tree_index(uint32_t addr[8], uint32_t treeIndex) {
+    addr[6] = treeIndex;
 }
