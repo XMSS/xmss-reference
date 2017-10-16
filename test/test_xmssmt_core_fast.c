@@ -23,12 +23,17 @@ unsigned long long cpucycles(void)
 
 int main()
 {
+  xmss_params params;
+  // TODO test more different OIDs
+  uint32_t oid = 0x01000001;
+  xmssmt_parse_oid(&params, oid);
+
   int r;
   unsigned long long i,j;
-  unsigned int n = XMSS_N;
-  unsigned int h = XMSS_FULLHEIGHT;
-  unsigned int d = XMSS_D;
-  unsigned int k = XMSS_BDS_K;
+  unsigned int n = params.n;
+  unsigned int h = params.full_height;
+  unsigned int d = params.d;
+  unsigned int k = params.bds_k;
 
   unsigned int tree_h = h / d;
 
@@ -40,7 +45,7 @@ int main()
   treehash_inst treehash[(2*d-1) * (tree_h-k)];
   unsigned char th_nodes[(2*d-1) * (tree_h-k)*n];
   unsigned char retain[(2*d-1) * ((1 << k) - k - 1)*n];
-  unsigned char wots_sigs[d * XMSS_WOTS_KEYSIZE];
+  unsigned char wots_sigs[d * params.wots_keysize];
   // first d are 'regular' states, second d are 'next'; top tree has no 'next'
   bds_state states[2*d-1];
 
@@ -57,25 +62,25 @@ int main()
     );
   }
 
-  unsigned char sk[(XMSS_INDEX_LEN+4*n)];
+  unsigned char sk[(params.index_len+4*n)];
   unsigned char pk[2*n];
 
-  unsigned long long signature_length = XMSS_INDEX_LEN + n + (d*XMSS_WOTS_KEYSIZE) + h*n;
+  unsigned long long signature_length = params.index_len + n + (d*params.wots_keysize) + h*n;
   unsigned char mo[MLEN+signature_length];
   unsigned char sm[MLEN+signature_length];
 
   randombytes(mi, MLEN);
 
   printf("keypair\n");
-  xmssmt_core_keypair(pk, sk, states, wots_sigs);
+  xmssmt_core_keypair(&params, pk, sk, states, wots_sigs);
   // check pub_seed in SK
   for (i = 0; i < n; i++) {
-    if (pk[n+i] != sk[XMSS_INDEX_LEN+2*n+i]) printf("pk.pub_seed != sk.pub_seed %llu",i);
-    if (pk[i] != sk[XMSS_INDEX_LEN+3*n+i]) printf("pk.root != sk.root %llu",i);
+    if (pk[n+i] != sk[params.index_len+2*n+i]) printf("pk.pub_seed != sk.pub_seed %llu",i);
+    if (pk[i] != sk[params.index_len+3*n+i]) printf("pk.root != sk.root %llu",i);
   }
   printf("pk checked\n");
 
-  unsigned int idx_len = XMSS_INDEX_LEN;
+  unsigned int idx_len = params.index_len;
   // check index
   unsigned long long idx = 0;
   for (i = 0; i < idx_len; i++) {
@@ -87,7 +92,7 @@ int main()
   for (i = 0; i < SIGNATURES; i++) {
     printf("sign\n");
     t1 = cpucycles();
-    xmssmt_core_sign(sk, states, wots_sigs, sm, &smlen, mi, MLEN);
+    xmssmt_core_sign(&params, sk, states, wots_sigs, sm, &smlen, mi, MLEN);
     t2 = cpucycles();
     printf("signing cycles = %llu\n", (t2-t1));
 
@@ -102,7 +107,7 @@ int main()
     /* Test valid signature */
     printf("verify\n");
     t1 = cpucycles();
-    r = xmssmt_core_sign_open(mo, &mlen, sm, smlen, pk);
+    r = xmssmt_core_sign_open(&params, mo, &mlen, sm, smlen, pk);
     t2 = cpucycles();
     printf("verification cycles = %llu\n", (t2-t1));
     printf("%d\n", r);
@@ -112,7 +117,7 @@ int main()
 
     /* Test with modified message */
     sm[52] ^= 1;
-    r = xmssmt_core_sign_open(mo, &mlen, sm, smlen, pk);
+    r = xmssmt_core_sign_open(&params, mo, &mlen, sm, smlen, pk);
     printf("%d\n", r+1);
     r = memcmp(mi,mo,MLEN);
     printf("%d\n", (r!=0) - 1);
@@ -122,7 +127,7 @@ int main()
     sm[260] ^= 1;
     sm[52] ^= 1;
     sm[2] ^= 1;
-    r = xmssmt_core_sign_open(mo, &mlen, sm, smlen, pk);
+    r = xmssmt_core_sign_open(&params, mo, &mlen, sm, smlen, pk);
     printf("%d\n", r+1);
     r = memcmp(mi,mo,MLEN);
     printf("%d\n", (r!=0) - 1);

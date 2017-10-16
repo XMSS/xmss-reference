@@ -15,26 +15,27 @@ unsigned long long mlen;
 
 int main()
 {
+  xmss_params params;
   // TODO test more different OIDs
   uint32_t oid = 0x01000001;
-  xmss_parse_oid(oid); // Parse it to make sure the sizes are set
+  xmss_parse_oid(&params, oid);
 
   int r;
   unsigned long long i, j;
   unsigned long errors = 0;
 
-  unsigned char sk[XMSS_OID_LEN + XMSS_PRIVATEKEY_BYTES];
-  unsigned char pk[XMSS_OID_LEN + XMSS_PUBLICKEY_BYTES];
+  unsigned char sk[XMSS_OID_LEN + params.privatekey_bytes];
+  unsigned char pk[XMSS_OID_LEN + params.publickey_bytes];
 
-  unsigned char mo[MLEN+XMSS_BYTES];
-  unsigned char sm[MLEN+XMSS_BYTES];
+  unsigned char mo[MLEN+params.bytes];
+  unsigned char sm[MLEN+params.bytes];
 
   printf("keypair\n");
   xmss_keypair(pk, sk, oid);
   // check pub_seed in SK
-  for (i = 0; i < XMSS_N; i++) {
-    if (pk[XMSS_OID_LEN+XMSS_N+i] != sk[XMSS_OID_LEN+XMSS_INDEX_LEN+2*XMSS_N+i]) printf("pk.pub_seed != sk.pub_seed %llu",i);
-    if (pk[XMSS_OID_LEN+i] != sk[XMSS_OID_LEN+XMSS_INDEX_LEN+3*XMSS_N+i]) printf("pk.root != sk.root %llu",i);
+  for (i = 0; i < params.n; i++) {
+    if (pk[XMSS_OID_LEN+params.n+i] != sk[XMSS_OID_LEN+params.index_len+2*params.n+i]) printf("pk.pub_seed != sk.pub_seed %llu",i);
+    if (pk[XMSS_OID_LEN+i] != sk[XMSS_OID_LEN+params.index_len+3*params.n+i]) printf("pk.root != sk.root %llu",i);
   }
 
   // check index
@@ -54,7 +55,7 @@ int main()
     }
     printf("\n");
 
-    r = memcmp(mi, sm+XMSS_BYTES,MLEN);
+    r = memcmp(mi, sm+params.bytes,MLEN);
     printf("%d\n", r);
 
     /* Test valid signature */
@@ -67,7 +68,7 @@ int main()
     printf("%llu\n", MLEN-mlen);
 
     /* Test with modified message */
-    sm[XMSS_BYTES+10] ^= 1;
+    sm[params.bytes+10] ^= 1;
     r = xmss_sign_open(mo, &mlen, sm, smlen, pk);
     printf("%d\n", r+1);
     if (r == 0) errors++;
@@ -77,7 +78,7 @@ int main()
 
     /* Test with modified signature */
     /* Modified index */
-    sm[XMSS_BYTES+10] ^= 1;
+    sm[params.bytes+10] ^= 1;
     sm[2] ^= 1;
     r = xmss_sign_open(mo, &mlen, sm, smlen, pk);
     printf("%d\n", r+1);
@@ -108,7 +109,7 @@ int main()
 
     /* Modified AUTH */
     sm[240] ^= 1;
-    sm[XMSS_BYTES - 10] ^= 1;
+    sm[params.bytes - 10] ^= 1;
     r = xmss_sign_open(mo, &mlen, sm, smlen, pk);
     printf("%d\n", r+1);
     if (r == 0) errors++;

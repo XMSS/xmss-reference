@@ -14,27 +14,32 @@ static void hexdump(unsigned char *a, size_t len)
 
 int main()
 {
-  unsigned char seed[XMSS_N];
-  unsigned char pub_seed[XMSS_N];
+  xmss_params params;
+  // TODO test more different OIDs
+  uint32_t oid = 0x01000001;
+  xmssmt_parse_oid(&params, oid);
 
-  int sig_len = XMSS_WOTS_LEN*XMSS_N;
+  unsigned char seed[params.n];
+  unsigned char pub_seed[params.n];
+
+  int sig_len = params.wots_len*params.n;
 
   unsigned char pk1[sig_len];
   unsigned char pk2[sig_len];
   unsigned char sig[sig_len];
   uint32_t addr[8] = {1,2,3,4};
 
-  unsigned char msg[XMSS_N];
+  unsigned char msg[params.n];
   int i;
 
-  randombytes(seed, XMSS_N);
-  randombytes(pub_seed, XMSS_N);
-  randombytes(msg, XMSS_N);
+  randombytes(seed, params.n);
+  randombytes(pub_seed, params.n);
+  randombytes(msg, params.n);
   //randombytes(addr, 16);
 
-  wots_pkgen(pk1, seed, pub_seed, addr);
-  wots_sign(sig, msg, seed, pub_seed, addr);
-  wots_pk_from_sig(pk2, sig, msg, pub_seed, addr);
+  wots_pkgen(&params, pk1, seed, pub_seed, addr);
+  wots_sign(&params, sig, msg, seed, pub_seed, addr);
+  wots_pk_from_sig(&params, pk2, sig, msg, pub_seed, addr);
 
   for (i = 0; i < sig_len; i++)
     if (pk1[i] != pk2[i]) {

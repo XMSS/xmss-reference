@@ -28,7 +28,8 @@ unsigned char* addr_to_byte(unsigned char *bytes, const uint32_t addr[8])
     return bytes;
 }
 
-static int core_hash(unsigned char *out, const unsigned int type,
+static int core_hash(const xmss_params *params,
+                     unsigned char *out, const unsigned int type,
                      const unsigned char *key, unsigned int keylen,
                      const unsigned char *in, unsigned long long inlen, int n)
 {
@@ -47,16 +48,16 @@ static int core_hash(unsigned char *out, const unsigned int type,
         buf[keylen + n + i] = in[i];
     }
 
-    if (n == 32 && XMSS_FUNC == XMSS_SHA2) {
+    if (n == 32 && params->func == XMSS_SHA2) {
         SHA256(buf, inlen + keylen + n, out);
     }
-    else if (n == 32 && XMSS_FUNC == XMSS_SHAKE) {
+    else if (n == 32 && params->func == XMSS_SHAKE) {
         shake128(out, 32, buf, inlen + keylen + n);
     }
-    else if (n == 64 && XMSS_FUNC == XMSS_SHA2) {
+    else if (n == 64 && params->func == XMSS_SHA2) {
         SHA512(buf, inlen + keylen + n, out);
     }
-    else if (n == 64 && XMSS_FUNC == XMSS_SHAKE) {
+    else if (n == 64 && params->func == XMSS_SHAKE) {
         shake256(out, 64, buf, inlen + keylen + n);
     }
     else {
@@ -65,66 +66,70 @@ static int core_hash(unsigned char *out, const unsigned int type,
     return 0;
 }
 
-int prf(unsigned char *out, const unsigned char *in,
+int prf(const xmss_params *params,
+        unsigned char *out, const unsigned char *in,
         const unsigned char *key, unsigned int keylen)
 {
-    return core_hash(out, 3, key, keylen, in, 32, keylen);
+    return core_hash(params, out, 3, key, keylen, in, 32, keylen);
 }
 
-int h_msg(unsigned char *out,
+int h_msg(const xmss_params *params,
+          unsigned char *out,
           const unsigned char *in, unsigned long long inlen,
           const unsigned char *key, const unsigned int keylen)
 {
-    return core_hash(out, 2, key, keylen, in, inlen, XMSS_N);
+    return core_hash(params, out, 2, key, keylen, in, inlen, params->n);
 }
 
 /**
  * We assume the left half is in in[0]...in[n-1]
  */
-int hash_h(unsigned char *out, const unsigned char *in,
+int hash_h(const xmss_params *params,
+           unsigned char *out, const unsigned char *in,
            const unsigned char *pub_seed, uint32_t addr[8])
 {
-    unsigned char buf[2*XMSS_N];
-    unsigned char key[XMSS_N];
-    unsigned char bitmask[2*XMSS_N];
+    unsigned char buf[2*params->n];
+    unsigned char key[params->n];
+    unsigned char bitmask[2*params->n];
     unsigned char byte_addr[32];
     unsigned int i;
 
     set_key_and_mask(addr, 0);
     addr_to_byte(byte_addr, addr);
-    prf(key, byte_addr, pub_seed, XMSS_N);
+    prf(params, key, byte_addr, pub_seed, params->n);
     // Use MSB order
     set_key_and_mask(addr, 1);
     addr_to_byte(byte_addr, addr);
-    prf(bitmask, byte_addr, pub_seed, XMSS_N);
+    prf(params, bitmask, byte_addr, pub_seed, params->n);
     set_key_and_mask(addr, 2);
     addr_to_byte(byte_addr, addr);
-    prf(bitmask+XMSS_N, byte_addr, pub_seed, XMSS_N);
-    for (i = 0; i < 2*XMSS_N; i++) {
+    prf(params, bitmask+params->n, byte_addr, pub_seed, params->n);
+    for (i = 0; i < 2*params->n; i++) {
         buf[i] = in[i] ^ bitmask[i];
     }
-    return core_hash(out, 1, key, XMSS_N, buf, 2*XMSS_N, XMSS_N);
+    return core_hash(params, out, 1, key, params->n, buf, 2*params->n, params->n);
 }
 
-int hash_f(unsigned char *out, const unsigned char *in,
+int hash_f(const xmss_params *params,
+           unsigned char *out, const unsigned char *in,
            const unsigned char *pub_seed, uint32_t addr[8])
 {
-    unsigned char buf[XMSS_N];
-    unsigned char key[XMSS_N];
-    unsigned char bitmask[XMSS_N];
+    unsigned char buf[params->n];
+    unsigned char key[params->n];
+    unsigned char bitmask[params->n];
     unsigned char byte_addr[32];
     unsigned int i;
 
     set_key_and_mask(addr, 0);
     addr_to_byte(byte_addr, addr);
-    prf(key, byte_addr, pub_seed, XMSS_N);
+    prf(params, key, byte_addr, pub_seed, params->n);
 
     set_key_and_mask(addr, 1);
     addr_to_byte(byte_addr, addr);
-    prf(bitmask, byte_addr, pub_seed, XMSS_N);
+    prf(params, bitmask, byte_addr, pub_seed, params->n);
 
-    for (i = 0; i < XMSS_N; i++) {
+    for (i = 0; i < params->n; i++) {
         buf[i] = in[i] ^ bitmask[i];
     }
-    return core_hash(out, 0, key, XMSS_N, buf, XMSS_N, XMSS_N);
+    return core_hash(params, out, 0, key, params->n, buf, params->n, params->n);
 }
