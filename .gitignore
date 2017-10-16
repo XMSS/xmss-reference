@@ -13,6 +13,3 @@ test/test_xmssmt_core_XMSSMT*
 test/test_xmssmt_core_fast_XMSSMT*
 test/speed
 test/gen_testvectors
-params_XMSS_*.h
-params_XMSSMT_*.h
-params.h

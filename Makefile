@@ -10,10 +10,6 @@ test/test_xmssmt_core \
 test/test_xmssmt
 
 .PHONY: clean
-.PRECIOUS: params_%.h
-
-params_%.h: params.h.py
-	python3 params.h.py $(patsubst params_%.h,%,$@) > $@
 
 test/test_wots: params.c hash.c fips202.c hash_address.c randombytes.c wots.c xmss_commons.c test/test_wots.c params.h hash.h fips202.h hash_address.h randombytes.h wots.h xmss_commons.h
 	$(CC) $(CFLAGS) params.c hash.c fips202.c hash_address.c randombytes.c wots.c xmss_commons.c test/test_wots.c -o $@ -lcrypto -lm
@@ -44,7 +40,3 @@ clean:
 	-rm test/test_xmssmt_core
 	-rm test/test_xmssmt_core_fast
 	-rm test/test_xmssmt
-
-distclean: clean
-	-rm params.h
-	-rm params_XMSS*.h
