@@ -1,5 +1,154 @@
 #include <stdint.h>
+#include <string.h>
 #include "params.h"
+
+int xmss_str_to_oid(uint32_t *oid, const char *s)
+{
+    if (!strcmp(s, "XMSS-SHA2_10_256")) {
+        *oid = 0x01000001;
+    }
+    else if (!strcmp(s, "XMSS-SHA2_16_256")) {
+        *oid = 0x02000002;
+    }
+    else if (!strcmp(s, "XMSS-SHA2_20_256")) {
+        *oid = 0x03000003;
+    }
+    else if (!strcmp(s, "XMSS-SHA2_10_512")) {
+        *oid = 0x04000004;
+    }
+    else if (!strcmp(s, "XMSS-SHA2_16_512")) {
+        *oid = 0x05000005;
+    }
+    else if (!strcmp(s, "XMSS-SHA2_20_512")) {
+        *oid = 0x06000006;
+    }
+    else if (!strcmp(s, "XMSS-SHAKE_10_256")) {
+        *oid = 0x07000007;
+    }
+    else if (!strcmp(s, "XMSS-SHAKE_16_256")) {
+        *oid = 0x08000008;
+    }
+    else if (!strcmp(s, "XMSS-SHAKE_20_256")) {
+        *oid = 0x09000009;
+    }
+    else if (!strcmp(s, "XMSS-SHAKE_10_512")) {
+        *oid = 0x0a00000a;
+    }
+    else if (!strcmp(s, "XMSS-SHAKE_16_512")) {
+        *oid = 0x0b00000b;
+    }
+    else if (!strcmp(s, "XMSS-SHAKE_20_512")) {
+        *oid = 0x0c00000c;
+    }
+    else {
+        return -1;
+    }
+    return 0;
+}
+
+int xmssmt_str_to_oid(uint32_t *oid, const char *s)
+{
+    if (!strcmp(s, "XMSSMT-SHA2_20/2_256")) {
+       *oid = 0x01000001;
+    }
+    else if (!strcmp(s, "XMSSMT-SHA2_20/4_256")) {
+       *oid = 0x02000002;
+    }
+    else if (!strcmp(s, "XMSSMT-SHA2_40/2_256")) {
+       *oid = 0x03000003;
+    }
+    else if (!strcmp(s, "XMSSMT-SHA2_40/4_256")) {
+       *oid = 0x04000004;
+    }
+    else if (!strcmp(s, "XMSSMT-SHA2_40/8_256")) {
+       *oid = 0x05000005;
+    }
+    else if (!strcmp(s, "XMSSMT-SHA2_60/3_256")) {
+       *oid = 0x06000006;
+    }
+    else if (!strcmp(s, "XMSSMT-SHA2_60/6_256")) {
+       *oid = 0x07000007;
+    }
+    else if (!strcmp(s, "XMSSMT-SHA2_60/12_256")) {
+      *oid = 0x08000008;
+    }
+    else if (!strcmp(s, "XMSSMT-SHA2_20/2_512")) {
+       *oid = 0x09000009;
+    }
+    else if (!strcmp(s, "XMSSMT-SHA2_20/4_512")) {
+       *oid = 0x0a00000a;
+    }
+    else if (!strcmp(s, "XMSSMT-SHA2_40/2_512")) {
+       *oid = 0x0b00000b;
+    }
+    else if (!strcmp(s, "XMSSMT-SHA2_40/4_512")) {
+       *oid = 0x0c00000c;
+    }
+    else if (!strcmp(s, "XMSSMT-SHA2_40/8_512")) {
+       *oid = 0x0d00000d;
+    }
+    else if (!strcmp(s, "XMSSMT-SHA2_60/3_512")) {
+       *oid = 0x0e00000e;
+    }
+    else if (!strcmp(s, "XMSSMT-SHA2_60/6_512")) {
+       *oid = 0x0f00000f;
+    }
+    else if (!strcmp(s, "XMSSMT-SHA2_60/12_512")) {
+      *oid = 0x01010101;
+    }
+    else if (!strcmp(s, "XMSSMT-SHAKE_20/2_256")) {
+      *oid = 0x02010102;
+    }
+    else if (!strcmp(s, "XMSSMT-SHAKE_20/4_256")) {
+      *oid = 0x03010103;
+    }
+    else if (!strcmp(s, "XMSSMT-SHAKE_40/2_256")) {
+      *oid = 0x04010104;
+    }
+    else if (!strcmp(s, "XMSSMT-SHAKE_40/4_256")) {
+      *oid = 0x05010105;
+    }
+    else if (!strcmp(s, "XMSSMT-SHAKE_40/8_256")) {
+      *oid = 0x06010106;
+    }
+    else if (!strcmp(s, "XMSSMT-SHAKE_60/3_256")) {
+      *oid = 0x07010107;
+    }
+    else if (!strcmp(s, "XMSSMT-SHAKE_60/6_256")) {
+      *oid = 0x08010108;
+    }
+    else if (!strcmp(s, "XMSSMT-SHAKE_60/12_256")) {
+     *oid = 0x09010109;
+    }
+    else if (!strcmp(s, "XMSSMT-SHAKE_20/2_512")) {
+      *oid = 0x0a01010a;
+    }
+    else if (!strcmp(s, "XMSSMT-SHAKE_20/4_512")) {
+      *oid = 0x0b01010b;
+    }
+    else if (!strcmp(s, "XMSSMT-SHAKE_40/2_512")) {
+      *oid = 0x0c01010c;
+    }
+    else if (!strcmp(s, "XMSSMT-SHAKE_40/4_512")) {
+      *oid = 0x0d01010d;
+    }
+    else if (!strcmp(s, "XMSSMT-SHAKE_40/8_512")) {
+      *oid = 0x0e01010e;
+    }
+    else if (!strcmp(s, "XMSSMT-SHAKE_60/3_512")) {
+      *oid = 0x0f01010f;
+    }
+    else if (!strcmp(s, "XMSSMT-SHAKE_60/6_512")) {
+      *oid = 0x01020201;
+    }
+    else if (!strcmp(s, "XMSSMT-SHAKE_60/12_512")) {
+     *oid = 0x02020202;
+    }
+    else {
+        return -1;
+    }
+    return 0;
+}
 
 int xmss_parse_oid(xmss_params *params, const uint32_t oid)
 {

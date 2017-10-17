@@ -30,6 +30,9 @@ typedef struct {
     unsigned int bds_k;
 } xmss_params;
 
+int xmss_str_to_oid(uint32_t *oid, const char* s);
+int xmssmt_str_to_oid(uint32_t *oid, const char* s);
+
 int xmss_parse_oid(xmss_params *params, const uint32_t oid);
 int xmssmt_parse_oid(xmss_params *params, const uint32_t oid);
 
