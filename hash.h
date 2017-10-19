@@ -4,8 +4,6 @@
 #include <stdint.h>
 #include "params.h"
 
-#define IS_LITTLE_ENDIAN 1
-
 unsigned char* addr_to_byte(unsigned char *bytes, const uint32_t addr[8]);
 
 int prf(const xmss_params *params,

@@ -10,14 +10,10 @@
 
 unsigned char* addr_to_byte(unsigned char *bytes, const uint32_t addr[8])
 {
-#if IS_LITTLE_ENDIAN==1
     int i;
     for (i = 0; i < 8; i++) {
         to_byte(bytes + i*4, addr[i], 4);
     }
-#else
-    memcpy(bytes, addr, 32);
-#endif
     return bytes;
 }
 
@@ -90,7 +86,6 @@ int hash_h(const xmss_params *params,
     set_key_and_mask(addr, 0);
     addr_to_byte(byte_addr, addr);
     prf(params, key, byte_addr, pub_seed, params->n);
-    // Use MSB order
     set_key_and_mask(addr, 1);
     addr_to_byte(byte_addr, addr);
     prf(params, bitmask, byte_addr, pub_seed, params->n);
