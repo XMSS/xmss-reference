@@ -1,10 +1,3 @@
-/*
-hash.c version 20160722
-Andreas Hülsing
-Joost Rijneveld
-Public domain.
-*/
-
 #include "hash_address.h"
 #include "xmss_commons.h"
 #include "params.h"

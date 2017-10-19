@@ -1,10 +1,3 @@
-/*
-wots.h version 20160722
-Andreas Hülsing
-Joost Rijneveld
-Public domain.
-*/
-
 #ifndef XMSS_WOTS_H
 #define XMSS_WOTS_H
 

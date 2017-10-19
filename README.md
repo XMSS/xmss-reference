@@ -7,3 +7,7 @@ This reference implementation supports all parameter sets as defined in the Draf
 _While the behavior of the code in this repository is supposed to be stable, the API is not yet fully complete. In particular, the wrapper for run-time parameters does not yet support the back-end functions that make use of BDS traversal (TODO). We will also add more extensive test functionality, making it easier to compare to other XMSS implementations (TODO)._
 
 _When using the current code base, please be careful, expect changes and watch this document for further documentation._
+
+### License
+
+This reference implementation was written by Andreas Hülsing and Joost Rijneveld. All included code is available under the CC0 1.0 Universal Public Domain Dedication.

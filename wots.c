@@ -1,10 +1,3 @@
-/*
-wots.c version 20160722
-Andreas Hülsing
-Joost Rijneveld
-Public domain.
-*/
-
 #include <stdint.h>
 #include "xmss_commons.h"
 #include "hash.h"

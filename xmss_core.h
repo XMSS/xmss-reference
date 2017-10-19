@@ -1,9 +1,3 @@
-/*
-xmss.h version 20160722
-Andreas Hülsing
-Joost Rijneveld
-Public domain.
-*/
 #ifndef XMSS_CORE_H
 #define XMSS_CORE_H
 

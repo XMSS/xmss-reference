@@ -1,9 +1,3 @@
-/*
-hash_address.c version 20160722
-Andreas Hülsing
-Joost Rijneveld
-Public domain.
-*/
 #include <stdint.h>
 
 void set_layer_addr(uint32_t addr[8], uint32_t layer) {

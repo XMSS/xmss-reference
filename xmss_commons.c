@@ -1,10 +1,3 @@
-/*
-xmss_commons.c 20160722
-Andreas Hülsing
-Joost Rijneveld
-Public domain.
-*/
-
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>

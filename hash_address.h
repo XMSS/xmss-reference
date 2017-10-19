@@ -1,10 +1,3 @@
-/*
-hash_address.h version 20160722
-Andreas Hülsing
-Joost Rijneveld
-Public domain.
-*/
-
 #ifndef XMSS_HASH_ADDRESS_H
 #define XMSS_HASH_ADDRESS_H
 
