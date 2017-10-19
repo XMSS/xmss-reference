@@ -12,7 +12,7 @@ int main(int argc, char **argv) {
 
     if (argc != 2) {
         fprintf(stderr, "Expected keypair filename as only parameter, "
-                        "and the message + signature via stdin.\n"
+                        "and the signature + message via stdin.\n"
                         "Keypair file needs only to contain the public key.\n"
                         "The return code 0 indicates verification success.\n");
         return -1;

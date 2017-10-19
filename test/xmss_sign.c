@@ -18,7 +18,7 @@ int main(int argc, char **argv) {
         return -1;
     }
 
-    keypair = fopen(argv[1], "rb");
+    keypair = fopen(argv[1], "r+b");
     if (keypair == NULL) {
         fprintf(stderr, "Could not open keypair file.\n");
         return -1;
