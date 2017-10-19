@@ -220,7 +220,7 @@ static char bds_state_update(const xmss_params *params,
     uint32_t node_addr[8];
     uint32_t ots_addr[8];
 
-    int nodeh;
+    unsigned int nodeh;
     int idx = state->next_leaf;
     if (idx == 1 << params->tree_height) {
         return 1;
@@ -493,7 +493,7 @@ int xmssmt_core_keypair(const xmss_params *params,
 {
     unsigned char ots_seed[params->n];
     uint32_t addr[8] = {0, 0, 0, 0, 0, 0, 0, 0};
-    int i;
+    unsigned int i;
 
     // Set idx = 0
     for (i = 0; i < params->index_len; i++) {
