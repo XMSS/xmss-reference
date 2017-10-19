@@ -5,6 +5,9 @@ Joost Rijneveld
 Public domain.
 */
 
+#ifndef XMSS_HASH_ADDRESS_H
+#define XMSS_HASH_ADDRESS_H
+
 #include <stdint.h>
 
 void set_layer_addr(uint32_t addr[8], uint32_t layer);
@@ -32,3 +35,5 @@ void set_ltree_addr(uint32_t addr[8], uint32_t ltree);
 void set_tree_height(uint32_t addr[8], uint32_t treeHeight);
 
 void set_tree_index(uint32_t addr[8], uint32_t treeIndex);
+
+#endif

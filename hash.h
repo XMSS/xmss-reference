@@ -5,8 +5,8 @@ Joost Rijneveld
 Public domain.
 */
 
-#ifndef HASH_H
-#define HASH_H
+#ifndef XMSS_HASH_H
+#define XMSS_HASH_H
 
 #include "params.h"
 

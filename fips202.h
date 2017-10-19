@@ -1,5 +1,5 @@
-#ifndef FIPS202_H
-#define FIPS202_H
+#ifndef XMSS_FIPS202_H
+#define XMSS_FIPS202_H
 
 #define SHAKE128_RATE 168
 #define SHAKE256_RATE 136

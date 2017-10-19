@@ -1,5 +1,5 @@
-#ifndef PARAMS_H
-#define PARAMS_H
+#ifndef XMSS_PARAMS_H
+#define XMSS_PARAMS_H
 
 #include <stdint.h>
 

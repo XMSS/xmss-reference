@@ -5,8 +5,8 @@ Joost Rijneveld
 Public domain.
 */
 
-#ifndef WOTS_H
-#define WOTS_H
+#ifndef XMSS_WOTS_H
+#define XMSS_WOTS_H
 
 #include <stdint.h>
 #include "params.h"
