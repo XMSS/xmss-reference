@@ -8,6 +8,7 @@ Public domain.
 #ifndef XMSS_HASH_H
 #define XMSS_HASH_H
 
+#include <stdint.h>
 #include "params.h"
 
 #define IS_LITTLE_ENDIAN 1

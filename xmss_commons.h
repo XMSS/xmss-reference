@@ -7,13 +7,10 @@ Public domain.
 #ifndef XMSS_COMMONS_H
 #define XMSS_COMMONS_H
 
-#include <stdlib.h>
 #include <stdint.h>
 #include "params.h"
 
 void to_byte(unsigned char *output, unsigned long long in, uint32_t bytes);
-
-void hexdump(const unsigned char *a, size_t len);
 
 void gen_leaf_wots(const xmss_params *params, unsigned char *leaf,
                    const unsigned char *sk_seed, const unsigned char *pub_seed,

@@ -5,9 +5,11 @@
  * from https://twitter.com/tweetfips202
  * by Gilles Van Assche, Daniel J. Bernstein, and Peter Schwabe */
 
-#include <stdint.h>
-#include <assert.h>
 #include "fips202.h"
+
+#include <assert.h>
+#include <stdint.h>
+#include <string.h>
 
 #define NROUNDS 24
 #define ROL(a, offset) ((a << offset) ^ (a >> (64-offset)))
@@ -323,8 +325,6 @@ void KeccakF1600_StatePermute(uint64_t * state)
     state[23] = Aso;
     state[24] = Asu;
 }
-
-#include <string.h>
 
 static void keccak_absorb(uint64_t *s, unsigned int r,
                           const unsigned char *m, unsigned long long mlen,

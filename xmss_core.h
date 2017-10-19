@@ -4,11 +4,10 @@ Andreas Hülsing
 Joost Rijneveld
 Public domain.
 */
-
-#include "wots.h"
-
 #ifndef XMSS_CORE_H
 #define XMSS_CORE_H
+
+#include "params.h"
 
 /**
  * Generates a XMSS key pair for a given parameter set.
