@@ -43,7 +43,7 @@ int main(int argc, char **argv) {
     fread(m, 1, MLEN, stdin);
     xmss_core_sign(&params, sk, sm, &smlen, m, MLEN);
 
-    fseek(keypair, -params.privatekey_bytes, SEEK_CUR);
+    fseek(keypair, -((long int)params.privatekey_bytes), SEEK_CUR);
     fwrite(sk, 1, params.privatekey_bytes, keypair);
     fwrite(sm, 1, params.bytes + MLEN, stdout);
 
