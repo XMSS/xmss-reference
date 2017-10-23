@@ -11,50 +11,56 @@
 #include "xmss_core.h"
 
 /**
- * Merkle's TreeHash algorithm. The address only needs to initialize the first
- * 78 bits of addr. Everything else will be set by treehash.
- * Currently only used for key generation.
+ * Merkle's TreeHash algorithm. Currently only used for key generation.
+ * Computes the root node of the top-most subtree.
  */
-static void treehash(const xmss_params *params, unsigned char *node, uint32_t index, const unsigned char *sk_seed, const unsigned char *pub_seed, const uint32_t addr[8])
+static void treehash_root(const xmss_params *params, unsigned char *root,
+                          const unsigned char *sk_seed,
+                          const unsigned char *pub_seed)
 {
-    uint32_t idx = index;
-    // Use three different addresses because at this point we use all three formats in parallel
-    uint32_t ots_addr[8];
-    uint32_t ltree_addr[8];
-    uint32_t node_addr[8];
-    // only copy layer and tree address parts
-    memcpy(ots_addr, addr, 12);
-    // type = ots
+    unsigned char stack[(params->tree_height+1)*params->n];
+    unsigned int heights[params->tree_height+1];
+    unsigned int offset = 0;
+
+    /* The subtree has at most 2^20 leafs, so uint32_t suffices. */
+    uint32_t idx;
+
+    /* We need all three types of addresses in parallel. */
+    uint32_t ots_addr[8] = {0};
+    uint32_t ltree_addr[8] = {0};
+    uint32_t node_addr[8] = {0};
+
+    /* To support the multi-tree setting, select the top tree. */
+    set_layer_addr(ots_addr, params->d - 1);
+    set_layer_addr(ltree_addr, params->d - 1);
+    set_layer_addr(node_addr, params->d - 1);
+
     set_type(ots_addr, 0);
-    memcpy(ltree_addr, addr, 12);
     set_type(ltree_addr, 1);
-    memcpy(node_addr, addr, 12);
     set_type(node_addr, 2);
 
-    uint32_t lastnode, i;
-    unsigned char stack[(params->tree_height+1)*params->n];
-    uint16_t stacklevels[params->tree_height+1];
-    unsigned int stackoffset=0;
-
-    lastnode = idx+(1 << params->tree_height);
-
-    for (; idx < lastnode; idx++) {
+    for (idx = 0; idx < (uint32_t)(1 << params->tree_height); idx++) {
+        /* Add the next leaf node to the stack. */
         set_ltree_addr(ltree_addr, idx);
         set_ots_addr(ots_addr, idx);
-        gen_leaf_wots(params, stack+stackoffset*params->n, sk_seed, pub_seed, ltree_addr, ots_addr);
-        stacklevels[stackoffset] = 0;
-        stackoffset++;
-        while (stackoffset>1 && stacklevels[stackoffset-1] == stacklevels[stackoffset-2]) {
-            set_tree_height(node_addr, stacklevels[stackoffset-1]);
-            set_tree_index(node_addr, (idx >> (stacklevels[stackoffset-1]+1)));
-            hash_h(params, stack+(stackoffset-2)*params->n, stack+(stackoffset-2)*params->n, pub_seed, node_addr);
-            stacklevels[stackoffset-2]++;
-            stackoffset--;
+        gen_leaf_wots(params, stack + offset*params->n,
+                      sk_seed, pub_seed, ltree_addr, ots_addr);
+        heights[offset] = 0;
+        offset++;
+
+        /* While the top-most nodes are of equal height.. */
+        while (offset >= 2 && heights[offset - 1] == heights[offset - 2]) {
+            /* Hash the top-most nodes from the stack together. */
+            set_tree_height(node_addr, heights[offset - 1]);
+            set_tree_index(node_addr, (idx >> (heights[offset - 1] + 1)));
+            hash_h(params, stack + (offset-2)*params->n,
+                           stack + (offset-2)*params->n, pub_seed, node_addr);
+            /* Note that the top-most node is now one layer higher. */
+            heights[offset-2]++;
+            offset--;
         }
     }
-    for (i = 0; i < params->n; i++) {
-        node[i] = stack[i];
-    }
+    memcpy(root, stack, params->n);
 }
 
 /**
@@ -112,29 +118,26 @@ static void compute_authpath_wots(const xmss_params *params, unsigned char *root
     memcpy(root, tree+params->n, params->n);
 }
 
-
 /*
  * Generates a XMSS key pair for a given parameter set.
- * Format sk: [(32bit) idx || SK_SEED || SK_PRF || PUB_SEED || root]
- * Format pk: [root || PUB_SEED] omitting algo oid.
+ * Format sk: [(32bit) index || SK_SEED || SK_PRF || PUB_SEED || root]
+ * Format pk: [root || PUB_SEED], omitting algorithm OID.
  */
-int xmss_core_keypair(const xmss_params *params, unsigned char *pk, unsigned char *sk)
+int xmss_core_keypair(const xmss_params *params,
+                      unsigned char *pk, unsigned char *sk)
 {
-    // Set idx = 0
-    sk[0] = 0;
-    sk[1] = 0;
-    sk[2] = 0;
-    sk[3] = 0;
-    // Init SK_SEED (params->n byte), SK_PRF (params->n byte), and PUB_SEED (params->n byte)
-    randombytes(sk+4, 3*params->n);
-    // Copy PUB_SEED to public key
-    memcpy(pk+params->n, sk+4+2*params->n, params->n);
+    /* Initialize index to 0. */
+    memset(sk, 0, params->index_len);
+    sk += 4;
 
-    uint32_t addr[8] = {0, 0, 0, 0, 0, 0, 0, 0};
-    // Compute root
-    treehash(params, pk, 0, sk+4, sk+4+2*params->n, addr);
-    // copy root to sk
-    memcpy(sk+4+3*params->n, pk, params->n);
+    /* Initialize SK_SEED, SK_PRF and PUB_SEED. */
+    randombytes(sk, 3 * params->n);
+    memcpy(pk + params->n, sk + 2*params->n, params->n);
+
+    /* Compute root node. */
+    treehash_root(params, pk, sk, pk + params->n);
+    memcpy(sk + 3*params->n, pk, params->n);
+
     return 0;
 }
 
@@ -242,28 +245,23 @@ int xmss_core_sign(const xmss_params *params, unsigned char *sk, unsigned char *
 
 /*
  * Generates a XMSSMT key pair for a given parameter set.
- * Format sk: [(ceil(h/8) bit) idx || SK_SEED || SK_PRF || PUB_SEED]
- * Format pk: [root || PUB_SEED] omitting algo oid.
+ * Format sk: [(ceil(h/8) bit) index || SK_SEED || SK_PRF || PUB_SEED]
+ * Format pk: [root || PUB_SEED] omitting algorithm OID.
  */
 int xmssmt_core_keypair(const xmss_params *params, unsigned char *pk, unsigned char *sk)
 {
-    uint16_t i;
-    // Set idx = 0
-    for (i = 0; i < params->index_len; i++) {
-        sk[i] = 0;
-    }
-    // Init SK_SEED (params->n byte), SK_PRF (params->n byte), and PUB_SEED (params->n byte)
-    randombytes(sk+params->index_len, 3*params->n);
-    // Copy PUB_SEED to public key
-    memcpy(pk+params->n, sk+params->index_len+2*params->n, params->n);
+    /* Initialize index to 0. */
+    memset(sk, 0, params->index_len);
+    sk += 4;
 
-    // Set address to point on the single tree on layer d-1
-    uint32_t addr[8] = {0, 0, 0, 0, 0, 0, 0, 0};
-    set_layer_addr(addr, (params->d-1));
+    /* Initialize SK_SEED, SK_PRF and PUB_SEED. */
+    randombytes(sk, 3 * params->n);
+    memcpy(pk + params->n, sk + 2*params->n, params->n);
 
-    // Compute root
-    treehash(params, pk, 0, sk+params->index_len, pk+params->n, addr);
-    memcpy(sk+params->index_len+3*params->n, pk, params->n);
+    /* Compute root node of the top-most subtree. */
+    treehash_root(params, pk, sk, pk + params->n);
+    memcpy(sk + 3*params->n, pk, params->n);
+
     return 0;
 }
 
