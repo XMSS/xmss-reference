@@ -9,13 +9,15 @@
 #include "xmss_commons.h"
 
 /**
- * Converts the value of 'in' to 'len' bytes in big-endian byte order.
+ * Converts the value of 'in' to 'outlen' bytes in big-endian byte order.
  */
-void ull_to_bytes(unsigned char *out, unsigned long long in, uint32_t len)
+void ull_to_bytes(unsigned char *out, unsigned long long outlen,
+                  unsigned long long in)
 {
     int i;
 
-    for (i = len - 1; i >= 0; i--) {
+    /* Iterate over out in decreasing order, for big-endianness. */
+    for (i = outlen - 1; i >= 0; i--) {
         out[i] = in & 0xff;
         in = in >> 8;
     }
@@ -187,7 +189,7 @@ int xmss_core_sign_open(const xmss_params *params,
     /* Prepare the hash key, of the form [R || root || idx]. */
     memcpy(hash_key, sm + params->index_len, params->n);
     memcpy(hash_key + params->n, pk, params->n);
-    ull_to_bytes(hash_key + 2*params->n, idx, params->n);
+    ull_to_bytes(hash_key + 2*params->n, params->n, idx);
 
     /* Compute the message hash. */
     h_msg(params, msg_h, sm + params->bytes, *mlen, hash_key, 3*params->n);
@@ -262,7 +264,7 @@ int xmssmt_core_sign_open(const xmss_params *params,
     /* Prepare the hash key, of the form [R || root || idx]. */
     memcpy(hash_key, sm + params->index_len, params->n);
     memcpy(hash_key + params->n, pk, params->n);
-    ull_to_bytes(hash_key + 2*params->n, idx, params->n);
+    ull_to_bytes(hash_key + 2*params->n, params->n, idx);
 
     /* Compute the message hash. */
     h_msg(params, msg_h, sm + params->bytes, *mlen, hash_key, 3*params->n);

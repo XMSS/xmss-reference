@@ -18,7 +18,7 @@ static void expand_seed(const xmss_params *params,
     unsigned char ctr[32];
 
     for (i = 0; i < params->wots_len; i++) {
-        ull_to_bytes(ctr, i, 32);
+        ull_to_bytes(ctr, 32, i);
         prf(params, outseeds + i*params->n, ctr, inseed, params->n);
     }
 }
@@ -89,7 +89,7 @@ static void wots_checksum(const xmss_params *params,
     /* Convert checksum to base_w. */
     /* Make sure expected empty zero bits are the least significant bits. */
     csum = csum << (8 - ((params->wots_len2 * params->wots_log_w) % 8));
-    ull_to_bytes(csum_bytes, csum, sizeof(csum_bytes));
+    ull_to_bytes(csum_bytes, sizeof(csum_bytes), csum);
     base_w(params, csum_base_w, params->wots_len2, csum_bytes);
 }
 

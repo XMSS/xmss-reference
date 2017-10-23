@@ -11,7 +11,7 @@ void addr_to_bytes(unsigned char *bytes, const uint32_t addr[8])
 {
     int i;
     for (i = 0; i < 8; i++) {
-        ull_to_bytes(bytes + i*4, addr[i], 4);
+        ull_to_bytes(bytes + i*4, 4, addr[i]);
     }
 }
 
@@ -27,7 +27,7 @@ static int core_hash(const xmss_params *params,
      *  toByte(X, 32) || KEY || M
      */
 
-    ull_to_bytes(buf, type, n);
+    ull_to_bytes(buf, n, type);
 
     for (i=0; i < keylen; i++) {
         buf[i+n] = key[i];

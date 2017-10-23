@@ -7,7 +7,8 @@
 /**
  * Converts the value of 'in' to 'len' bytes in big-endian byte order.
  */
-void ull_to_bytes(unsigned char *output, unsigned long long in, uint32_t bytes);
+void ull_to_bytes(unsigned char *out, unsigned long long outlen,
+                  unsigned long long in);
 
 /**
  * Computes the leaf at a given address. First generates the WOTS key pair,

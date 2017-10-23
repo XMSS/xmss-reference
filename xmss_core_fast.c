@@ -396,7 +396,7 @@ int xmss_core_sign(const xmss_params *params,
 
     // index as 32 bytes string
     unsigned char idx_bytes_32[32];
-    ull_to_bytes(idx_bytes_32, idx, 32);
+    ull_to_bytes(idx_bytes_32, 32, idx);
 
     unsigned char hash_key[3*params->n];
 
@@ -425,7 +425,7 @@ int xmss_core_sign(const xmss_params *params,
     // Generate hash key (R || root || idx)
     memcpy(hash_key, R, params->n);
     memcpy(hash_key+params->n, sk+4+3*params->n, params->n);
-    ull_to_bytes(hash_key+2*params->n, idx, params->n);
+    ull_to_bytes(hash_key+2*params->n, params->n, idx);
     // Then use it for message digest
     h_msg(params, msg_h, m, mlen, hash_key, 3*params->n);
 
@@ -577,12 +577,12 @@ int xmssmt_core_sign(const xmss_params *params,
 
     // Message Hash:
     // First compute pseudorandom value
-    ull_to_bytes(idx_bytes_32, idx, 32);
+    ull_to_bytes(idx_bytes_32, 32, idx);
     prf(params, R, idx_bytes_32, sk_prf, params->n);
     // Generate hash key (R || root || idx)
     memcpy(hash_key, R, params->n);
     memcpy(hash_key+params->n, sk+params->index_len+3*params->n, params->n);
-    ull_to_bytes(hash_key+2*params->n, idx, params->n);
+    ull_to_bytes(hash_key+2*params->n, params->n, idx);
 
     // Then use it for message digest
     h_msg(params, msg_h, m, mlen, hash_key, 3*params->n);
