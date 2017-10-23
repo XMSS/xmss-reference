@@ -1,5 +1,4 @@
 #include <stdio.h>
-#include <math.h>
 #include <stdint.h>
 #include "../wots.h"
 #include "../randombytes.h"

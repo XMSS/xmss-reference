@@ -8,6 +8,10 @@ _While the behavior of the code in this repository is supposed to be stable, the
 
 _When using the current code base, please be careful, expect changes and watch this document for further documentation._
 
+### Dependencies
+
+For the SHA-2 hash functions (i.e. SHA-256 and SHA-512), we rely on OpenSSL. Make sure to install the OpenSSL development headers. On Debian-based systems, this is achieved by installing the OpenSSL development package `libssl-dev`.
+
 ### License
 
 This reference implementation was written by Andreas Hülsing and Joost Rijneveld. All included code is available under the CC0 1.0 Universal Public Domain Dedication.
