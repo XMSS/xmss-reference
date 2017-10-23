@@ -11,6 +11,7 @@ test/test_xmss_core_XMSS*
 test/test_xmss_core_fast_XMSS*
 test/test_xmssmt_core_XMSSMT*
 test/test_xmssmt_core_fast_XMSSMT*
+test/test_determinism
 test/speed
 test/gen_testvectors
 test/xmss_keypair

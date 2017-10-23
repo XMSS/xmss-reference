@@ -15,6 +15,7 @@ TESTS = test/test_wots \
 		test/test_xmssmt_core_fast \
 		test/test_xmssmt_core \
 		test/test_xmssmt \
+		test/test_determinism \
 
 UI = test/xmss_keypair \
 	 test/xmss_sign \
