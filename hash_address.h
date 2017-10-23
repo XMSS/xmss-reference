@@ -19,7 +19,7 @@ void set_chain_addr(uint32_t addr[8], uint32_t chain);
 
 void set_hash_addr(uint32_t addr[8], uint32_t hash);
 
-/* This function is used for L-trees. */
+/* This function is used for L-tree addresses. */
 
 void set_ltree_addr(uint32_t addr[8], uint32_t ltree);
 

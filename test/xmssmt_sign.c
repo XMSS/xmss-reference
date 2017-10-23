@@ -24,13 +24,13 @@ int main(int argc, char **argv) {
         return -1;
     }
 
-    // Read the OID from the public key, as we need its length to seek past it
+    /* Read the OID from the public key, as we need its length to seek past it. */
     fread(&oid_pk, 1, XMSS_OID_LEN, keypair);
     xmssmt_parse_oid(&params, oid_pk);
 
-    // fseek past the public key
+    /* fseek past the public key. */
     fseek(keypair, params.publickey_bytes, SEEK_CUR);
-    // This is the OID we're actually going to use. Likely the same, but still.
+    /* This is the OID we're actually going to use. Likely the same, but still.. */
     fread(&oid_sk, 1, XMSS_OID_LEN, keypair);
     xmssmt_parse_oid(&params, oid_sk);
 

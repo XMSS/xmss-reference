@@ -11,14 +11,14 @@
 #include "xmss_core.h"
 
 /**
- * Merkle's TreeHash algorithm. The address only needs to initialize the first 78 bits of addr. Everything else will be set by treehash.
+ * Merkle's TreeHash algorithm. The address only needs to initialize the first
+ * 78 bits of addr. Everything else will be set by treehash.
  * Currently only used for key generation.
- *
  */
 static void treehash(const xmss_params *params, unsigned char *node, uint32_t index, const unsigned char *sk_seed, const unsigned char *pub_seed, const uint32_t addr[8])
 {
     uint32_t idx = index;
-    // use three different addresses because at this point we use all three formats in parallel
+    // Use three different addresses because at this point we use all three formats in parallel
     uint32_t ots_addr[8];
     uint32_t ltree_addr[8];
     uint32_t node_addr[8];
@@ -58,9 +58,12 @@ static void treehash(const xmss_params *params, unsigned char *node, uint32_t in
 }
 
 /**
- * Computes the authpath and the root. This method is using a lot of space as we build the whole tree and then select the authpath nodes.
- * For more efficient algorithms see e.g. the chapter on hash-based signatures in Bernstein, Buchmann, Dahmen. "Post-quantum Cryptography", Springer 2009.
- * It returns the authpath in "authpath" with the node on level 0 at index 0.
+ * Computes the authpath and the root. This method is using a lot of space as we
+ * build the whole tree and then select the authpath nodes. For more efficient
+ * algorithms see e.g. the chapter on hash-based signatures in Bernstein,
+ * Buchmann, Dahmen. "Post-quantum Cryptography", Springer 2009.
+ *
+ * Returns the authpath in "authpath" with the node on level 0 at index 0.
  */
 static void compute_authpath_wots(const xmss_params *params, unsigned char *root, unsigned char *authpath, unsigned long leaf_idx, const unsigned char *sk_seed, unsigned char *pub_seed, uint32_t addr[8])
 {
@@ -155,7 +158,7 @@ int xmss_core_sign(const xmss_params *params, unsigned char *sk, unsigned char *
 
     // index as 32 bytes string
     unsigned char idx_bytes_32[32];
-    to_byte(idx_bytes_32, idx, 32);
+    ull_to_bytes(idx_bytes_32, idx, 32);
 
     memcpy(sk_seed, sk+4, params->n);
     memcpy(sk_prf, sk+4+params->n, params->n);
@@ -166,8 +169,9 @@ int xmss_core_sign(const xmss_params *params, unsigned char *sk, unsigned char *
     sk[1] = ((idx + 1) >> 16) & 255;
     sk[2] = ((idx + 1) >> 8) & 255;
     sk[3] = (idx + 1) & 255;
-    // -- Secret key for this non-forward-secure version is now updated.
-    // -- A productive implementation should use a file handle instead and write the updated secret key at this point!
+    // Secret key for this non-forward-secure version is now updated.
+    // A production implementation should consider using a file handle instead,
+    //  and write the updated secret key at this point!
 
     // Init working params
     unsigned char R[params->n];
@@ -186,7 +190,7 @@ int xmss_core_sign(const xmss_params *params, unsigned char *sk, unsigned char *
     // Generate hash key (R || root || idx)
     memcpy(hash_key, R, params->n);
     memcpy(hash_key+params->n, sk+4+3*params->n, params->n);
-    to_byte(hash_key+2*params->n, idx, params->n);
+    ull_to_bytes(hash_key+2*params->n, idx, params->n);
     // Then use it for message digest
     h_msg(params, msg_h, m, mlen, hash_key, 3*params->n);
 
@@ -302,9 +306,9 @@ int xmssmt_core_sign(const xmss_params *params, unsigned char *sk, unsigned char
     for (i = 0; i < params->index_len; i++) {
         sk[i] = ((idx + 1) >> 8*(params->index_len - 1 - i)) & 255;
     }
-    // -- Secret key for this non-forward-secure version is now updated.
-    // -- A productive implementation should use a file handle instead and write the updated secret key at this point!
-
+    // Secret key for this non-forward-secure version is now updated.
+    // A production implementation should consider using a file handle instead,
+    //  and write the updated secret key at this point!
 
     // ---------------------------------
     // Message Hashing
@@ -312,12 +316,12 @@ int xmssmt_core_sign(const xmss_params *params, unsigned char *sk, unsigned char
 
     // Message Hash:
     // First compute pseudorandom value
-    to_byte(idx_bytes_32, idx, 32);
+    ull_to_bytes(idx_bytes_32, idx, 32);
     prf(params, R, idx_bytes_32, sk_prf, params->n);
     // Generate hash key (R || root || idx)
     memcpy(hash_key, R, params->n);
     memcpy(hash_key+params->n, sk+params->index_len+3*params->n, params->n);
-    to_byte(hash_key+2*params->n, idx, params->n);
+    ull_to_bytes(hash_key+2*params->n, idx, params->n);
 
     // Then use it for message digest
     h_msg(params, msg_h, m, mlen, hash_key, 3*params->n);

@@ -6,9 +6,8 @@
 #include "params.h"
 
 /**
- * Helper method for pseudorandom key generation
- * Expands an n-byte array into a len*n byte array
- * this is done using PRF
+ * Helper method for pseudorandom key generation.
+ * Expands an n-byte array into a len*n byte array using the `prf` function.
  */
 static void expand_seed(const xmss_params *params,
                         unsigned char *outseeds, const unsigned char *inseed)
@@ -17,17 +16,17 @@ static void expand_seed(const xmss_params *params,
     unsigned char ctr[32];
 
     for (i = 0; i < params->wots_len; i++) {
-        to_byte(ctr, i, 32);
+        ull_to_bytes(ctr, i, 32);
         prf(params, outseeds + i*params->n, ctr, inseed, params->n);
     }
 }
 
 /**
  * Computes the chaining function.
- * out and in have to be n-byte arrays
+ * out and in have to be n-byte arrays.
  *
- * interpretes in as start-th value of the chain
- * addr has to contain the address of the chain
+ * Interprets in as start-th value of the chain.
+ * addr has to contain the address of the chain.
  */
 static void gen_chain(const xmss_params *params,
                       unsigned char *out, const unsigned char *in,
@@ -48,6 +47,7 @@ static void gen_chain(const xmss_params *params,
 
 /**
  * base_w algorithm as described in draft.
+ * Interprets an array of bytes as integers in base w.
  */
 static void base_w(const xmss_params *params,
                    int *output, const int out_len, const unsigned char *input)
@@ -104,7 +104,7 @@ void wots_sign(const xmss_params *params,
 
     csum = csum << (8 - ((params->wots_len2 * params->wots_log_w) % 8));
 
-    to_byte(csum_bytes, csum, ((params->wots_len2 * params->wots_log_w) + 7) / 8);
+    ull_to_bytes(csum_bytes, csum, ((params->wots_len2 * params->wots_log_w) + 7) / 8);
     base_w(params, csum_basew, params->wots_len2, csum_bytes);
 
     for (i = 0; i < params->wots_len2; i++) {
@@ -138,7 +138,7 @@ void wots_pk_from_sig(const xmss_params *params, unsigned char *pk,
 
     csum = csum << (8 - ((params->wots_len2 * params->wots_log_w) % 8));
 
-    to_byte(csum_bytes, csum, ((params->wots_len2 * params->wots_log_w) + 7) / 8);
+    ull_to_bytes(csum_bytes, csum, ((params->wots_len2 * params->wots_log_w) + 7) / 8);
     base_w(params, csum_basew, params->wots_len2, csum_bytes);
 
     for (i = 0; i < params->wots_len2; i++) {

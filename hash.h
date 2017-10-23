@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include "params.h"
 
-unsigned char* addr_to_byte(unsigned char *bytes, const uint32_t addr[8]);
+void addr_to_bytes(unsigned char *bytes, const uint32_t addr[8]);
 
 int prf(const xmss_params *params,
         unsigned char *out, const unsigned char *in,

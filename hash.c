@@ -5,16 +5,14 @@
 #include "fips202.h"
 
 #include <stdint.h>
-#include <string.h>
 #include <openssl/sha.h>
 
-unsigned char* addr_to_byte(unsigned char *bytes, const uint32_t addr[8])
+void addr_to_bytes(unsigned char *bytes, const uint32_t addr[8])
 {
     int i;
     for (i = 0; i < 8; i++) {
-        to_byte(bytes + i*4, addr[i], 4);
+        ull_to_bytes(bytes + i*4, addr[i], 4);
     }
-    return bytes;
 }
 
 static int core_hash(const xmss_params *params,
@@ -25,9 +23,11 @@ static int core_hash(const xmss_params *params,
     unsigned long long i = 0;
     unsigned char buf[inlen + n + keylen];
 
-    /* Input is of the form (toByte(X, 32) || KEY || M). */
+    /* We arrange the input into the hash function to be of the form:
+     *  toByte(X, 32) || KEY || M
+     */
 
-    to_byte(buf, type, n);
+    ull_to_bytes(buf, type, n);
 
     for (i=0; i < keylen; i++) {
         buf[i+n] = key[i];
@@ -80,18 +80,23 @@ int hash_h(const xmss_params *params,
     unsigned char buf[2*params->n];
     unsigned char key[params->n];
     unsigned char bitmask[2*params->n];
-    unsigned char byte_addr[32];
+    unsigned char addr_as_bytes[32];
     unsigned int i;
 
+    /* Generate the n-byte key. */
     set_key_and_mask(addr, 0);
-    addr_to_byte(byte_addr, addr);
-    prf(params, key, byte_addr, pub_seed, params->n);
+    addr_to_bytes(addr_as_bytes, addr);
+    prf(params, key, addr_as_bytes, pub_seed, params->n);
+
+    /* Generate the 2n-byte mask. */
     set_key_and_mask(addr, 1);
-    addr_to_byte(byte_addr, addr);
-    prf(params, bitmask, byte_addr, pub_seed, params->n);
+    addr_to_bytes(addr_as_bytes, addr);
+    prf(params, bitmask, addr_as_bytes, pub_seed, params->n);
+
     set_key_and_mask(addr, 2);
-    addr_to_byte(byte_addr, addr);
-    prf(params, bitmask+params->n, byte_addr, pub_seed, params->n);
+    addr_to_bytes(addr_as_bytes, addr);
+    prf(params, bitmask + params->n, addr_as_bytes, pub_seed, params->n);
+
     for (i = 0; i < 2*params->n; i++) {
         buf[i] = in[i] ^ bitmask[i];
     }
@@ -105,16 +110,16 @@ int hash_f(const xmss_params *params,
     unsigned char buf[params->n];
     unsigned char key[params->n];
     unsigned char bitmask[params->n];
-    unsigned char byte_addr[32];
+    unsigned char addr_as_bytes[32];
     unsigned int i;
 
     set_key_and_mask(addr, 0);
-    addr_to_byte(byte_addr, addr);
-    prf(params, key, byte_addr, pub_seed, params->n);
+    addr_to_bytes(addr_as_bytes, addr);
+    prf(params, key, addr_as_bytes, pub_seed, params->n);
 
     set_key_and_mask(addr, 1);
-    addr_to_byte(byte_addr, addr);
-    prf(params, bitmask, byte_addr, pub_seed, params->n);
+    addr_to_bytes(addr_as_bytes, addr);
+    prf(params, bitmask, addr_as_bytes, pub_seed, params->n);
 
     for (i = 0; i < params->n; i++) {
         buf[i] = in[i] ^ bitmask[i];
