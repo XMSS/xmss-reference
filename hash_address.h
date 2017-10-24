@@ -32,8 +32,8 @@ void set_ltree_addr(uint32_t addr[8], uint32_t ltree);
 
 /* These functions are used for hash tree addresses. */
 
-void set_tree_height(uint32_t addr[8], uint32_t treeHeight);
+void set_tree_height(uint32_t addr[8], uint32_t tree_height);
 
-void set_tree_index(uint32_t addr[8], uint32_t treeIndex);
+void set_tree_index(uint32_t addr[8], uint32_t tree_index);
 
 #endif

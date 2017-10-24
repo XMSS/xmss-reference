@@ -49,7 +49,7 @@ int main()
     treehash[i].node = &th_nodes[params.n*i];
   xmss_set_bds_state(state, stack, stackoffset, stacklevels, auth, keep, treehash, retain, 0);
 
-  unsigned long long signature_length = 4+params.n+params.wots_keysize+params.tree_height*params.n;
+  unsigned long long signature_length = 4+params.n+params.wots_sig_bytes+params.tree_height*params.n;
   unsigned char mi[MLEN];
   unsigned char mo[MLEN+signature_length];
   unsigned char sm[MLEN+signature_length];

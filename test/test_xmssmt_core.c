@@ -22,10 +22,10 @@ int main()
   int r;
   unsigned long long i,j;
 
-  unsigned char sk[(params.index_len+4*params.n)];
+  unsigned char sk[(params.index_bytes+4*params.n)];
   unsigned char pk[2*params.n];
 
-  unsigned long long signature_length = params.index_len + params.n + (params.d*params.wots_keysize) + params.full_height*params.n;
+  unsigned long long signature_length = params.index_bytes + params.n + (params.d*params.wots_sig_bytes) + params.full_height*params.n;
   unsigned char mo[MLEN+signature_length];
   unsigned char sm[MLEN+signature_length];
 
@@ -33,12 +33,12 @@ int main()
   xmssmt_core_keypair(&params, pk, sk);
   // check pub_seed in SK
   for (i = 0; i < params.n; i++) {
-    if (pk[params.n+i] != sk[params.index_len+2*params.n+i]) printf("pk.pub_seed != sk.pub_seed %llu",i);
-    if (pk[i] != sk[params.index_len+3*params.n+i]) printf("pk.root != sk.root %llu",i);
+    if (pk[params.n+i] != sk[params.index_bytes+2*params.n+i]) printf("pk.pub_seed != sk.pub_seed %llu",i);
+    if (pk[i] != sk[params.index_bytes+3*params.n+i]) printf("pk.root != sk.root %llu",i);
   }
   printf("pk checked\n");
 
-  unsigned int idx_len = params.index_len;
+  unsigned int idx_len = params.index_bytes;
   // check index
   unsigned long long idx = 0;
   for (i = 0; i < idx_len; i++) {

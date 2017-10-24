@@ -360,14 +360,14 @@ int xmss_core_keypair(const xmss_params *params,
     sk[2] = 0;
     sk[3] = 0;
     // Init SK_SEED (n byte), SK_PRF (n byte), and PUB_SEED (n byte)
-    randombytes(sk + params->index_len, 3*params->n);
+    randombytes(sk + params->index_bytes, 3*params->n);
     // Copy PUB_SEED to public key
-    memcpy(pk + params->n, sk + params->index_len + 2*params->n, params->n);
+    memcpy(pk + params->n, sk + params->index_bytes + 2*params->n, params->n);
 
     // Compute root
-    treehash_init(params, pk, params->tree_height, 0, state, sk + params->index_len, sk + params->index_len + 2*params->n, addr);
+    treehash_init(params, pk, params->tree_height, 0, state, sk + params->index_bytes, sk + params->index_bytes + 2*params->n, addr);
     // copy root o sk
-    memcpy(sk + params->index_len + 3*params->n, pk, params->n);
+    memcpy(sk + params->index_bytes + 3*params->n, pk, params->n);
     return 0;
 }
 
@@ -388,11 +388,11 @@ int xmss_core_sign(const xmss_params *params,
     // Extract SK
     unsigned long idx = ((unsigned long)sk[0] << 24) | ((unsigned long)sk[1] << 16) | ((unsigned long)sk[2] << 8) | sk[3];
     unsigned char sk_seed[params->n];
-    memcpy(sk_seed, sk + params->index_len, params->n);
+    memcpy(sk_seed, sk + params->index_bytes, params->n);
     unsigned char sk_prf[params->n];
-    memcpy(sk_prf, sk + params->index_len + params->n, params->n);
+    memcpy(sk_prf, sk + params->index_bytes + params->n, params->n);
     unsigned char pub_seed[params->n];
-    memcpy(pub_seed, sk + params->index_len + 2*params->n, params->n);
+    memcpy(pub_seed, sk + params->index_bytes + 2*params->n, params->n);
 
     // index as 32 bytes string
     unsigned char idx_bytes_32[32];
@@ -463,8 +463,8 @@ int xmss_core_sign(const xmss_params *params,
     // Compute WOTS signature
     wots_sign(params, sm, msg_h, ots_seed, pub_seed, ots_addr);
 
-    sm += params->wots_keysize;
-    *smlen += params->wots_keysize;
+    sm += params->wots_sig_bytes;
+    *smlen += params->wots_sig_bytes;
 
     // the auth path was already computed during the previous round
     memcpy(sm, state->auth, params->tree_height*params->n);
@@ -497,27 +497,27 @@ int xmssmt_core_keypair(const xmss_params *params,
     unsigned int i;
 
     // Set idx = 0
-    for (i = 0; i < params->index_len; i++) {
+    for (i = 0; i < params->index_bytes; i++) {
         sk[i] = 0;
     }
     // Init SK_SEED (params->n byte), SK_PRF (params->n byte), and PUB_SEED (params->n byte)
-    randombytes(sk+params->index_len, 3*params->n);
+    randombytes(sk+params->index_bytes, 3*params->n);
     // Copy PUB_SEED to public key
-    memcpy(pk+params->n, sk+params->index_len+2*params->n, params->n);
+    memcpy(pk+params->n, sk+params->index_bytes+2*params->n, params->n);
 
     // Start with the bottom-most layer
     set_layer_addr(addr, 0);
     // Set up state and compute wots signatures for all but topmost tree root
     for (i = 0; i < params->d - 1; i++) {
         // Compute seed for OTS key pair
-        treehash_init(params, pk, params->tree_height, 0, states + i, sk+params->index_len, pk+params->n, addr);
+        treehash_init(params, pk, params->tree_height, 0, states + i, sk+params->index_bytes, pk+params->n, addr);
         set_layer_addr(addr, (i+1));
-        get_seed(params, ots_seed, sk + params->index_len, addr);
-        wots_sign(params, wots_sigs + i*params->wots_keysize, pk, ots_seed, pk+params->n, addr);
+        get_seed(params, ots_seed, sk + params->index_bytes, addr);
+        wots_sign(params, wots_sigs + i*params->wots_sig_bytes, pk, ots_seed, pk+params->n, addr);
     }
     // Address now points to the single tree on layer d-1
-    treehash_init(params, pk, params->tree_height, 0, states + i, sk+params->index_len, pk+params->n, addr);
-    memcpy(sk + params->index_len + 3*params->n, pk, params->n);
+    treehash_init(params, pk, params->tree_height, 0, states + i, sk+params->index_bytes, pk+params->n, addr);
+    memcpy(sk + params->index_bytes + 3*params->n, pk, params->n);
     return 0;
 }
 
@@ -555,17 +555,17 @@ int xmssmt_core_sign(const xmss_params *params,
 
     // Extract SK
     unsigned long long idx = 0;
-    for (i = 0; i < params->index_len; i++) {
-        idx |= ((unsigned long long)sk[i]) << 8*(params->index_len - 1 - i);
+    for (i = 0; i < params->index_bytes; i++) {
+        idx |= ((unsigned long long)sk[i]) << 8*(params->index_bytes - 1 - i);
     }
 
-    memcpy(sk_seed, sk+params->index_len, params->n);
-    memcpy(sk_prf, sk+params->index_len+params->n, params->n);
-    memcpy(pub_seed, sk+params->index_len+2*params->n, params->n);
+    memcpy(sk_seed, sk+params->index_bytes, params->n);
+    memcpy(sk_prf, sk+params->index_bytes+params->n, params->n);
+    memcpy(pub_seed, sk+params->index_bytes+2*params->n, params->n);
 
     // Update SK
-    for (i = 0; i < params->index_len; i++) {
-        sk[i] = ((idx + 1) >> 8*(params->index_len - 1 - i)) & 255;
+    for (i = 0; i < params->index_bytes; i++) {
+        sk[i] = ((idx + 1) >> 8*(params->index_bytes - 1 - i)) & 255;
     }
     // Secret key for this non-forward-secure version is now updated.
     // A production implementation should consider using a file handle instead,
@@ -581,7 +581,7 @@ int xmssmt_core_sign(const xmss_params *params,
     prf(params, R, idx_bytes_32, sk_prf, params->n);
     // Generate hash key (R || root || idx)
     memcpy(hash_key, R, params->n);
-    memcpy(hash_key+params->n, sk+params->index_len+3*params->n, params->n);
+    memcpy(hash_key+params->n, sk+params->index_bytes+3*params->n, params->n);
     ull_to_bytes(hash_key+2*params->n, params->n, idx);
 
     // Then use it for message digest
@@ -591,12 +591,12 @@ int xmssmt_core_sign(const xmss_params *params,
     *smlen = 0;
 
     // Copy index to signature
-    for (i = 0; i < params->index_len; i++) {
-        sm[i] = (idx >> 8*(params->index_len - 1 - i)) & 255;
+    for (i = 0; i < params->index_bytes; i++) {
+        sm[i] = (idx >> 8*(params->index_bytes - 1 - i)) & 255;
     }
 
-    sm += params->index_len;
-    *smlen += params->index_len;
+    sm += params->index_bytes;
+    *smlen += params->index_bytes;
 
     // Copy R to signature
     for (i = 0; i < params->n; i++) {
@@ -626,8 +626,8 @@ int xmssmt_core_sign(const xmss_params *params,
     // Compute WOTS signature
     wots_sign(params, sm, msg_h, ots_seed, pub_seed, ots_addr);
 
-    sm += params->wots_keysize;
-    *smlen += params->wots_keysize;
+    sm += params->wots_sig_bytes;
+    *smlen += params->wots_sig_bytes;
 
     memcpy(sm, states[0].auth, params->tree_height*params->n);
     sm += params->tree_height*params->n;
@@ -636,10 +636,10 @@ int xmssmt_core_sign(const xmss_params *params,
     // prepare signature of remaining layers
     for (i = 1; i < params->d; i++) {
         // put WOTS signature in place
-        memcpy(sm, wots_sigs + (i-1)*params->wots_keysize, params->wots_keysize);
+        memcpy(sm, wots_sigs + (i-1)*params->wots_sig_bytes, params->wots_sig_bytes);
 
-        sm += params->wots_keysize;
-        *smlen += params->wots_keysize;
+        sm += params->wots_sig_bytes;
+        *smlen += params->wots_sig_bytes;
 
         // put AUTH nodes in place
         memcpy(sm, states[i].auth, params->tree_height*params->n);
@@ -684,8 +684,8 @@ int xmssmt_core_sign(const xmss_params *params,
             set_tree_addr(ots_addr, ((idx + 1) >> ((i+2) * params->tree_height)));
             set_ots_addr(ots_addr, (((idx >> ((i+1) * params->tree_height)) + 1) & ((1 << params->tree_height)-1)));
 
-            get_seed(params, ots_seed, sk+params->index_len, ots_addr);
-            wots_sign(params, wots_sigs + i*params->wots_keysize, states[i].stack, ots_seed, pub_seed, ots_addr);
+            get_seed(params, ots_seed, sk+params->index_bytes, ots_addr);
+            wots_sign(params, wots_sigs + i*params->wots_sig_bytes, states[i].stack, ots_seed, pub_seed, ots_addr);
 
             states[params->d + i].stackoffset = 0;
             states[params->d + i].next_leaf = 0;

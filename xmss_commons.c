@@ -47,7 +47,7 @@ void gen_leaf_wots(const xmss_params *params, unsigned char *leaf,
                    uint32_t ltree_addr[8], uint32_t ots_addr[8])
 {
     unsigned char seed[params->n];
-    unsigned char pk[params->wots_keysize];
+    unsigned char pk[params->wots_sig_bytes];
 
     get_seed(params, seed, sk_seed, ots_addr);
     wots_pkgen(params, pk, seed, pub_seed, ots_addr);
@@ -191,7 +191,7 @@ int xmss_core_sign_open(const xmss_params *params,
                         const unsigned char *pk)
 {
     const unsigned char *pub_seed = pk + params->n;
-    unsigned char wots_pk[params->wots_keysize];
+    unsigned char wots_pk[params->wots_sig_bytes];
     unsigned char leaf[params->n];
     unsigned char root[params->n];
     unsigned char mhash[params->n];
@@ -205,20 +205,20 @@ int xmss_core_sign_open(const xmss_params *params,
     set_type(ltree_addr, XMSS_ADDR_TYPE_LTREE);
     set_type(node_addr, XMSS_ADDR_TYPE_HASHTREE);
 
-    *mlen = smlen - params->bytes;
+    *mlen = smlen - params->sig_bytes;
 
     /* Convert the index bytes from the signature to an integer. */
-    idx = (unsigned long)bytes_to_ull(sm, params->index_len);
+    idx = (unsigned long)bytes_to_ull(sm, params->index_bytes);
 
     /* Compute the message hash. */
-    hash_message(params, mhash, sm + params->index_len, pk, idx,
-                 sm + params->bytes, *mlen);
-    sm += params->index_len + params->n;
+    hash_message(params, mhash, sm + params->index_bytes, pk, idx,
+                 sm + params->sig_bytes, *mlen);
+    sm += params->index_bytes + params->n;
 
     /* The WOTS public key is only correct if the signature was correct. */
     set_ots_addr(ots_addr, idx);
     wots_pk_from_sig(params, wots_pk, sm, mhash, pub_seed, ots_addr);
-    sm += params->wots_keysize;
+    sm += params->wots_sig_bytes;
 
     /* Compute the leaf node using the WOTS public key. */
     set_ltree_addr(ltree_addr, idx);
@@ -252,7 +252,7 @@ int xmssmt_core_sign_open(const xmss_params *params,
                           const unsigned char *pk)
 {
     const unsigned char *pub_seed = pk + params->n;
-    unsigned char wots_pk[params->wots_keysize];
+    unsigned char wots_pk[params->wots_sig_bytes];
     unsigned char leaf[params->n];
     unsigned char root[params->n];
     unsigned char *mhash = root;
@@ -268,15 +268,15 @@ int xmssmt_core_sign_open(const xmss_params *params,
     set_type(ltree_addr, XMSS_ADDR_TYPE_LTREE);
     set_type(node_addr, XMSS_ADDR_TYPE_HASHTREE);
 
-    *mlen = smlen - params->bytes;
+    *mlen = smlen - params->sig_bytes;
 
     /* Convert the index bytes from the signature to an integer. */
-    idx = bytes_to_ull(sm, params->index_len);
+    idx = bytes_to_ull(sm, params->index_bytes);
 
     /* Compute the message hash. */
-    hash_message(params, mhash, sm + params->index_len, pk, idx,
-                 sm + params->bytes, *mlen);
-    sm += params->index_len + params->n;
+    hash_message(params, mhash, sm + params->index_bytes, pk, idx,
+                 sm + params->sig_bytes, *mlen);
+    sm += params->index_bytes + params->n;
 
     /* For each subtree.. */
     for (i = 0; i < params->d; i++) {
@@ -296,7 +296,7 @@ int xmssmt_core_sign_open(const xmss_params *params,
         /* Initially, root = mhash, but on subsequent iterations it is the root
            of the subtree below the currently processed subtree. */
         wots_pk_from_sig(params, wots_pk, sm, root, pub_seed, ots_addr);
-        sm += params->wots_keysize;
+        sm += params->wots_sig_bytes;
 
         /* Compute the leaf node using the WOTS public key. */
         set_ltree_addr(ltree_addr, idx_leaf);

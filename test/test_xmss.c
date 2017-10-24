@@ -24,18 +24,18 @@ int main()
   unsigned long long i, j;
   unsigned long errors = 0;
 
-  unsigned char sk[XMSS_OID_LEN + params.privatekey_bytes];
-  unsigned char pk[XMSS_OID_LEN + params.publickey_bytes];
+  unsigned char sk[XMSS_OID_LEN + params.sk_bytes];
+  unsigned char pk[XMSS_OID_LEN + params.pk_bytes];
 
-  unsigned char mo[MLEN+params.bytes];
-  unsigned char sm[MLEN+params.bytes];
+  unsigned char mo[MLEN+params.sig_bytes];
+  unsigned char sm[MLEN+params.sig_bytes];
 
   printf("keypair\n");
   xmss_keypair(pk, sk, oid);
   // check pub_seed in SK
   for (i = 0; i < params.n; i++) {
-    if (pk[XMSS_OID_LEN+params.n+i] != sk[XMSS_OID_LEN+params.index_len+2*params.n+i]) printf("pk.pub_seed != sk.pub_seed %llu",i);
-    if (pk[XMSS_OID_LEN+i] != sk[XMSS_OID_LEN+params.index_len+3*params.n+i]) printf("pk.root != sk.root %llu",i);
+    if (pk[XMSS_OID_LEN+params.n+i] != sk[XMSS_OID_LEN+params.index_bytes+2*params.n+i]) printf("pk.pub_seed != sk.pub_seed %llu",i);
+    if (pk[XMSS_OID_LEN+i] != sk[XMSS_OID_LEN+params.index_bytes+3*params.n+i]) printf("pk.root != sk.root %llu",i);
   }
 
   // check index
@@ -55,7 +55,7 @@ int main()
     }
     printf("\n");
 
-    r = memcmp(mi, sm+params.bytes,MLEN);
+    r = memcmp(mi, sm+params.sig_bytes,MLEN);
     printf("%d\n", r);
 
     /* Test valid signature */
@@ -68,7 +68,7 @@ int main()
     printf("%llu\n", MLEN-mlen);
 
     /* Test with modified message */
-    sm[params.bytes+10] ^= 1;
+    sm[params.sig_bytes+10] ^= 1;
     r = xmss_sign_open(mo, &mlen, sm, smlen, pk);
     printf("%d\n", r+1);
     if (r == 0) errors++;
@@ -78,7 +78,7 @@ int main()
 
     /* Test with modified signature */
     /* Modified index */
-    sm[params.bytes+10] ^= 1;
+    sm[params.sig_bytes+10] ^= 1;
     sm[2] ^= 1;
     r = xmss_sign_open(mo, &mlen, sm, smlen, pk);
     printf("%d\n", r+1);
@@ -109,7 +109,7 @@ int main()
 
     /* Modified AUTH */
     sm[240] ^= 1;
-    sm[params.bytes - 10] ^= 1;
+    sm[params.sig_bytes - 10] ^= 1;
     r = xmss_sign_open(mo, &mlen, sm, smlen, pk);
     printf("%d\n", r+1);
     if (r == 0) errors++;

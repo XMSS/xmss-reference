@@ -18,13 +18,13 @@ int main(int argc, char **argv)
     xmssmt_str_to_oid(&oid, argv[1]);
     xmssmt_parse_oid(&params, oid);
 
-    unsigned char pk[XMSS_OID_LEN + params.publickey_bytes];
-    unsigned char sk[XMSS_OID_LEN + params.privatekey_bytes];
+    unsigned char pk[XMSS_OID_LEN + params.pk_bytes];
+    unsigned char sk[XMSS_OID_LEN + params.sk_bytes];
 
     xmssmt_keypair(pk, sk, oid);
 
-    fwrite(pk, 1, XMSS_OID_LEN + params.publickey_bytes, stdout);
-    fwrite(sk, 1, XMSS_OID_LEN + params.privatekey_bytes, stdout);
+    fwrite(pk, 1, XMSS_OID_LEN + params.pk_bytes, stdout);
+    fwrite(sk, 1, XMSS_OID_LEN + params.sk_bytes, stdout);
 
     fclose(stdout);
 }

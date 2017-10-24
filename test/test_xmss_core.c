@@ -26,7 +26,7 @@ int main()
   unsigned char sk[4*params.n+4];
   unsigned char pk[2*params.n];
 
-  unsigned long long signature_length = 4+params.n+params.wots_keysize+params.tree_height*params.n;
+  unsigned long long signature_length = 4+params.n+params.wots_sig_bytes+params.tree_height*params.n;
   unsigned char mo[MLEN+signature_length];
   unsigned char sm[MLEN+signature_length];
 

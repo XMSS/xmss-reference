@@ -23,26 +23,26 @@ int main()
   int r;
   unsigned long long i,j;
 
-  unsigned char sk[XMSS_OID_LEN + params.privatekey_bytes];
-  unsigned char pk[XMSS_OID_LEN + params.publickey_bytes];
+  unsigned char sk[XMSS_OID_LEN + params.sk_bytes];
+  unsigned char pk[XMSS_OID_LEN + params.pk_bytes];
 
-  unsigned char mo[MLEN+params.bytes];
-  unsigned char sm[MLEN+params.bytes];
+  unsigned char mo[MLEN+params.sig_bytes];
+  unsigned char sm[MLEN+params.sig_bytes];
 
   printf("keypair\n");
   xmssmt_keypair(pk, sk, oid);
   // check pub_seed in SK
   for (i = 0; i < params.n; i++) {
-    if (pk[XMSS_OID_LEN+params.n+i] != sk[XMSS_OID_LEN+params.index_len+2*params.n+i]) printf("pk.pub_seed != sk.pub_seed %llu",i);
-    if (pk[XMSS_OID_LEN+i] != sk[XMSS_OID_LEN+params.index_len+3*params.n+i]) printf("pk.root != sk.root %llu",i);
+    if (pk[XMSS_OID_LEN+params.n+i] != sk[XMSS_OID_LEN+params.index_bytes+2*params.n+i]) printf("pk.pub_seed != sk.pub_seed %llu",i);
+    if (pk[XMSS_OID_LEN+i] != sk[XMSS_OID_LEN+params.index_bytes+3*params.n+i]) printf("pk.root != sk.root %llu",i);
   }
 
   printf("pk checked\n");
 
   // check index
   unsigned long long idx = 0;
-  for (i = 0; i < params.index_len; i++) {
-    idx |= ((unsigned long long)sk[i + XMSS_OID_LEN]) << 8*(params.index_len - 1 - i);
+  for (i = 0; i < params.index_bytes; i++) {
+    idx |= ((unsigned long long)sk[i + XMSS_OID_LEN]) << 8*(params.index_bytes - 1 - i);
   }
 
   if (idx) printf("\nidx != 0: %llu\n",idx);
@@ -53,11 +53,11 @@ int main()
     printf("sign\n");
     xmssmt_sign(sk, sm, &smlen, mi, MLEN);
     idx = 0;
-    for (j = 0; j < params.index_len; j++) {
-      idx += ((unsigned long long)sm[j]) << 8*(params.index_len - 1 - j);
+    for (j = 0; j < params.index_bytes; j++) {
+      idx += ((unsigned long long)sm[j]) << 8*(params.index_bytes - 1 - j);
     }
     printf("\nidx = %llu\n",idx);
-    r = memcmp(mi, sm+params.bytes,MLEN);
+    r = memcmp(mi, sm+params.sig_bytes,MLEN);
     printf("%d\n", r);
 
     for (j = 0; j < smlen; j++) {

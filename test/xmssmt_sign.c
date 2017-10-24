@@ -29,23 +29,23 @@ int main(int argc, char **argv) {
     xmssmt_parse_oid(&params, oid_pk);
 
     /* fseek past the public key. */
-    fseek(keypair, params.publickey_bytes, SEEK_CUR);
+    fseek(keypair, params.pk_bytes, SEEK_CUR);
     /* This is the OID we're actually going to use. Likely the same, but still.. */
     fread(&oid_sk, 1, XMSS_OID_LEN, keypair);
     xmssmt_parse_oid(&params, oid_sk);
 
-    unsigned char sk[params.privatekey_bytes];
+    unsigned char sk[params.sk_bytes];
     unsigned char m[MLEN];
-    unsigned char sm[params.bytes + MLEN];
+    unsigned char sm[params.sig_bytes + MLEN];
     unsigned long long smlen;
 
-    fread(sk, 1, params.privatekey_bytes, keypair);
+    fread(sk, 1, params.sk_bytes, keypair);
     fread(m, 1, MLEN, stdin);
     xmssmt_core_sign(&params, sk, sm, &smlen, m, MLEN);
 
-    fseek(keypair, -((long int)params.privatekey_bytes), SEEK_CUR);
-    fwrite(sk, 1, params.privatekey_bytes, keypair);
-    fwrite(sm, 1, params.bytes + MLEN, stdout);
+    fseek(keypair, -((long int)params.sk_bytes), SEEK_CUR);
+    fwrite(sk, 1, params.sk_bytes, keypair);
+    fwrite(sm, 1, params.sig_bytes + MLEN, stdout);
 
     fclose(keypair);
     fclose(stdout);

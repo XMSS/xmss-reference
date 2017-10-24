@@ -107,10 +107,10 @@ int xmss_core_sign(const xmss_params *params,
                    unsigned char *sm, unsigned long long *smlen,
                    const unsigned char *m, unsigned long long mlen)
 {
-    const unsigned char *sk_seed = sk + params->index_len;
-    const unsigned char *sk_prf = sk + params->index_len + params->n;
-    const unsigned char *pub_seed = sk + params->index_len + 2*params->n;
-    const unsigned char *pub_root = sk + params->index_len + 3*params->n;
+    const unsigned char *sk_seed = sk + params->index_bytes;
+    const unsigned char *sk_prf = sk + params->index_bytes + params->n;
+    const unsigned char *pub_seed = sk + params->index_bytes + 2*params->n;
+    const unsigned char *pub_root = sk + params->index_bytes + 3*params->n;
 
     unsigned char root[params->n];
     unsigned char mhash[params->n];
@@ -122,15 +122,15 @@ int xmss_core_sign(const xmss_params *params,
     set_type(ots_addr, XMSS_ADDR_TYPE_OTS);
 
     /* Read and use the current index from the secret key. */
-    idx = (unsigned long)bytes_to_ull(sk, params->index_len);
-    memcpy(sm, sk, params->index_len);
-    sm += params->index_len;
+    idx = (unsigned long)bytes_to_ull(sk, params->index_bytes);
+    memcpy(sm, sk, params->index_bytes);
+    sm += params->index_bytes;
 
     /*************************************************************************
      * THIS IS WHERE PRODUCTION IMPLEMENTATIONS WOULD UPDATE THE SECRET KEY. *
      *************************************************************************/
     /* Increment the index in the secret key. */
-    ull_to_bytes(sk, params->index_len, idx + 1);
+    ull_to_bytes(sk, params->index_bytes, idx + 1);
 
     /* Compute the digest randomization value. */
     ull_to_bytes(idx_bytes_32, 32, idx);
@@ -147,14 +147,14 @@ int xmss_core_sign(const xmss_params *params,
 
     /* Compute a WOTS signature on the message hash. */
     wots_sign(params, sm, mhash, ots_seed, pub_seed, ots_addr);
-    sm += params->wots_keysize;
+    sm += params->wots_sig_bytes;
 
     /* Compute the authentication path for the used WOTS leaf. */
     treehash(params, root, sm, sk_seed, pub_seed, idx, ots_addr);
     sm += params->tree_height*params->n;
 
     memcpy(sm, m, mlen);
-    *smlen = params->bytes + mlen;
+    *smlen = params->sig_bytes + mlen;
 
     return 0;
 }
@@ -175,8 +175,8 @@ int xmssmt_core_keypair(const xmss_params *params,
     set_layer_addr(top_tree_addr, params->d - 1);
 
     /* Initialize index to 0. */
-    memset(sk, 0, params->index_len);
-    sk += params->index_len;
+    memset(sk, 0, params->index_bytes);
+    sk += params->index_bytes;
 
     /* Initialize SK_SEED, SK_PRF and PUB_SEED. */
     randombytes(sk, 3 * params->n);
@@ -198,10 +198,10 @@ int xmssmt_core_sign(const xmss_params *params,
                      unsigned char *sm, unsigned long long *smlen,
                      const unsigned char *m, unsigned long long mlen)
 {
-    const unsigned char *sk_seed = sk + params->index_len;
-    const unsigned char *sk_prf = sk + params->index_len + params->n;
-    const unsigned char *pub_seed = sk + params->index_len + 2*params->n;
-    const unsigned char *pub_root = sk + params->index_len + 3*params->n;
+    const unsigned char *sk_seed = sk + params->index_bytes;
+    const unsigned char *sk_prf = sk + params->index_bytes + params->n;
+    const unsigned char *pub_seed = sk + params->index_bytes + 2*params->n;
+    const unsigned char *pub_root = sk + params->index_bytes + 3*params->n;
 
     unsigned char root[params->n];
     unsigned char *mhash = root;
@@ -215,15 +215,15 @@ int xmssmt_core_sign(const xmss_params *params,
     set_type(ots_addr, XMSS_ADDR_TYPE_OTS);
 
     /* Read and use the current index from the secret key. */
-    idx = (unsigned long)bytes_to_ull(sk, params->index_len);
-    memcpy(sm, sk, params->index_len);
-    sm += params->index_len;
+    idx = (unsigned long)bytes_to_ull(sk, params->index_bytes);
+    memcpy(sm, sk, params->index_bytes);
+    sm += params->index_bytes;
 
     /*************************************************************************
      * THIS IS WHERE PRODUCTION IMPLEMENTATIONS WOULD UPDATE THE SECRET KEY. *
      *************************************************************************/
     /* Increment the index in the secret key. */
-    ull_to_bytes(sk, params->index_len, idx + 1);
+    ull_to_bytes(sk, params->index_bytes, idx + 1);
 
     /* Compute the digest randomization value. */
     ull_to_bytes(idx_bytes_32, 32, idx);
@@ -250,7 +250,7 @@ int xmssmt_core_sign(const xmss_params *params,
         /* Initially, root = mhash, but on subsequent iterations it is the root
            of the subtree below the currently processed subtree. */
         wots_sign(params, sm, root, ots_seed, pub_seed, ots_addr);
-        sm += params->wots_keysize;
+        sm += params->wots_sig_bytes;
 
         /* Compute the authentication path for the used WOTS leaf. */
         treehash(params, root, sm, sk_seed, pub_seed, idx_leaf, ots_addr);
@@ -258,7 +258,7 @@ int xmssmt_core_sign(const xmss_params *params,
     }
 
     memcpy(sm, m, mlen);
-    *smlen = params->bytes + mlen;
+    *smlen = params->sig_bytes + mlen;
 
     return 0;
 }

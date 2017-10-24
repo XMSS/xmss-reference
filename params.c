@@ -227,20 +227,17 @@ int xmss_parse_oid(xmss_params *params, const uint32_t oid)
     params->tree_height = params->full_height  / params->d;
     params->wots_w = 16;
     params->wots_log_w = 4;
-    if (params->n == 32) {
-        params->wots_len1 = 64;
-    }
-    else {
-        params->wots_len1 = 128;
-    }
+    params->wots_len1 = 8 * params->n / params->wots_log_w;
+    /* len_2 = floor(log(len_1 * (w - 1)) / log(w)) + 1 */
     params->wots_len2 = 3;
     params->wots_len = params->wots_len1 + params->wots_len2;
-    params->wots_keysize = params->wots_len * params->n;
-    params->index_len = 4;
-    params->bytes = (params->index_len + params->n + params->d*params->wots_keysize
-                     + params->full_height *params->n);
-    params->publickey_bytes = 2*params->n;
-    params->privatekey_bytes = 4*params->n + params->index_len;
+    params->wots_sig_bytes = params->wots_len * params->n;
+    params->index_bytes = 4;
+    params->sig_bytes = (params->index_bytes + params->n
+                         + params->d * params->wots_sig_bytes
+                         + params->full_height * params->n);
+    params->pk_bytes = 2 * params->n;
+    params->sk_bytes = 4 * params->n + params->index_bytes;
 
     // TODO figure out sensible and legal values for this based on the above
     params->bds_k = 0;
@@ -447,21 +444,18 @@ int xmssmt_parse_oid(xmss_params *params, const uint32_t oid)
     params->tree_height = params->full_height  / params->d;
     params->wots_w = 16;
     params->wots_log_w = 4;
-    if (params->n == 32) {
-        params->wots_len1 = 64;
-    }
-    else {
-        params->wots_len1 = 128;
-    }
+    params->wots_len1 = 8 * params->n / params->wots_log_w;
+    /* len_2 = floor(log(len_1 * (w - 1)) / log(w)) + 1 */
     params->wots_len2 = 3;
     params->wots_len = params->wots_len1 + params->wots_len2;
-    params->wots_keysize = params->wots_len * params->n;
-    /* Round index_len up to nearest byte. */
-    params->index_len = (params->full_height + 7) / 8;
-    params->bytes = (params->index_len + params->n + params->d*params->wots_keysize
-                     + params->full_height *params->n);
-    params->publickey_bytes = 2*params->n;
-    params->privatekey_bytes = 4*params->n + params->index_len;
+    params->wots_sig_bytes = params->wots_len * params->n;
+    /* Round index_bytes up to nearest byte. */
+    params->index_bytes = (params->full_height + 7) / 8;
+    params->sig_bytes = (params->index_bytes + params->n
+                         + params->d * params->wots_sig_bytes
+                         + params->full_height * params->n);
+    params->pk_bytes = 2 * params->n;
+    params->sk_bytes = 4 * params->n + params->index_bytes;
 
     // TODO figure out sensible and legal values for this based on the above
     params->bds_k = 0;

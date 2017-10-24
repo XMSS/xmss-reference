@@ -19,14 +19,14 @@ typedef struct {
     unsigned int wots_len1;
     unsigned int wots_len2;
     unsigned int wots_len;
-    unsigned int wots_keysize;
+    unsigned int wots_sig_bytes;
     unsigned int full_height;
     unsigned int tree_height;
     unsigned int d;
-    unsigned int index_len;
-    unsigned int bytes;
-    unsigned int publickey_bytes;
-    unsigned int privatekey_bytes;
+    unsigned int index_bytes;
+    unsigned int sig_bytes;
+    unsigned int pk_bytes;
+    unsigned int sk_bytes;
     unsigned int bds_k;
 } xmss_params;
 

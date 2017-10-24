@@ -45,7 +45,7 @@ int main()
   treehash_inst treehash[(2*d-1) * (tree_h-k)];
   unsigned char th_nodes[(2*d-1) * (tree_h-k)*n];
   unsigned char retain[(2*d-1) * ((1 << k) - k - 1)*n];
-  unsigned char wots_sigs[d * params.wots_keysize];
+  unsigned char wots_sigs[d * params.wots_sig_bytes];
   // first d are 'regular' states, second d are 'next'; top tree has no 'next'
   bds_state states[2*d-1];
 
@@ -62,10 +62,10 @@ int main()
     );
   }
 
-  unsigned char sk[(params.index_len+4*n)];
+  unsigned char sk[(params.index_bytes+4*n)];
   unsigned char pk[2*n];
 
-  unsigned long long signature_length = params.index_len + n + (d*params.wots_keysize) + h*n;
+  unsigned long long signature_length = params.index_bytes + n + (d*params.wots_sig_bytes) + h*n;
   unsigned char mo[MLEN+signature_length];
   unsigned char sm[MLEN+signature_length];
 
@@ -75,12 +75,12 @@ int main()
   xmssmt_core_keypair(&params, pk, sk, states, wots_sigs);
   // check pub_seed in SK
   for (i = 0; i < n; i++) {
-    if (pk[n+i] != sk[params.index_len+2*n+i]) printf("pk.pub_seed != sk.pub_seed %llu",i);
-    if (pk[i] != sk[params.index_len+3*n+i]) printf("pk.root != sk.root %llu",i);
+    if (pk[n+i] != sk[params.index_bytes+2*n+i]) printf("pk.pub_seed != sk.pub_seed %llu",i);
+    if (pk[i] != sk[params.index_bytes+3*n+i]) printf("pk.root != sk.root %llu",i);
   }
   printf("pk checked\n");
 
-  unsigned int idx_len = params.index_len;
+  unsigned int idx_len = params.index_bytes;
   // check index
   unsigned long long idx = 0;
   for (i = 0; i < idx_len; i++) {

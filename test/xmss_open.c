@@ -26,15 +26,15 @@ int main(int argc, char **argv) {
     fread(&oid, 1, XMSS_OID_LEN, keypair);
     xmss_parse_oid(&params, oid);
 
-    unsigned char pk[params.publickey_bytes];
-    unsigned char sm[params.bytes + MLEN];
-    unsigned char m[params.bytes + MLEN];
+    unsigned char pk[params.pk_bytes];
+    unsigned char sm[params.sig_bytes + MLEN];
+    unsigned char m[params.sig_bytes + MLEN];
     unsigned long long mlen;
 
-    fread(pk, 1, params.publickey_bytes, keypair);
-    fread(sm, 1, params.bytes + MLEN, stdin);
+    fread(pk, 1, params.pk_bytes, keypair);
+    fread(sm, 1, params.sig_bytes + MLEN, stdin);
 
-    ret = xmss_core_sign_open(&params, m, &mlen, sm, params.bytes + MLEN, pk);
+    ret = xmss_core_sign_open(&params, m, &mlen, sm, params.sig_bytes + MLEN, pk);
 
     if (ret) {
         printf("Verification failed!\n");
