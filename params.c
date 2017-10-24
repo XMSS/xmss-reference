@@ -456,7 +456,8 @@ int xmssmt_parse_oid(xmss_params *params, const uint32_t oid)
     params->wots_len2 = 3;
     params->wots_len = params->wots_len1 + params->wots_len2;
     params->wots_keysize = params->wots_len * params->n;
-    params->index_len = 4;
+    /* Round index_len up to nearest byte. */
+    params->index_len = (params->full_height + 7) / 8;
     params->bytes = (params->index_len + params->n + params->d*params->wots_keysize
                      + params->full_height *params->n);
     params->publickey_bytes = 2*params->n;

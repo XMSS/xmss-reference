@@ -176,7 +176,7 @@ int xmssmt_core_keypair(const xmss_params *params,
 
     /* Initialize index to 0. */
     memset(sk, 0, params->index_len);
-    sk += 4;
+    sk += params->index_len;
 
     /* Initialize SK_SEED, SK_PRF and PUB_SEED. */
     randombytes(sk, 3 * params->n);
