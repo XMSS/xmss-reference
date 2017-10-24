@@ -11,6 +11,9 @@ void set_type(uint32_t addr[8], uint32_t type);
 
 void set_key_and_mask(uint32_t addr[8], uint32_t key_and_mask);
 
+/* Copies the layer and tree part of one address into the other */
+void copy_subtree_addr(uint32_t out[8], const uint32_t in[8]);
+
 /* These functions are used for OTS addresses. */
 
 void set_ots_addr(uint32_t addr[8], uint32_t ots);
