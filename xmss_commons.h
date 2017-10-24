@@ -7,8 +7,13 @@
 /**
  * Converts the value of 'in' to 'len' bytes in big-endian byte order.
  */
-void ull_to_bytes(unsigned char *out, unsigned long long outlen,
+void ull_to_bytes(unsigned char *out, unsigned int outlen,
                   unsigned long long in);
+
+/**
+ * Converts the inlen bytes in 'in' from big-endian byte order to an integer.
+ */
+unsigned long long bytes_to_ull(const unsigned char *in, unsigned int inlen);
 
 /**
  * Computes the leaf at a given address. First generates the WOTS key pair,
@@ -35,6 +40,14 @@ void get_seed(const xmss_params *params, unsigned char *seed,
 void l_tree(const xmss_params *params,
             unsigned char *leaf, unsigned char *wots_pk,
             const unsigned char *pub_seed, uint32_t addr[8]);
+
+/**
+ * Computes the randomized message hash.
+ */
+void hash_message(const xmss_params *params, unsigned char *mhash,
+                  const unsigned char *R, const unsigned char *root,
+                  unsigned long long idx,
+                  const unsigned char *m, unsigned long long mlen);
 
 /**
  * Verifies a given message signature pair under a given public key.

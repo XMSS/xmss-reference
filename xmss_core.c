@@ -11,8 +11,9 @@
 #include "xmss_core.h"
 
 /**
- * Merkle's TreeHash algorithm. Currently only used for key generation.
- * Computes the root node of the top-most subtree.
+ * For a given leaf index, computes the authentication path and the resulting
+ * root node using Merkle's TreeHash algorithm.
+ * Expects the layer and tree parts of subtree_addr to be set.
  */
 static void treehash(const xmss_params *params,
                      unsigned char *root, unsigned char *auth_path,
@@ -98,103 +99,62 @@ int xmss_core_keypair(const xmss_params *params,
 }
 
 /**
- * Signs a message.
- * Returns
- * 1. an array containing the signature followed by the message AND
- * 2. an updated secret key!
- *
+ * Signs a message. Returns an array containing the signature followed by the
+ * message and an updated secret key.
  */
-int xmss_core_sign(const xmss_params *params, unsigned char *sk, unsigned char *sm, unsigned long long *smlen, const unsigned char *m, unsigned long long mlen)
+int xmss_core_sign(const xmss_params *params,
+                   unsigned char *sk,
+                   unsigned char *sm, unsigned long long *smlen,
+                   const unsigned char *m, unsigned long long mlen)
 {
-    uint16_t i = 0;
+    const unsigned char *sk_seed = sk + params->index_len;
+    const unsigned char *sk_prf = sk + params->index_len + params->n;
+    const unsigned char *pub_seed = sk + params->index_len + 2*params->n;
+    const unsigned char *pub_root = sk + params->index_len + 3*params->n;
 
-    // Extract SK
-    uint32_t idx = ((unsigned long)sk[0] << 24) | ((unsigned long)sk[1] << 16) | ((unsigned long)sk[2] << 8) | sk[3];
-    unsigned char sk_seed[params->n];
-    unsigned char sk_prf[params->n];
-    unsigned char pub_seed[params->n];
-    unsigned char hash_key[3*params->n];
-
-    // index as 32 bytes string
-    unsigned char idx_bytes_32[32];
-    ull_to_bytes(idx_bytes_32, 32, idx);
-
-    memcpy(sk_seed, sk+4, params->n);
-    memcpy(sk_prf, sk+4+params->n, params->n);
-    memcpy(pub_seed, sk+4+2*params->n, params->n);
-
-    // Update SK
-    sk[0] = ((idx + 1) >> 24) & 255;
-    sk[1] = ((idx + 1) >> 16) & 255;
-    sk[2] = ((idx + 1) >> 8) & 255;
-    sk[3] = (idx + 1) & 255;
-    // Secret key for this non-forward-secure version is now updated.
-    // A production implementation should consider using a file handle instead,
-    //  and write the updated secret key at this point!
-
-    // Init working params
-    unsigned char R[params->n];
-    unsigned char msg_h[params->n];
     unsigned char root[params->n];
+    unsigned char mhash[params->n];
     unsigned char ots_seed[params->n];
-    uint32_t ots_addr[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+    unsigned long idx;
+    unsigned char idx_bytes_32[32];
 
-    // ---------------------------------
-    // Message Hashing
-    // ---------------------------------
-
-    // Message Hash:
-    // First compute pseudorandom value
-    prf(params, R, idx_bytes_32, sk_prf, params->n);
-    // Generate hash key (R || root || idx)
-    memcpy(hash_key, R, params->n);
-    memcpy(hash_key+params->n, sk+4+3*params->n, params->n);
-    ull_to_bytes(hash_key+2*params->n, params->n, idx);
-    // Then use it for message digest
-    h_msg(params, msg_h, m, mlen, hash_key, 3*params->n);
-
-    // Start collecting signature
-    *smlen = 0;
-
-    // Copy index to signature
-    sm[0] = (idx >> 24) & 255;
-    sm[1] = (idx >> 16) & 255;
-    sm[2] = (idx >> 8) & 255;
-    sm[3] = idx & 255;
-
-    sm += 4;
-    *smlen += 4;
-
-    // Copy R to signature
-    for (i = 0; i < params->n; i++)
-    sm[i] = R[i];
-
-    sm += params->n;
-    *smlen += params->n;
-
-    // ----------------------------------
-    // Now we start to "really sign"
-    // ----------------------------------
-
-    // Prepare Address
+    uint32_t ots_addr[8] = {0};
     set_type(ots_addr, 0);
+
+    /* Read and use the current index from the secret key. */
+    idx = (unsigned long)bytes_to_ull(sk, params->index_len);
+    memcpy(sm, sk, params->index_len);
+    sm += params->index_len;
+
+    /*************************************************************************
+     * THIS IS WHERE PRODUCTION IMPLEMENTATIONS WOULD UPDATE THE SECRET KEY. *
+     *************************************************************************/
+    /* Increment the index in the secret key. */
+    ull_to_bytes(sk, params->index_len, idx + 1);
+
+    /* Compute the digest randomization value. */
+    ull_to_bytes(idx_bytes_32, 32, idx);
+    prf(params, sm, idx_bytes_32, sk_prf, params->n);
+
+    /* Compute the message hash. */
+    hash_message(params, mhash, sm, pub_root, idx, m, mlen);
+    sm += params->n;
+
     set_ots_addr(ots_addr, idx);
 
-    // Compute seed for OTS key pair
+    /* Get a seed for the WOTS keypair. */
     get_seed(params, ots_seed, sk_seed, ots_addr);
 
-    // Compute WOTS signature
-    wots_sign(params, sm, msg_h, ots_seed, pub_seed, ots_addr);
-
+    /* Compute a WOTS signature on the message hash. */
+    wots_sign(params, sm, mhash, ots_seed, pub_seed, ots_addr);
     sm += params->wots_keysize;
-    *smlen += params->wots_keysize;
 
+    /* Compute the authentication path for the used WOTS leaf. */
     treehash(params, root, sm, sk_seed, pub_seed, idx, ots_addr);
     sm += params->tree_height*params->n;
-    *smlen += params->tree_height*params->n;
 
     memcpy(sm, m, mlen);
-    *smlen += mlen;
+    *smlen = params->bytes + mlen;
 
     return 0;
 }
@@ -204,7 +164,8 @@ int xmss_core_sign(const xmss_params *params, unsigned char *sk, unsigned char *
  * Format sk: [(ceil(h/8) bit) index || SK_SEED || SK_PRF || PUB_SEED]
  * Format pk: [root || PUB_SEED] omitting algorithm OID.
  */
-int xmssmt_core_keypair(const xmss_params *params, unsigned char *pk, unsigned char *sk)
+int xmssmt_core_keypair(const xmss_params *params,
+                        unsigned char *pk, unsigned char *sk)
 {
     /* We do not need the auth path in key generation, but it simplifies the
        code to have just one treehash routine that computes both root and path
@@ -229,136 +190,75 @@ int xmssmt_core_keypair(const xmss_params *params, unsigned char *pk, unsigned c
 }
 
 /**
- * Signs a message.
- * Returns
- * 1. an array containing the signature followed by the message AND
- * 2. an updated secret key!
- *
+ * Signs a message. Returns an array containing the signature followed by the
+ * message and an updated secret key.
  */
-int xmssmt_core_sign(const xmss_params *params, unsigned char *sk, unsigned char *sm, unsigned long long *smlen, const unsigned char *m, unsigned long long mlen)
+int xmssmt_core_sign(const xmss_params *params,
+                     unsigned char *sk,
+                     unsigned char *sm, unsigned long long *smlen,
+                     const unsigned char *m, unsigned long long mlen)
 {
-    uint64_t idx_tree;
-    uint32_t idx_leaf;
-    uint64_t i;
+    const unsigned char *sk_seed = sk + params->index_len;
+    const unsigned char *sk_prf = sk + params->index_len + params->n;
+    const unsigned char *pub_seed = sk + params->index_len + 2*params->n;
+    const unsigned char *pub_root = sk + params->index_len + 3*params->n;
 
-    unsigned char sk_seed[params->n];
-    unsigned char sk_prf[params->n];
-    unsigned char pub_seed[params->n];
-    // Init working params
-    unsigned char R[params->n];
-    unsigned char hash_key[3*params->n];
-    unsigned char msg_h[params->n];
     unsigned char root[params->n];
+    unsigned char *mhash = root;
     unsigned char ots_seed[params->n];
-    uint32_t ots_addr[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+    unsigned long long idx;
     unsigned char idx_bytes_32[32];
+    unsigned int i;
+    uint32_t idx_leaf;
 
-    // Extract SK
-    unsigned long long idx = 0;
-    for (i = 0; i < params->index_len; i++) {
-        idx |= ((unsigned long long)sk[i]) << 8*(params->index_len - 1 - i);
-    }
-
-    memcpy(sk_seed, sk+params->index_len, params->n);
-    memcpy(sk_prf, sk+params->index_len+params->n, params->n);
-    memcpy(pub_seed, sk+params->index_len+2*params->n, params->n);
-
-    // Update SK
-    for (i = 0; i < params->index_len; i++) {
-        sk[i] = ((idx + 1) >> 8*(params->index_len - 1 - i)) & 255;
-    }
-    // Secret key for this non-forward-secure version is now updated.
-    // A production implementation should consider using a file handle instead,
-    //  and write the updated secret key at this point!
-
-    // ---------------------------------
-    // Message Hashing
-    // ---------------------------------
-
-    // Message Hash:
-    // First compute pseudorandom value
-    ull_to_bytes(idx_bytes_32, 32, idx);
-    prf(params, R, idx_bytes_32, sk_prf, params->n);
-    // Generate hash key (R || root || idx)
-    memcpy(hash_key, R, params->n);
-    memcpy(hash_key+params->n, sk+params->index_len+3*params->n, params->n);
-    ull_to_bytes(hash_key+2*params->n, params->n, idx);
-
-    // Then use it for message digest
-    h_msg(params, msg_h, m, mlen, hash_key, 3*params->n);
-
-    // Start collecting signature
-    *smlen = 0;
-
-    // Copy index to signature
-    for (i = 0; i < params->index_len; i++) {
-        sm[i] = (idx >> 8*(params->index_len - 1 - i)) & 255;
-    }
-
-    sm += params->index_len;
-    *smlen += params->index_len;
-
-    // Copy R to signature
-    for (i = 0; i < params->n; i++) {
-        sm[i] = R[i];
-    }
-
-    sm += params->n;
-    *smlen += params->n;
-
-    // ----------------------------------
-    // Now we start to "really sign"
-    // ----------------------------------
-
-    // Handle lowest layer separately as it is slightly different...
-
-    // Prepare Address
+    uint32_t ots_addr[8] = {0};
     set_type(ots_addr, 0);
-    idx_tree = idx >> params->tree_height;
-    idx_leaf = (idx & ((1 << params->tree_height)-1));
-    set_layer_addr(ots_addr, 0);
-    set_tree_addr(ots_addr, idx_tree);
-    set_ots_addr(ots_addr, idx_leaf);
 
-    // Compute seed for OTS key pair
-    get_seed(params, ots_seed, sk_seed, ots_addr);
+    /* Read and use the current index from the secret key. */
+    idx = (unsigned long)bytes_to_ull(sk, params->index_len);
+    memcpy(sm, sk, params->index_len);
+    sm += params->index_len;
 
-    // Compute WOTS signature
-    wots_sign(params, sm, msg_h, ots_seed, pub_seed, ots_addr);
+    /*************************************************************************
+     * THIS IS WHERE PRODUCTION IMPLEMENTATIONS WOULD UPDATE THE SECRET KEY. *
+     *************************************************************************/
+    /* Increment the index in the secret key. */
+    ull_to_bytes(sk, params->index_len, idx + 1);
 
-    sm += params->wots_keysize;
-    *smlen += params->wots_keysize;
+    /* Compute the digest randomization value. */
+    ull_to_bytes(idx_bytes_32, 32, idx);
+    prf(params, sm, idx_bytes_32, sk_prf, params->n);
 
-    treehash(params, root, sm, sk_seed, pub_seed, idx_leaf, ots_addr);
-    sm += params->tree_height*params->n;
-    *smlen += params->tree_height*params->n;
+    /* Compute the message hash. */
+    hash_message(params, mhash, sm, pub_root, idx, m, mlen);
+    sm += params->n;
 
-    // Now loop over remaining layers...
-    unsigned int j;
-    for (j = 1; j < params->d; j++) {
-        // Prepare Address
-        idx_leaf = (idx_tree & ((1 << params->tree_height)-1));
-        idx_tree = idx_tree >> params->tree_height;
-        set_layer_addr(ots_addr, j);
-        set_tree_addr(ots_addr, idx_tree);
+    set_type(ots_addr, 0);
+
+    for (i = 0; i < params->d; i++) {
+        idx_leaf = (idx & ((1 << params->tree_height)-1));
+        idx = idx >> params->tree_height;
+
+        set_layer_addr(ots_addr, i);
+        set_tree_addr(ots_addr, idx);
         set_ots_addr(ots_addr, idx_leaf);
 
-        // Compute seed for OTS key pair
+        /* Get a seed for the WOTS keypair. */
         get_seed(params, ots_seed, sk_seed, ots_addr);
 
-        // Compute WOTS signature
+        /* Compute a WOTS signature. */
+        /* Initially, root = mhash, but on subsequent iterations it is the root
+           of the subtree below the currently processed subtree. */
         wots_sign(params, sm, root, ots_seed, pub_seed, ots_addr);
-
         sm += params->wots_keysize;
-        *smlen += params->wots_keysize;
 
+        /* Compute the authentication path for the used WOTS leaf. */
         treehash(params, root, sm, sk_seed, pub_seed, idx_leaf, ots_addr);
         sm += params->tree_height*params->n;
-        *smlen += params->tree_height*params->n;
     }
 
     memcpy(sm, m, mlen);
-    *smlen += mlen;
+    *smlen = params->bytes + mlen;
 
     return 0;
 }

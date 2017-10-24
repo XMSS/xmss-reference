@@ -11,7 +11,7 @@
 /**
  * Converts the value of 'in' to 'outlen' bytes in big-endian byte order.
  */
-void ull_to_bytes(unsigned char *out, unsigned long long outlen,
+void ull_to_bytes(unsigned char *out, unsigned int outlen,
                   unsigned long long in)
 {
     int i;
@@ -21,6 +21,20 @@ void ull_to_bytes(unsigned char *out, unsigned long long outlen,
         out[i] = in & 0xff;
         in = in >> 8;
     }
+}
+
+/**
+ * Converts the inlen bytes in 'in' from big-endian byte order to an integer.
+ */
+unsigned long long bytes_to_ull(const unsigned char *in, unsigned int inlen)
+{
+    unsigned long long retval = 0;
+    unsigned int i;
+
+    for (i = 0; i < inlen; i++) {
+        retval |= ((unsigned long long)in[i]) << (8*(inlen - 1 - i));
+    }
+    return retval;
 }
 
 /**
@@ -82,12 +96,14 @@ void l_tree(const xmss_params *params,
         for (i = 0; i < parent_nodes; i++) {
             set_tree_index(addr, i);
             /* Hashes the nodes at (i*2)*params->n and (i*2)*params->n + 1 */
-            hash_h(params, wots_pk + i*params->n, wots_pk + (i*2)*params->n, pub_seed, addr);
+            hash_h(params, wots_pk + i*params->n,
+                           wots_pk + (i*2)*params->n, pub_seed, addr);
         }
-        /* If the row contained an odd number of nodes, the last node was not hashed.
-           Instead, we pull it up to the next layer. */
+        /* If the row contained an odd number of nodes, the last node was not
+           hashed. Instead, we pull it up to the next layer. */
         if (l & 1) {
-            memcpy(wots_pk + (l >> 1)*params->n, wots_pk + (l - 1)*params->n, params->n);
+            memcpy(wots_pk + (l >> 1)*params->n,
+                   wots_pk + (l - 1)*params->n, params->n);
             l = (l >> 1) + 1;
         }
         else {
@@ -100,51 +116,65 @@ void l_tree(const xmss_params *params,
 }
 
 /**
+ * Computes the randomized message hash.
+ */
+void hash_message(const xmss_params *params, unsigned char *mhash,
+                  const unsigned char *R, const unsigned char *root,
+                  unsigned long long idx,
+                  const unsigned char *m, unsigned long long mlen)
+{
+    unsigned char hash_key[3*params->n];
+
+    /* Compute hash key. */
+    memcpy(hash_key, R, params->n);
+    memcpy(hash_key + params->n, root, params->n);
+    ull_to_bytes(hash_key + 2*params->n, params->n, idx);
+
+    /* Hash the message using the randomized hash key. */
+    h_msg(params, mhash, m, mlen, hash_key, 3*params->n);
+}
+
+/**
  * Computes a root node given a leaf and an auth path
  */
-static void validate_authpath(const xmss_params *params, unsigned char *root,
-                              const unsigned char *leaf, unsigned long leafidx,
-                              const unsigned char *authpath,
-                              const unsigned char *pub_seed, uint32_t addr[8])
+static void compute_root(const xmss_params *params, unsigned char *root,
+                         const unsigned char *leaf, unsigned long leafidx,
+                         const unsigned char *auth_path,
+                         const unsigned char *pub_seed, uint32_t addr[8])
 {
-    uint32_t i, j;
+    uint32_t i;
     unsigned char buffer[2*params->n];
 
     /* If leafidx is odd (last bit = 1), current path element is a right child
-       and authpath has to go left. Otherwise it is the other way around. */
+       and auth_path has to go left. Otherwise it is the other way around. */
     if (leafidx & 1) {
-        for (j = 0; j < params->n; j++) {
-            buffer[params->n + j] = leaf[j];
-            buffer[j] = authpath[j];
-        }
+        memcpy(buffer + params->n, leaf, params->n);
+        memcpy(buffer, auth_path, params->n);
     }
     else {
-        for (j = 0; j < params->n; j++) {
-            buffer[j] = leaf[j];
-            buffer[params->n + j] = authpath[j];
-        }
+        memcpy(buffer, leaf, params->n);
+        memcpy(buffer + params->n, auth_path, params->n);
     }
-    authpath += params->n;
+    auth_path += params->n;
 
-    for (i = 0; i < params->tree_height-1; i++) {
+    for (i = 0; i < params->tree_height - 1; i++) {
         set_tree_height(addr, i);
         leafidx >>= 1;
         set_tree_index(addr, leafidx);
+
         /* Pick the right or left neighbor, depending on parity of the node. */
         if (leafidx & 1) {
             hash_h(params, buffer + params->n, buffer, pub_seed, addr);
-            for (j = 0; j < params->n; j++) {
-                buffer[j] = authpath[j];
-            }
+            memcpy(buffer, auth_path, params->n);
         }
         else {
             hash_h(params, buffer, buffer, pub_seed, addr);
-            for (j = 0; j < params->n; j++) {
-                buffer[j + params->n] = authpath[j];
-            }
+            memcpy(buffer + params->n, auth_path, params->n);
         }
-        authpath += params->n;
+        auth_path += params->n;
     }
+
+    /* The last iteration is exceptional; we do not copy an auth)path node. */
     set_tree_height(addr, params->tree_height - 1);
     leafidx >>= 1;
     set_tree_index(addr, leafidx);
@@ -160,16 +190,12 @@ int xmss_core_sign_open(const xmss_params *params,
                         const unsigned char *sm, unsigned long long smlen,
                         const unsigned char *pk)
 {
-    unsigned long long i;
-    unsigned long idx = 0;
+    const unsigned char *pub_seed = pk + params->n;
     unsigned char wots_pk[params->wots_keysize];
-    unsigned char pkhash[params->n];
+    unsigned char leaf[params->n];
     unsigned char root[params->n];
-    unsigned char msg_h[params->n];
-    unsigned char hash_key[3*params->n];
-
-    unsigned char pub_seed[params->n];
-    memcpy(pub_seed, pk + params->n, params->n);
+    unsigned char mhash[params->n];
+    unsigned long idx;
 
     uint32_t ots_addr[8] = {0};
     uint32_t ltree_addr[8] = {0};
@@ -182,47 +208,36 @@ int xmss_core_sign_open(const xmss_params *params,
     *mlen = smlen - params->bytes;
 
     /* Convert the index bytes from the signature to an integer. */
-    for (i = 0; i < params->index_len; i++) {
-        idx |= ((unsigned long long)sm[i]) << (8*(params->index_len - 1 - i));
-    }
-
-    /* Prepare the hash key, of the form [R || root || idx]. */
-    memcpy(hash_key, sm + params->index_len, params->n);
-    memcpy(hash_key + params->n, pk, params->n);
-    ull_to_bytes(hash_key + 2*params->n, params->n, idx);
+    idx = (unsigned long)bytes_to_ull(sm, params->index_len);
 
     /* Compute the message hash. */
-    h_msg(params, msg_h, sm + params->bytes, *mlen, hash_key, 3*params->n);
+    hash_message(params, mhash, sm + params->index_len, pk, idx,
+                 sm + params->bytes, *mlen);
     sm += params->index_len + params->n;
 
     /* The WOTS public key is only correct if the signature was correct. */
     set_ots_addr(ots_addr, idx);
-    wots_pk_from_sig(params, wots_pk, sm, msg_h, pub_seed, ots_addr);
+    wots_pk_from_sig(params, wots_pk, sm, mhash, pub_seed, ots_addr);
     sm += params->wots_keysize;
 
     /* Compute the leaf node using the WOTS public key. */
     set_ltree_addr(ltree_addr, idx);
-    l_tree(params, pkhash, wots_pk, pub_seed, ltree_addr);
+    l_tree(params, leaf, wots_pk, pub_seed, ltree_addr);
 
     /* Compute the root node. */
-    validate_authpath(params, root, pkhash, idx, sm, pub_seed, node_addr);
+    compute_root(params, root, leaf, idx, sm, pub_seed, node_addr);
     sm += params->tree_height*params->n;
 
     /* Check if the root node equals the root node in the public key. */
-    for (i = 0; i < params->n; i++) {
-        if (root[i] != pk[i]) {
-            for (i = 0; i < *mlen; i++) {
-                m[i] = 0;
-            }
-            *mlen = -1;
-            return -1;
-        }
+    if (memcmp(root, pk, params->n)) {
+        /* If not, zero the message */
+        memset(m, 0, *mlen);
+        *mlen = -1;
+        return -1;
     }
 
     /* If verification was successful, copy the message from the signature. */
-    for (i = 0; i < *mlen; i++) {
-        m[i] = sm[i];
-    }
+    memcpy(m, sm, *mlen);
 
     return 0;
 }
@@ -236,15 +251,14 @@ int xmssmt_core_sign_open(const xmss_params *params,
                           const unsigned char *sm, unsigned long long smlen,
                           const unsigned char *pk)
 {
-    uint32_t idx_leaf;
-    unsigned long long i;
-    unsigned long long idx = 0;
-    unsigned char wots_pk[params->wots_keysize];
-    unsigned char pkhash[params->n];
-    unsigned char root[params->n];
-    unsigned char *msg_h = root;
-    unsigned char hash_key[3*params->n];
     const unsigned char *pub_seed = pk + params->n;
+    unsigned char wots_pk[params->wots_keysize];
+    unsigned char leaf[params->n];
+    unsigned char root[params->n];
+    unsigned char *mhash = root;
+    unsigned long long idx = 0;
+    unsigned int i;
+    uint32_t idx_leaf;
 
     uint32_t ots_addr[8] = {0};
     uint32_t ltree_addr[8] = {0};
@@ -257,17 +271,11 @@ int xmssmt_core_sign_open(const xmss_params *params,
     *mlen = smlen - params->bytes;
 
     /* Convert the index bytes from the signature to an integer. */
-    for (i = 0; i < params->index_len; i++) {
-        idx |= ((unsigned long long)sm[i]) << (8*(params->index_len - 1 - i));
-    }
-
-    /* Prepare the hash key, of the form [R || root || idx]. */
-    memcpy(hash_key, sm + params->index_len, params->n);
-    memcpy(hash_key + params->n, pk, params->n);
-    ull_to_bytes(hash_key + 2*params->n, params->n, idx);
+    idx = bytes_to_ull(sm, params->index_len);
 
     /* Compute the message hash. */
-    h_msg(params, msg_h, sm + params->bytes, *mlen, hash_key, 3*params->n);
+    hash_message(params, mhash, sm + params->index_len, pk, idx,
+                 sm + params->bytes, *mlen);
     sm += params->index_len + params->n;
 
     /* For each subtree.. */
@@ -285,35 +293,30 @@ int xmssmt_core_sign_open(const xmss_params *params,
 
         /* The WOTS public key is only correct if the signature was correct. */
         set_ots_addr(ots_addr, idx_leaf);
-        /* Initially, root = msg_h, but on subsequent iterations it is the root
+        /* Initially, root = mhash, but on subsequent iterations it is the root
            of the subtree below the currently processed subtree. */
         wots_pk_from_sig(params, wots_pk, sm, root, pub_seed, ots_addr);
         sm += params->wots_keysize;
 
         /* Compute the leaf node using the WOTS public key. */
         set_ltree_addr(ltree_addr, idx_leaf);
-        l_tree(params, pkhash, wots_pk, pub_seed, ltree_addr);
+        l_tree(params, leaf, wots_pk, pub_seed, ltree_addr);
 
         /* Compute the root node of this subtree. */
-        validate_authpath(params, root, pkhash, idx_leaf, sm, pub_seed, node_addr);
+        compute_root(params, root, leaf, idx_leaf, sm, pub_seed, node_addr);
         sm += params->tree_height*params->n;
     }
 
-    /* Check if the final root node equals the root node in the public key. */
-    for (i = 0; i < params->n; i++) {
-        if (root[i] != pk[i]) {
-            for (i = 0; i < *mlen; i++) {
-                m[i] = 0;
-            }
-            *mlen = -1;
-            return -1;
-        }
+    /* Check if the root node equals the root node in the public key. */
+    if (memcmp(root, pk, params->n)) {
+        /* If not, zero the message */
+        memset(m, 0, *mlen);
+        *mlen = -1;
+        return -1;
     }
 
     /* If verification was successful, copy the message from the signature. */
-    for (i = 0; i < *mlen; i++) {
-        m[i] = sm[i];
-    }
+    memcpy(m, sm, *mlen);
 
     return 0;
 }
