@@ -91,25 +91,10 @@ static void treehash(const xmss_params *params,
 int xmss_core_keypair(const xmss_params *params,
                       unsigned char *pk, unsigned char *sk)
 {
-    /* We do not need the auth path in key generation, but it simplifies the
-       code to have just one treehash routine that computes both root and path
-       in one function. */
-    unsigned char auth_path[params->tree_height * params->n];
-    uint32_t top_tree_addr[8] = {0};
-
-    /* Initialize index to 0. */
-    memset(sk, 0, params->index_len);
-    sk += 4;
-
-    /* Initialize SK_SEED, SK_PRF and PUB_SEED. */
-    randombytes(sk, 3 * params->n);
-    memcpy(pk + params->n, sk + 2*params->n, params->n);
-
-    /* Compute root node. */
-    treehash(params, pk, auth_path, sk, pk + params->n, 0, top_tree_addr);
-    memcpy(sk + 3*params->n, pk, params->n);
-
-    return 0;
+    /* The key generation procedure of XMSS and XMSSMT is exactly the same.
+       The only important detail is that the right subtree must be selected;
+       this requires us to correctly set the d=1 parameter for XMSS. */
+    return xmssmt_core_keypair(params, pk, sk);
 }
 
 /**
