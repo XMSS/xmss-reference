@@ -3,6 +3,10 @@
 
 #include <stdint.h>
 
+#define XMSS_ADDR_TYPE_OTS 0
+#define XMSS_ADDR_TYPE_LTREE 1
+#define XMSS_ADDR_TYPE_HASHTREE 2
+
 void set_layer_addr(uint32_t addr[8], uint32_t layer);
 
 void set_tree_addr(uint32_t addr[8], uint64_t tree);

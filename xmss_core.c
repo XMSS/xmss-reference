@@ -39,9 +39,9 @@ static void treehash(const xmss_params *params,
     copy_subtree_addr(ltree_addr, subtree_addr);
     copy_subtree_addr(node_addr, subtree_addr);
 
-    set_type(ots_addr, 0);
-    set_type(ltree_addr, 1);
-    set_type(node_addr, 2);
+    set_type(ots_addr, XMSS_ADDR_TYPE_OTS);
+    set_type(ltree_addr, XMSS_ADDR_TYPE_LTREE);
+    set_type(node_addr, XMSS_ADDR_TYPE_HASHTREE);
 
     for (idx = 0; idx < (uint32_t)(1 << params->tree_height); idx++) {
         /* Add the next leaf node to the stack. */
@@ -119,7 +119,7 @@ int xmss_core_sign(const xmss_params *params,
     unsigned char idx_bytes_32[32];
 
     uint32_t ots_addr[8] = {0};
-    set_type(ots_addr, 0);
+    set_type(ots_addr, XMSS_ADDR_TYPE_OTS);
 
     /* Read and use the current index from the secret key. */
     idx = (unsigned long)bytes_to_ull(sk, params->index_len);
@@ -212,7 +212,7 @@ int xmssmt_core_sign(const xmss_params *params,
     uint32_t idx_leaf;
 
     uint32_t ots_addr[8] = {0};
-    set_type(ots_addr, 0);
+    set_type(ots_addr, XMSS_ADDR_TYPE_OTS);
 
     /* Read and use the current index from the secret key. */
     idx = (unsigned long)bytes_to_ull(sk, params->index_len);
@@ -233,7 +233,7 @@ int xmssmt_core_sign(const xmss_params *params,
     hash_message(params, mhash, sm, pub_root, idx, m, mlen);
     sm += params->n;
 
-    set_type(ots_addr, 0);
+    set_type(ots_addr, XMSS_ADDR_TYPE_OTS);
 
     for (i = 0; i < params->d; i++) {
         idx_leaf = (idx & ((1 << params->tree_height)-1));

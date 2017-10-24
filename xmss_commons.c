@@ -201,9 +201,9 @@ int xmss_core_sign_open(const xmss_params *params,
     uint32_t ltree_addr[8] = {0};
     uint32_t node_addr[8] = {0};
 
-    set_type(ots_addr, 0);
-    set_type(ltree_addr, 1);
-    set_type(node_addr, 2);
+    set_type(ots_addr, XMSS_ADDR_TYPE_OTS);
+    set_type(ltree_addr, XMSS_ADDR_TYPE_LTREE);
+    set_type(node_addr, XMSS_ADDR_TYPE_HASHTREE);
 
     *mlen = smlen - params->bytes;
 
@@ -264,9 +264,9 @@ int xmssmt_core_sign_open(const xmss_params *params,
     uint32_t ltree_addr[8] = {0};
     uint32_t node_addr[8] = {0};
 
-    set_type(ots_addr, 0);
-    set_type(ltree_addr, 1);
-    set_type(node_addr, 2);
+    set_type(ots_addr, XMSS_ADDR_TYPE_OTS);
+    set_type(ltree_addr, XMSS_ADDR_TYPE_LTREE);
+    set_type(node_addr, XMSS_ADDR_TYPE_HASHTREE);
 
     *mlen = smlen - params->bytes;
 
