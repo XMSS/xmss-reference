@@ -1,7 +1,8 @@
-#include "../params.h"
-#include "../xmss.h"
 #include <stdio.h>
 #include <stdint.h>
+
+#include "../params.h"
+#include "../xmss.h"
 
 #ifdef XMSSMT
     #define XMSS_STR_TO_OID xmssmt_str_to_oid

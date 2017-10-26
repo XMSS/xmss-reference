@@ -1,8 +1,7 @@
-#include "../params.h"
-#include "../xmss.h"
 #include <stdio.h>
 
-#define MLEN 32
+#include "../params.h"
+#include "../xmss.h"
 
 #ifdef XMSSMT
     #define XMSS_PARSE_OID xmssmt_parse_oid
@@ -13,37 +12,53 @@
 #endif
 
 int main(int argc, char **argv) {
-    FILE *keypair;
+    FILE *keypair_file;
+    FILE *sm_file;
+
     xmss_params params;
     uint32_t oid;
+
+    unsigned long long smlen;
     int ret;
 
-    if (argc != 2) {
-        fprintf(stderr, "Expected keypair filename as only parameter, "
-                        "and the signature + message via stdin.\n"
+    if (argc != 3) {
+        fprintf(stderr, "Expected keypair and signature + message filenames "
+                        "as two parameters.\n"
                         "Keypair file needs only to contain the public key.\n"
                         "The return code 0 indicates verification success.\n");
         return -1;
     }
 
-    keypair = fopen(argv[1], "rb");
-    if (keypair == NULL) {
+    keypair_file = fopen(argv[1], "rb");
+    if (keypair_file == NULL) {
+        fprintf(stderr, "Could not open keypair file.\n");
         return -1;
     }
 
-    fread(&oid, 1, XMSS_OID_LEN, keypair);
+    sm_file = fopen(argv[2], "rb");
+    if (sm_file == NULL) {
+        fprintf(stderr, "Could not open signature + message file.\n");
+        return -1;
+    }
+
+    /* Find out the message length. */
+    fseek(sm_file, 0, SEEK_END);
+    smlen = ftell(sm_file);
+
+    fread(&oid, 1, XMSS_OID_LEN, keypair_file);
     XMSS_PARSE_OID(&params, oid);
 
     unsigned char pk[XMSS_OID_LEN + params.pk_bytes];
-    unsigned char sm[params.sig_bytes + MLEN];
-    unsigned char m[params.sig_bytes + MLEN];
+    unsigned char sm[smlen];
+    unsigned char m[smlen];
     unsigned long long mlen;
 
-    fseek(keypair, 0, SEEK_SET);
-    fread(pk, 1, XMSS_OID_LEN + params.pk_bytes, keypair);
-    fread(sm, 1, params.sig_bytes + MLEN, stdin);
+    fseek(keypair_file, 0, SEEK_SET);
+    fseek(sm_file, 0, SEEK_SET);
+    fread(pk, 1, XMSS_OID_LEN + params.pk_bytes, keypair_file);
+    fread(sm, 1, smlen, sm_file);
 
-    ret = XMSS_SIGN_OPEN(m, &mlen, sm, params.sig_bytes + MLEN, pk);
+    ret = XMSS_SIGN_OPEN(m, &mlen, sm, smlen, pk);
 
     if (ret) {
         printf("Verification failed!\n");
@@ -51,6 +66,9 @@ int main(int argc, char **argv) {
     else {
         printf("Verification succeeded.\n");
     }
+
+    fclose(keypair_file);
+    fclose(sm_file);
 
     return ret;
 }

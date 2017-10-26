@@ -1,8 +1,7 @@
-#include "../params.h"
-#include "../xmss.h"
 #include <stdio.h>
 
-#define MLEN 32
+#include "../params.h"
+#include "../xmss.h"
 
 #ifdef XMSSMT
     #define XMSS_PARSE_OID xmssmt_parse_oid
@@ -13,51 +12,66 @@
 #endif
 
 int main(int argc, char **argv) {
-    FILE *keypair;
+    FILE *keypair_file;
+    FILE *m_file;
+
     xmss_params params;
     uint32_t oid_pk;
     uint32_t oid_sk;
 
-    if (argc != 2) {
-        fprintf(stderr, "Expected keypair filename as only parameter, "
-                        "and the message via stdin.\n"
+    unsigned long long mlen;
+
+    if (argc != 3) {
+        fprintf(stderr, "Expected keypair and message filenames as two "
+                        "parameters.\n"
                         "The keypair is updated with the changed state, "
                         "and the message + signature is output via stdout.\n");
         return -1;
     }
 
-    keypair = fopen(argv[1], "r+b");
-    if (keypair == NULL) {
+    keypair_file = fopen(argv[1], "r+b");
+    if (keypair_file == NULL) {
         fprintf(stderr, "Could not open keypair file.\n");
         return -1;
     }
 
+    m_file = fopen(argv[2], "rb");
+    if (m_file == NULL) {
+        fprintf(stderr, "Could not open message file.\n");
+        return -1;
+    }
+
+    /* Find out the message length. */
+    fseek(m_file, 0, SEEK_END);
+    mlen = ftell(m_file);
+
     /* Read the OID from the public key, as we need its length to seek past it */
-    fread(&oid_pk, 1, XMSS_OID_LEN, keypair);
+    fread(&oid_pk, 1, XMSS_OID_LEN, keypair_file);
     XMSS_PARSE_OID(&params, oid_pk);
 
     /* fseek past the public key */
-    fseek(keypair, params.pk_bytes, SEEK_CUR);
+    fseek(keypair_file, params.pk_bytes, SEEK_CUR);
     /* This is the OID we're actually going to use. Likely the same, but still. */
-    fread(&oid_sk, 1, XMSS_OID_LEN, keypair);
+    fread(&oid_sk, 1, XMSS_OID_LEN, keypair_file);
     XMSS_PARSE_OID(&params, oid_sk);
 
     unsigned char sk[XMSS_OID_LEN + params.sk_bytes];
-    unsigned char m[MLEN];
-    unsigned char sm[params.sig_bytes + MLEN];
+    unsigned char m[mlen];
+    unsigned char sm[params.sig_bytes + mlen];
     unsigned long long smlen;
 
     /* fseek back to start of sk. */
-    fseek(keypair, -((long int)XMSS_OID_LEN), SEEK_CUR);
-    fread(sk, 1, XMSS_OID_LEN + params.sk_bytes, keypair);
-    fread(m, 1, MLEN, stdin);
+    fseek(keypair_file, -((long int)XMSS_OID_LEN), SEEK_CUR);
+    fseek(m_file, 0, SEEK_SET);
+    fread(sk, 1, XMSS_OID_LEN + params.sk_bytes, keypair_file);
+    fread(m, 1, mlen, m_file);
 
-    XMSS_SIGN(sk, sm, &smlen, m, MLEN);
+    XMSS_SIGN(sk, sm, &smlen, m, mlen);
 
-    fseek(keypair, -((long int)params.sk_bytes), SEEK_CUR);
-    fwrite(sk + XMSS_OID_LEN, 1, params.sk_bytes, keypair);
-    fwrite(sm, 1, params.sig_bytes + MLEN, stdout);
+    fseek(keypair_file, -((long int)params.sk_bytes), SEEK_CUR);
+    fwrite(sk + XMSS_OID_LEN, 1, params.sk_bytes, keypair_file);
+    fwrite(sm, 1, smlen, stdout);
 
-    fclose(keypair);
-    fclose(stdout);
+    fclose(keypair_file);
+    fclose(m_file);
 }
