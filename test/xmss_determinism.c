@@ -12,7 +12,7 @@ int main()
 {
     xmss_params params;
     char *oidstr = "XMSS-SHA2_10_256";
-    uint32_t oid = 0x01000001;
+    uint32_t oid;
     unsigned int i;
 
     fprintf(stderr, "Testing if XMSS-SHA2_10_256 signing is deterministic.. ");
