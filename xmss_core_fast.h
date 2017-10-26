@@ -31,6 +31,14 @@ void xmss_set_bds_state(bds_state *state, unsigned char *stack,
                         unsigned char *auth, unsigned char *keep,
                         treehash_inst *treehash, unsigned char *retain,
                         int next_leaf);
+
+/**
+ * Given a set of parameters, this function returns the size of the secret key.
+ * This is implementation specific, as varying choices in tree traversal will
+ * result in varying requirements for state storage.
+ */
+unsigned long long xmss_core_sk_bytes(const xmss_params *params);
+
 /**
  * Generates a XMSS key pair for a given parameter set.
  * Format sk: [(32bit) idx || SK_SEED || SK_PRF || PUB_SEED || root]
@@ -57,6 +65,13 @@ int xmss_core_sign_open(const xmss_params *params,
                         unsigned char *m, unsigned long long *mlen,
                         const unsigned char *sm, unsigned long long smlen,
                         const unsigned char *pk);
+
+/**
+ * Given a set of parameters, this function returns the size of the secret key.
+ * This is implementation specific, as varying choices in tree traversal will
+ * result in varying requirements for state storage.
+ */
+unsigned long long xmssmt_core_sk_bytes(const xmss_params *params);
 
 /*
  * Generates a XMSSMT key pair for a given parameter set.

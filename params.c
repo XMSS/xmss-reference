@@ -1,6 +1,8 @@
 #include <stdint.h>
 #include <string.h>
+
 #include "params.h"
+#include "xmss_core.h"
 
 int xmss_str_to_oid(uint32_t *oid, const char *s)
 {
@@ -237,7 +239,7 @@ int xmss_parse_oid(xmss_params *params, const uint32_t oid)
                          + params->d * params->wots_sig_bytes
                          + params->full_height * params->n);
     params->pk_bytes = 2 * params->n;
-    params->sk_bytes = 4 * params->n + params->index_bytes;
+    params->sk_bytes = xmss_core_sk_bytes(params);
 
     // TODO figure out sensible and legal values for this based on the above
     params->bds_k = 0;
@@ -455,7 +457,7 @@ int xmssmt_parse_oid(xmss_params *params, const uint32_t oid)
                          + params->d * params->wots_sig_bytes
                          + params->full_height * params->n);
     params->pk_bytes = 2 * params->n;
-    params->sk_bytes = 4 * params->n + params->index_bytes;
+    params->sk_bytes = xmssmt_core_sk_bytes(params);
 
     // TODO figure out sensible and legal values for this based on the above
     params->bds_k = 0;

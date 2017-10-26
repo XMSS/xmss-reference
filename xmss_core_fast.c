@@ -344,6 +344,16 @@ static void bds_round(const xmss_params *params,
     }
 }
 
+/**
+ * Given a set of parameters, this function returns the size of the secret key.
+ * This is implementation specific, as varying choices in tree traversal will
+ * result in varying requirements for state storage.
+ */
+unsigned long long xmss_core_sk_bytes(const xmss_params *params)
+{
+    return params->index_bytes + 4 * params->n;
+}
+
 /*
  * Generates a XMSS key pair for a given parameter set.
  * Format sk: [(32bit) idx || SK_SEED || SK_PRF || PUB_SEED || root]
@@ -481,6 +491,16 @@ int xmss_core_sign(const xmss_params *params,
     *smlen += mlen;
 
     return 0;
+}
+
+/**
+ * Given a set of parameters, this function returns the size of the secret key.
+ * This is implementation specific, as varying choices in tree traversal will
+ * result in varying requirements for state storage.
+ */
+unsigned long long xmssmt_core_sk_bytes(const xmss_params *params)
+{
+    return params->index_bytes + 4 * params->n;
 }
 
 /*

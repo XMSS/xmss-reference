@@ -26,7 +26,7 @@ typedef struct {
     unsigned int index_bytes;
     unsigned int sig_bytes;
     unsigned int pk_bytes;
-    unsigned int sk_bytes;
+    unsigned long long sk_bytes;
     unsigned int bds_k;
 } xmss_params;
 
