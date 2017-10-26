@@ -17,12 +17,12 @@ TESTS = test/test_wots \
 		test/test_xmssmt \
 		test/test_determinism \
 
-UI = test/xmss_keypair \
-	 test/xmss_sign \
-	 test/xmss_open \
-	 test/xmssmt_keypair \
-	 test/xmssmt_sign \
-	 test/xmssmt_open \
+UI = ui/xmss_keypair \
+	 ui/xmss_sign \
+	 ui/xmss_open \
+	 ui/xmssmt_keypair \
+	 ui/xmssmt_sign \
+	 ui/xmssmt_open \
 
 all: $(TESTS) $(UI)
 
@@ -36,6 +36,12 @@ test/%: test/%.c $(SOURCES) $(OBJS) $(HEADERS)
 
 test/test_wots: params.c hash.c fips202.c hash_address.c randombytes.c wots.c xmss_commons.c test/test_wots.c params.h hash.h fips202.h hash_address.h randombytes.h wots.h xmss_commons.h
 	$(CC) $(CFLAGS) params.c hash.c fips202.c hash_address.c randombytes.c wots.c xmss_commons.c test/test_wots.c -o $@ -lcrypto
+
+ui/xmss_%: ui/%.c $(SOURCES) $(OBJS) $(HEADERS)
+	$(CC) $(CFLAGS) -o $@ $(SOURCES) $< $(LDLIBS)
+
+ui/xmssmt_%: ui/%.c $(SOURCES) $(OBJS) $(HEADERS)
+	$(CC) -DXMSSMT $(CFLAGS) -o $@ $(SOURCES) $< $(LDLIBS)
 
 clean:
 	-$(RM) $(TESTS)

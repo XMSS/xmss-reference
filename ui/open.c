@@ -4,6 +4,14 @@
 
 #define MLEN 32
 
+#ifdef XMSSMT
+    #define XMSS_PARSE_OID xmssmt_parse_oid
+    #define XMSS_CORE_SIGN_OPEN xmssmt_core_sign_open
+#else
+    #define XMSS_PARSE_OID xmss_parse_oid
+    #define XMSS_CORE_SIGN_OPEN xmss_core_sign_open
+#endif
+
 int main(int argc, char **argv) {
     FILE *keypair;
     xmss_params params;
@@ -24,7 +32,7 @@ int main(int argc, char **argv) {
     }
 
     fread(&oid, 1, XMSS_OID_LEN, keypair);
-    xmssmt_parse_oid(&params, oid);
+    XMSS_PARSE_OID(&params, oid);
 
     unsigned char pk[params.pk_bytes];
     unsigned char sm[params.sig_bytes + MLEN];
@@ -34,7 +42,7 @@ int main(int argc, char **argv) {
     fread(pk, 1, params.pk_bytes, keypair);
     fread(sm, 1, params.sig_bytes + MLEN, stdin);
 
-    ret = xmssmt_core_sign_open(&params, m, &mlen, sm, params.sig_bytes + MLEN, pk);
+    ret = XMSS_CORE_SIGN_OPEN(&params, m, &mlen, sm, params.sig_bytes + MLEN, pk);
 
     if (ret) {
         printf("Verification failed!\n");

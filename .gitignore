@@ -14,9 +14,9 @@ test/test_xmssmt_core_fast_XMSSMT*
 test/test_determinism
 test/speed
 test/gen_testvectors
-test/xmss_keypair
-test/xmss_open
-test/xmss_sign
-test/xmssmt_keypair
-test/xmssmt_open
-test/xmssmt_sign
+ui/xmss_keypair
+ui/xmss_open
+ui/xmss_sign
+ui/xmssmt_keypair
+ui/xmssmt_open
+ui/xmssmt_sign

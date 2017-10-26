@@ -4,6 +4,14 @@
 
 #define MLEN 32
 
+#ifdef XMSSMT
+    #define XMSS_PARSE_OID xmssmt_parse_oid
+    #define XMSS_CORE_SIGN xmssmt_core_sign
+#else
+    #define XMSS_PARSE_OID xmss_parse_oid
+    #define XMSS_CORE_SIGN xmss_core_sign
+#endif
+
 int main(int argc, char **argv) {
     FILE *keypair;
     xmss_params params;
@@ -24,15 +32,15 @@ int main(int argc, char **argv) {
         return -1;
     }
 
-    /* Read the OID from the public key, as we need its length to seek past it. */
+    /* Read the OID from the public key, as we need its length to seek past it */
     fread(&oid_pk, 1, XMSS_OID_LEN, keypair);
-    xmssmt_parse_oid(&params, oid_pk);
+    XMSS_PARSE_OID(&params, oid_pk);
 
-    /* fseek past the public key. */
+    /* fseek past the public key */
     fseek(keypair, params.pk_bytes, SEEK_CUR);
-    /* This is the OID we're actually going to use. Likely the same, but still.. */
+    /* This is the OID we're actually going to use. Likely the same, but still. */
     fread(&oid_sk, 1, XMSS_OID_LEN, keypair);
-    xmssmt_parse_oid(&params, oid_sk);
+    XMSS_PARSE_OID(&params, oid_sk);
 
     unsigned char sk[params.sk_bytes];
     unsigned char m[MLEN];
@@ -41,7 +49,7 @@ int main(int argc, char **argv) {
 
     fread(sk, 1, params.sk_bytes, keypair);
     fread(m, 1, MLEN, stdin);
-    xmssmt_core_sign(&params, sk, sm, &smlen, m, MLEN);
+    XMSS_CORE_SIGN(&params, sk, sm, &smlen, m, MLEN);
 
     fseek(keypair, -((long int)params.sk_bytes), SEEK_CUR);
     fwrite(sk, 1, params.sk_bytes, keypair);
