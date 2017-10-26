@@ -107,56 +107,11 @@ int xmss_core_sign(const xmss_params *params,
                    unsigned char *sm, unsigned long long *smlen,
                    const unsigned char *m, unsigned long long mlen)
 {
-    const unsigned char *sk_seed = sk + params->index_bytes;
-    const unsigned char *sk_prf = sk + params->index_bytes + params->n;
-    const unsigned char *pub_seed = sk + params->index_bytes + 2*params->n;
-    const unsigned char *pub_root = sk + params->index_bytes + 3*params->n;
-
-    unsigned char root[params->n];
-    unsigned char mhash[params->n];
-    unsigned char ots_seed[params->n];
-    unsigned long idx;
-    unsigned char idx_bytes_32[32];
-
-    uint32_t ots_addr[8] = {0};
-    set_type(ots_addr, XMSS_ADDR_TYPE_OTS);
-
-    /* Read and use the current index from the secret key. */
-    idx = (unsigned long)bytes_to_ull(sk, params->index_bytes);
-    memcpy(sm, sk, params->index_bytes);
-    sm += params->index_bytes;
-
-    /*************************************************************************
-     * THIS IS WHERE PRODUCTION IMPLEMENTATIONS WOULD UPDATE THE SECRET KEY. *
-     *************************************************************************/
-    /* Increment the index in the secret key. */
-    ull_to_bytes(sk, params->index_bytes, idx + 1);
-
-    /* Compute the digest randomization value. */
-    ull_to_bytes(idx_bytes_32, 32, idx);
-    prf(params, sm, idx_bytes_32, sk_prf, params->n);
-
-    /* Compute the message hash. */
-    hash_message(params, mhash, sm, pub_root, idx, m, mlen);
-    sm += params->n;
-
-    set_ots_addr(ots_addr, idx);
-
-    /* Get a seed for the WOTS keypair. */
-    get_seed(params, ots_seed, sk_seed, ots_addr);
-
-    /* Compute a WOTS signature on the message hash. */
-    wots_sign(params, sm, mhash, ots_seed, pub_seed, ots_addr);
-    sm += params->wots_sig_bytes;
-
-    /* Compute the authentication path for the used WOTS leaf. */
-    treehash(params, root, sm, sk_seed, pub_seed, idx, ots_addr);
-    sm += params->tree_height*params->n;
-
-    memcpy(sm, m, mlen);
-    *smlen = params->sig_bytes + mlen;
-
-    return 0;
+    /* XMSS signatures are fundamentally an instance of XMSSMT signatures.
+       For d=1, as is the case with XMSS, some of the calls in the XMSSMT
+       routine become vacuous (i.e. the loop only iterates once, and address
+       management can be simplified a bit).*/
+    return xmssmt_core_sign(params, sk, sm, smlen, m, mlen);
 }
 
 /*

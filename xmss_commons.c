@@ -190,56 +190,11 @@ int xmss_core_sign_open(const xmss_params *params,
                         const unsigned char *sm, unsigned long long smlen,
                         const unsigned char *pk)
 {
-    const unsigned char *pub_seed = pk + params->n;
-    unsigned char wots_pk[params->wots_sig_bytes];
-    unsigned char leaf[params->n];
-    unsigned char root[params->n];
-    unsigned char mhash[params->n];
-    unsigned long idx;
-
-    uint32_t ots_addr[8] = {0};
-    uint32_t ltree_addr[8] = {0};
-    uint32_t node_addr[8] = {0};
-
-    set_type(ots_addr, XMSS_ADDR_TYPE_OTS);
-    set_type(ltree_addr, XMSS_ADDR_TYPE_LTREE);
-    set_type(node_addr, XMSS_ADDR_TYPE_HASHTREE);
-
-    *mlen = smlen - params->sig_bytes;
-
-    /* Convert the index bytes from the signature to an integer. */
-    idx = (unsigned long)bytes_to_ull(sm, params->index_bytes);
-
-    /* Compute the message hash. */
-    hash_message(params, mhash, sm + params->index_bytes, pk, idx,
-                 sm + params->sig_bytes, *mlen);
-    sm += params->index_bytes + params->n;
-
-    /* The WOTS public key is only correct if the signature was correct. */
-    set_ots_addr(ots_addr, idx);
-    wots_pk_from_sig(params, wots_pk, sm, mhash, pub_seed, ots_addr);
-    sm += params->wots_sig_bytes;
-
-    /* Compute the leaf node using the WOTS public key. */
-    set_ltree_addr(ltree_addr, idx);
-    l_tree(params, leaf, wots_pk, pub_seed, ltree_addr);
-
-    /* Compute the root node. */
-    compute_root(params, root, leaf, idx, sm, pub_seed, node_addr);
-    sm += params->tree_height*params->n;
-
-    /* Check if the root node equals the root node in the public key. */
-    if (memcmp(root, pk, params->n)) {
-        /* If not, zero the message */
-        memset(m, 0, *mlen);
-        *mlen = -1;
-        return -1;
-    }
-
-    /* If verification was successful, copy the message from the signature. */
-    memcpy(m, sm, *mlen);
-
-    return 0;
+    /* XMSS signatures are fundamentally an instance of XMSSMT signatures.
+       For d=1, as is the case with XMSS, some of the calls in the XMSSMT
+       routine become vacuous (i.e. the loop only iterates once, and address
+       management can be simplified a bit).*/
+    return xmssmt_core_sign_open(params, m, mlen, sm, smlen, pk);
 }
 
 /**
