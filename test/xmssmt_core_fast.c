@@ -45,7 +45,7 @@ int main()
   treehash_inst treehash[(2*d-1) * (tree_h-k)];
   unsigned char th_nodes[(2*d-1) * (tree_h-k)*n];
   unsigned char retain[(2*d-1) * ((1 << k) - k - 1)*n];
-  unsigned char wots_sigs[d * params.wots_sig_bytes];
+  unsigned char wots_sigs[(d-1) * params.wots_sig_bytes];
   // first d are 'regular' states, second d are 'next'; top tree has no 'next'
   bds_state states[2*d-1];
 
