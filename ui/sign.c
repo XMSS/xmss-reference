@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "../params.h"
 #include "../xmss.h"
@@ -56,8 +57,8 @@ int main(int argc, char **argv) {
     XMSS_PARSE_OID(&params, oid_sk);
 
     unsigned char sk[XMSS_OID_LEN + params.sk_bytes];
-    unsigned char m[mlen];
-    unsigned char sm[params.sig_bytes + mlen];
+    unsigned char *m = malloc(mlen);
+    unsigned char *sm = malloc(params.sig_bytes + mlen);
     unsigned long long smlen;
 
     /* fseek back to start of sk. */
@@ -74,4 +75,9 @@ int main(int argc, char **argv) {
 
     fclose(keypair_file);
     fclose(m_file);
+
+    free(m);
+    free(sm);
+
+    return 0;
 }

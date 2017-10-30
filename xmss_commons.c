@@ -116,25 +116,6 @@ void l_tree(const xmss_params *params,
 }
 
 /**
- * Computes the randomized message hash.
- */
-void hash_message(const xmss_params *params, unsigned char *mhash,
-                  const unsigned char *R, const unsigned char *root,
-                  unsigned long long idx,
-                  const unsigned char *m, unsigned long long mlen)
-{
-    unsigned char hash_key[3*params->n];
-
-    /* Compute hash key. */
-    memcpy(hash_key, R, params->n);
-    memcpy(hash_key + params->n, root, params->n);
-    ull_to_bytes(hash_key + 2*params->n, params->n, idx);
-
-    /* Hash the message using the randomized hash key. */
-    h_msg(params, mhash, m, mlen, hash_key, 3*params->n);
-}
-
-/**
  * Computes a root node given a leaf and an auth path
  */
 static void compute_root(const xmss_params *params, unsigned char *root,
@@ -228,9 +209,13 @@ int xmssmt_core_sign_open(const xmss_params *params,
     /* Convert the index bytes from the signature to an integer. */
     idx = bytes_to_ull(sm, params->index_bytes);
 
+    /* Put the message all the way at the end of the m buffer, so that we can
+     * prepend the required other inputs for the hash function. */
+    memcpy(m + params->sig_bytes, sm + params->sig_bytes, *mlen);
+
     /* Compute the message hash. */
     hash_message(params, mhash, sm + params->index_bytes, pk, idx,
-                 sm + params->sig_bytes, *mlen);
+                 m + params->sig_bytes - 4*params->n, *mlen);
     sm += params->index_bytes + params->n;
 
     /* For each subtree.. */

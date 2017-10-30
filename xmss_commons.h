@@ -42,14 +42,6 @@ void l_tree(const xmss_params *params,
             const unsigned char *pub_seed, uint32_t addr[8]);
 
 /**
- * Computes the randomized message hash.
- */
-void hash_message(const xmss_params *params, unsigned char *mhash,
-                  const unsigned char *R, const unsigned char *root,
-                  unsigned long long idx,
-                  const unsigned char *m, unsigned long long mlen);
-
-/**
  * Verifies a given message signature pair under a given public key.
  * Note that this assumes a pk without an OID, i.e. [root || PUB_SEED]
  */

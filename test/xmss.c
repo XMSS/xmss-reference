@@ -1,9 +1,11 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
+#include <stdlib.h>
 
 #include "../xmss.h"
 #include "../params.h"
+#include "../randombytes.h"
 
 #define MLEN 32
 #define SIGNATURES 16
@@ -33,11 +35,13 @@ int main()
 
     unsigned char pk[XMSS_OID_LEN + params.pk_bytes];
     unsigned char sk[XMSS_OID_LEN + params.sk_bytes];
-    unsigned char m[MLEN];
-    unsigned char sm[params.sig_bytes + MLEN];
-    unsigned char mout[params.sig_bytes + MLEN];
+    unsigned char *m = malloc(MLEN);
+    unsigned char *sm = malloc(params.sig_bytes + MLEN);
+    unsigned char *mout = malloc(params.sig_bytes + MLEN);
     unsigned long long smlen;
     unsigned long long mlen;
+
+    randombytes(m, MLEN);
 
     XMSS_KEYPAIR(pk, sk, oid);
 
@@ -105,6 +109,10 @@ int main()
             printf("    changing any signature hash invalidates signature.\n");
         }
     }
+
+    free(m);
+    free(sm);
+    free(mout);
 
     return 0;
 }

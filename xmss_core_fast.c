@@ -393,6 +393,8 @@ int xmss_core_sign(const xmss_params *params,
                    unsigned char *sm, unsigned long long *smlen,
                    const unsigned char *m, unsigned long long mlen)
 {
+    const unsigned char *pub_root = sk + params->index_bytes + 3*params->n;
+
     uint16_t i = 0;
 
     // Extract SK
@@ -407,8 +409,6 @@ int xmss_core_sign(const xmss_params *params,
     // index as 32 bytes string
     unsigned char idx_bytes_32[32];
     ull_to_bytes(idx_bytes_32, 32, idx);
-
-    unsigned char hash_key[3*params->n];
 
     // Update SK
     sk[0] = ((idx + 1) >> 24) & 255;
@@ -432,12 +432,14 @@ int xmss_core_sign(const xmss_params *params,
     // Message Hash:
     // First compute pseudorandom value
     prf(params, R, idx_bytes_32, sk_prf, params->n);
-    // Generate hash key (R || root || idx)
-    memcpy(hash_key, R, params->n);
-    memcpy(hash_key+params->n, sk+4+3*params->n, params->n);
-    ull_to_bytes(hash_key+2*params->n, params->n, idx);
-    // Then use it for message digest
-    h_msg(params, msg_h, m, mlen, hash_key, 3*params->n);
+
+    /* Already put the message in the right place, to make it easier to prepend
+     * things when computing the hash over the message. */
+    memcpy(sm + params->sig_bytes, m, mlen);
+
+    /* Compute the message hash. */
+    hash_message(params, msg_h, R, pub_root, idx,
+                 sm + params->sig_bytes - 4*params->n, mlen);
 
     // Start collecting signature
     *smlen = 0;
@@ -554,6 +556,8 @@ int xmssmt_core_sign(const xmss_params *params,
                      unsigned char *sm, unsigned long long *smlen,
                      const unsigned char *m, unsigned long long mlen)
 {
+    const unsigned char *pub_root = sk + params->index_bytes + 3*params->n;
+
     uint64_t idx_tree;
     uint32_t idx_leaf;
     uint64_t i, j;
@@ -566,7 +570,6 @@ int xmssmt_core_sign(const xmss_params *params,
     // Init working params
     unsigned char R[params->n];
     unsigned char msg_h[params->n];
-    unsigned char hash_key[3*params->n];
     unsigned char ots_seed[params->n];
     uint32_t addr[8] = {0, 0, 0, 0, 0, 0, 0, 0};
     uint32_t ots_addr[8] = {0, 0, 0, 0, 0, 0, 0, 0};
@@ -599,13 +602,14 @@ int xmssmt_core_sign(const xmss_params *params,
     // First compute pseudorandom value
     ull_to_bytes(idx_bytes_32, 32, idx);
     prf(params, R, idx_bytes_32, sk_prf, params->n);
-    // Generate hash key (R || root || idx)
-    memcpy(hash_key, R, params->n);
-    memcpy(hash_key+params->n, sk+params->index_bytes+3*params->n, params->n);
-    ull_to_bytes(hash_key+2*params->n, params->n, idx);
 
-    // Then use it for message digest
-    h_msg(params, msg_h, m, mlen, hash_key, 3*params->n);
+    /* Already put the message in the right place, to make it easier to prepend
+     * things when computing the hash over the message. */
+    memcpy(sm + params->sig_bytes, m, mlen);
+
+    /* Compute the message hash. */
+    hash_message(params, msg_h, R, pub_root, idx,
+                 sm + params->sig_bytes - 4*params->n, mlen);
 
     // Start collecting signature
     *smlen = 0;

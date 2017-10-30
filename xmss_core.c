@@ -189,10 +189,14 @@ int xmssmt_core_sign(const xmss_params *params,
     uint32_t ots_addr[8] = {0};
     set_type(ots_addr, XMSS_ADDR_TYPE_OTS);
 
+    /* Already put the message in the right place, to make it easier to prepend
+     * things when computing the hash over the message. */
+    memcpy(sm + params->sig_bytes, m, mlen);
+    *smlen = params->sig_bytes + mlen;
+
     /* Read and use the current index from the secret key. */
     idx = (unsigned long)bytes_to_ull(sk, params->index_bytes);
     memcpy(sm, sk, params->index_bytes);
-    sm += params->index_bytes;
 
     /*************************************************************************
      * THIS IS WHERE PRODUCTION IMPLEMENTATIONS WOULD UPDATE THE SECRET KEY. *
@@ -202,11 +206,12 @@ int xmssmt_core_sign(const xmss_params *params,
 
     /* Compute the digest randomization value. */
     ull_to_bytes(idx_bytes_32, 32, idx);
-    prf(params, sm, idx_bytes_32, sk_prf, params->n);
+    prf(params, sm + params->index_bytes, idx_bytes_32, sk_prf, params->n);
 
     /* Compute the message hash. */
-    hash_message(params, mhash, sm, pub_root, idx, m, mlen);
-    sm += params->n;
+    hash_message(params, mhash, sm + params->index_bytes, pub_root, idx,
+                 sm + params->sig_bytes - 4*params->n, mlen);
+    sm += params->index_bytes + params->n;
 
     set_type(ots_addr, XMSS_ADDR_TYPE_OTS);
 
@@ -231,9 +236,6 @@ int xmssmt_core_sign(const xmss_params *params,
         treehash(params, root, sm, sk_seed, pub_seed, idx_leaf, ots_addr);
         sm += params->tree_height*params->n;
     }
-
-    memcpy(sm, m, mlen);
-    *smlen = params->sig_bytes + mlen;
 
     return 0;
 }

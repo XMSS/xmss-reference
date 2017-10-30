@@ -23,4 +23,9 @@ int hash_f(const xmss_params *params,
            unsigned char *out, const unsigned char *in,
            const unsigned char *pub_seed, uint32_t addr[8]);
 
+int hash_message(const xmss_params *params, unsigned char *out,
+                 const unsigned char *R, const unsigned char *root,
+                 unsigned long long idx,
+                 unsigned char *m_with_prefix, unsigned long long mlen);
+
 #endif
