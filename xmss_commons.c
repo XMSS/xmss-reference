@@ -266,7 +266,7 @@ int xmssmt_core_sign_open(const xmss_params *params,
     if (memcmp(root, pk, params->n)) {
         /* If not, zero the message */
         memset(m, 0, *mlen);
-        *mlen = -1;
+        *mlen = 0;
         return -1;
     }
 

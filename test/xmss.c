@@ -49,7 +49,7 @@ int main()
         XMSS_SIGN(sk, sm, &smlen, m, MLEN);
 
         if (smlen != params.sig_bytes + MLEN) {
-            printf("  X smlen incorrect [%llu != %u]!.\n",
+            printf("  X smlen incorrect [%llu != %u]!\n",
                    smlen, params.sig_bytes);
         }
         else {
@@ -66,13 +66,13 @@ int main()
 
         /* Test if the correct message was recovered. */
         if (mlen != MLEN) {
-            printf("  X mlen incorrect [%llu != %u]!.\n", mlen, MLEN);
+            printf("  X mlen incorrect [%llu != %u]!\n", mlen, MLEN);
         }
         else {
             printf("    mlen as expected [%llu].\n", mlen);
         }
-        if (memcmp(m, mout, mlen)) {
-            printf("  X output message incorrect!.\n");
+        if (memcmp(m, mout, MLEN)) {
+            printf("  X output message incorrect!\n");
         }
         else {
             printf("    output message as expected.\n");
