@@ -206,7 +206,7 @@ int xmssmt_core_sign(const xmss_params *params,
 
     /* Compute the digest randomization value. */
     ull_to_bytes(idx_bytes_32, 32, idx);
-    prf(params, sm + params->index_bytes, idx_bytes_32, sk_prf, params->n);
+    prf(params, sm + params->index_bytes, idx_bytes_32, sk_prf);
 
     /* Compute the message hash. */
     hash_message(params, mhash, sm + params->index_bytes, pub_root, idx,

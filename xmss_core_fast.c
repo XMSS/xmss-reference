@@ -431,7 +431,7 @@ int xmss_core_sign(const xmss_params *params,
 
     // Message Hash:
     // First compute pseudorandom value
-    prf(params, R, idx_bytes_32, sk_prf, params->n);
+    prf(params, R, idx_bytes_32, sk_prf);
 
     /* Already put the message in the right place, to make it easier to prepend
      * things when computing the hash over the message. */
@@ -601,7 +601,7 @@ int xmssmt_core_sign(const xmss_params *params,
     // Message Hash:
     // First compute pseudorandom value
     ull_to_bytes(idx_bytes_32, 32, idx);
-    prf(params, R, idx_bytes_32, sk_prf, params->n);
+    prf(params, R, idx_bytes_32, sk_prf);
 
     /* Already put the message in the right place, to make it easier to prepend
      * things when computing the hash over the message. */

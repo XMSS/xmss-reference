@@ -8,6 +8,11 @@
 #include "hash.h"
 #include "fips202.h"
 
+#define XMSS_HASH_PADDING_F 0
+#define XMSS_HASH_PADDING_H 1
+#define XMSS_HASH_PADDING_HASH 2
+#define XMSS_HASH_PADDING_PRF 3
+
 void addr_to_bytes(unsigned char *bytes, const uint32_t addr[8])
 {
     int i;
@@ -17,29 +22,20 @@ void addr_to_bytes(unsigned char *bytes, const uint32_t addr[8])
 }
 
 static int core_hash(const xmss_params *params,
-                     unsigned char *out, const unsigned int type,
-                     const unsigned char *key, unsigned int keylen,
-                     const unsigned char *in, unsigned long long inlen, int n)
+                     unsigned char *out,
+                     const unsigned char *in, unsigned long long inlen)
 {
-    unsigned char buf[inlen + n + keylen];
-
-    /* We arrange the input into the hash function to be of the form:
-     *  toByte(X, 32) || KEY || M */
-    ull_to_bytes(buf, n, type);
-    memcpy(buf + n, key, keylen);
-    memcpy(buf + keylen + n, in, inlen);
-
-    if (n == 32 && params->func == XMSS_SHA2) {
-        SHA256(buf, inlen + keylen + n, out);
+    if (params->n == 32 && params->func == XMSS_SHA2) {
+        SHA256(in, inlen, out);
     }
-    else if (n == 32 && params->func == XMSS_SHAKE) {
-        shake128(out, 32, buf, inlen + keylen + n);
+    else if (params->n == 32 && params->func == XMSS_SHAKE) {
+        shake128(out, 32, in, inlen);
     }
-    else if (n == 64 && params->func == XMSS_SHA2) {
-        SHA512(buf, inlen + keylen + n, out);
+    else if (params->n == 64 && params->func == XMSS_SHA2) {
+        SHA512(in, inlen, out);
     }
-    else if (n == 64 && params->func == XMSS_SHAKE) {
-        shake256(out, 64, buf, inlen + keylen + n);
+    else if (params->n == 64 && params->func == XMSS_SHAKE) {
+        shake256(out, 64, in, inlen);
     }
     else {
         return 1;
@@ -47,19 +43,20 @@ static int core_hash(const xmss_params *params,
     return 0;
 }
 
+/*
+ * Computes PRF(key, in), for a key of params->n bytes, and a 32-byte input.
+ */
 int prf(const xmss_params *params,
-        unsigned char *out, const unsigned char *in,
-        const unsigned char *key, unsigned int keylen)
+        unsigned char *out, const unsigned char in[32],
+        const unsigned char *key)
 {
-    return core_hash(params, out, 3, key, keylen, in, 32, keylen);
-}
+    unsigned char buf[2*params->n + 32];
 
-int h_msg(const xmss_params *params,
-          unsigned char *out,
-          const unsigned char *in, unsigned long long inlen,
-          const unsigned char *key, const unsigned int keylen)
-{
-    return core_hash(params, out, 2, key, keylen, in, inlen, params->n);
+    ull_to_bytes(buf, params->n, XMSS_HASH_PADDING_PRF);
+    memcpy(buf + params->n, key, params->n);
+    memcpy(buf + 2*params->n, in, 32);
+
+    return core_hash(params, out, buf, 3 * params->n);
 }
 
 /*
@@ -75,29 +72,12 @@ int hash_message(const xmss_params *params, unsigned char *out,
 {
     /* We're creating a hash using input of the form:
        toByte(X, 32) || R || root || index || M */
-    ull_to_bytes(m_with_prefix, params->n, 2);
+    ull_to_bytes(m_with_prefix, params->n, XMSS_HASH_PADDING_HASH);
     memcpy(m_with_prefix + params->n, R, params->n);
-    memcpy(m_with_prefix + 2 * params->n, root, params->n);
-    ull_to_bytes(m_with_prefix + 3 * params->n, params->n, idx);
+    memcpy(m_with_prefix + 2*params->n, root, params->n);
+    ull_to_bytes(m_with_prefix + 3*params->n, params->n, idx);
 
-    /* Since the message can be bigger than the stack, this cannot use the
-     * core_hash function. */
-    if (params->n == 32 && params->func == XMSS_SHA2) {
-        SHA256(m_with_prefix, mlen + 4*params->n, out);
-    }
-    else if (params->n == 32 && params->func == XMSS_SHAKE) {
-        shake128(out, 32, m_with_prefix, mlen + 4*params->n);
-    }
-    else if (params->n == 64 && params->func == XMSS_SHA2) {
-        SHA512(m_with_prefix, mlen + 4*params->n, out);
-    }
-    else if (params->n == 64 && params->func == XMSS_SHAKE) {
-        shake256(out, 64, m_with_prefix, mlen + 4*params->n);
-    }
-    else {
-        return 1;
-    }
-    return 0;
+    return core_hash(params, out, m_with_prefix, mlen + 4*params->n);
 }
 
 /**
@@ -107,52 +87,58 @@ int hash_h(const xmss_params *params,
            unsigned char *out, const unsigned char *in,
            const unsigned char *pub_seed, uint32_t addr[8])
 {
-    unsigned char buf[2*params->n];
-    unsigned char key[params->n];
-    unsigned char bitmask[2*params->n];
+    unsigned char buf[4 * params->n];
+    unsigned char bitmask[2 * params->n];
     unsigned char addr_as_bytes[32];
     unsigned int i;
+
+    /* Set the function padding. */
+    ull_to_bytes(buf, params->n, XMSS_HASH_PADDING_H);
 
     /* Generate the n-byte key. */
     set_key_and_mask(addr, 0);
     addr_to_bytes(addr_as_bytes, addr);
-    prf(params, key, addr_as_bytes, pub_seed, params->n);
+    prf(params, buf + params->n, addr_as_bytes, pub_seed);
 
     /* Generate the 2n-byte mask. */
     set_key_and_mask(addr, 1);
     addr_to_bytes(addr_as_bytes, addr);
-    prf(params, bitmask, addr_as_bytes, pub_seed, params->n);
+    prf(params, bitmask, addr_as_bytes, pub_seed);
 
     set_key_and_mask(addr, 2);
     addr_to_bytes(addr_as_bytes, addr);
-    prf(params, bitmask + params->n, addr_as_bytes, pub_seed, params->n);
+    prf(params, bitmask + params->n, addr_as_bytes, pub_seed);
 
-    for (i = 0; i < 2*params->n; i++) {
-        buf[i] = in[i] ^ bitmask[i];
+    for (i = 0; i < 2 * params->n; i++) {
+        buf[2*params->n + i] = in[i] ^ bitmask[i];
     }
-    return core_hash(params, out, 1, key, params->n, buf, 2*params->n, params->n);
+    return core_hash(params, out, buf, 4 * params->n);
 }
 
 int hash_f(const xmss_params *params,
            unsigned char *out, const unsigned char *in,
            const unsigned char *pub_seed, uint32_t addr[8])
 {
-    unsigned char buf[params->n];
-    unsigned char key[params->n];
+    unsigned char buf[3 * params->n];
     unsigned char bitmask[params->n];
     unsigned char addr_as_bytes[32];
     unsigned int i;
 
+    /* Set the function padding. */
+    ull_to_bytes(buf, params->n, XMSS_HASH_PADDING_F);
+
+    /* Generate the n-byte key. */
     set_key_and_mask(addr, 0);
     addr_to_bytes(addr_as_bytes, addr);
-    prf(params, key, addr_as_bytes, pub_seed, params->n);
+    prf(params, buf + params->n, addr_as_bytes, pub_seed);
 
+    /* Generate the n-byte mask. */
     set_key_and_mask(addr, 1);
     addr_to_bytes(addr_as_bytes, addr);
-    prf(params, bitmask, addr_as_bytes, pub_seed, params->n);
+    prf(params, bitmask, addr_as_bytes, pub_seed);
 
     for (i = 0; i < params->n; i++) {
-        buf[i] = in[i] ^ bitmask[i];
+        buf[2*params->n + i] = in[i] ^ bitmask[i];
     }
-    return core_hash(params, out, 0, key, params->n, buf, params->n, params->n);
+    return core_hash(params, out, buf, 3 * params->n);
 }

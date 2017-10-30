@@ -19,7 +19,7 @@ static void expand_seed(const xmss_params *params,
 
     for (i = 0; i < params->wots_len; i++) {
         ull_to_bytes(ctr, 32, i);
-        prf(params, outseeds + i*params->n, ctr, inseed, params->n);
+        prf(params, outseeds + i*params->n, ctr, inseed);
     }
 }
 

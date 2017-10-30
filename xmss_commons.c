@@ -73,7 +73,7 @@ void get_seed(const xmss_params *params, unsigned char *seed,
 
     /* Generate seed. */
     addr_to_bytes(bytes, addr);
-    prf(params, seed, bytes, sk_seed, params->n);
+    prf(params, seed, bytes, sk_seed);
 }
 
 /**

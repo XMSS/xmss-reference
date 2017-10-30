@@ -7,8 +7,8 @@
 void addr_to_bytes(unsigned char *bytes, const uint32_t addr[8]);
 
 int prf(const xmss_params *params,
-        unsigned char *out, const unsigned char *in,
-        const unsigned char *key, unsigned int keylen);
+        unsigned char *out, const unsigned char in[32],
+        const unsigned char *key);
 
 int h_msg(const xmss_params *params,
           unsigned char *out,
