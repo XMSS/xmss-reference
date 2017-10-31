@@ -7,8 +7,11 @@
 #include "../params.h"
 #include "../randombytes.h"
 
-#define MLEN 32
-#define SIGNATURES 16
+#define XMSS_MLEN 32
+
+#ifndef XMSS_SIGNATURES
+    #define XMSS_SIGNATURES 16
+#endif
 
 #ifdef XMSSMT
     #define XMSS_PARSE_OID xmssmt_parse_oid
@@ -29,30 +32,30 @@ int main()
     xmss_params params;
     // TODO test more different OIDs
     uint32_t oid = 0x01000001;
-    int i, j;
+    int i;
 
     XMSS_PARSE_OID(&params, oid);
 
     unsigned char pk[XMSS_OID_LEN + params.pk_bytes];
     unsigned char sk[XMSS_OID_LEN + params.sk_bytes];
-    unsigned char *m = malloc(MLEN);
-    unsigned char *sm = malloc(params.sig_bytes + MLEN);
-    unsigned char *mout = malloc(params.sig_bytes + MLEN);
+    unsigned char *m = malloc(XMSS_MLEN);
+    unsigned char *sm = malloc(params.sig_bytes + XMSS_MLEN);
+    unsigned char *mout = malloc(params.sig_bytes + XMSS_MLEN);
     unsigned long long smlen;
     unsigned long long mlen;
 
-    randombytes(m, MLEN);
+    randombytes(m, XMSS_MLEN);
 
     XMSS_KEYPAIR(pk, sk, oid);
 
-    printf("Testing %d %s signatures.. \n", SIGNATURES, XMSS_VARIANT);
+    printf("Testing %d %s signatures.. \n", XMSS_SIGNATURES, XMSS_VARIANT);
 
-    for (i = 0; i < SIGNATURES; i++) {
+    for (i = 0; i < XMSS_SIGNATURES; i++) {
         printf("  - iteration #%d:\n", i);
 
-        XMSS_SIGN(sk, sm, &smlen, m, MLEN);
+        XMSS_SIGN(sk, sm, &smlen, m, XMSS_MLEN);
 
-        if (smlen != params.sig_bytes + MLEN) {
+        if (smlen != params.sig_bytes + XMSS_MLEN) {
             printf("  X smlen incorrect [%llu != %u]!\n",
                    smlen, params.sig_bytes);
         }
@@ -69,13 +72,13 @@ int main()
         }
 
         /* Test if the correct message was recovered. */
-        if (mlen != MLEN) {
-            printf("  X mlen incorrect [%llu != %u]!\n", mlen, MLEN);
+        if (mlen != XMSS_MLEN) {
+            printf("  X mlen incorrect [%llu != %u]!\n", mlen, XMSS_MLEN);
         }
         else {
             printf("    mlen as expected [%llu].\n", mlen);
         }
-        if (memcmp(m, mout, MLEN)) {
+        if (memcmp(m, mout, XMSS_MLEN)) {
             printf("  X output message incorrect!\n");
         }
         else {
@@ -94,9 +97,11 @@ int main()
         }
         sm[smlen - 1] ^= 1;
 
+#ifdef XMSS_TEST_INVALIDSIG
+        int j;
         /* Flip one bit per hash; the signature is almost entirely hashes.
            This also flips a bit in the index, which is also a useful test. */
-        for (j = 0; j < (int)(smlen - MLEN); j += params.n) {
+        for (j = 0; j < (int)(smlen - XMSS_MLEN); j += params.n) {
             sm[j] ^= 1;
             if (!XMSS_SIGN_OPEN(mout, &mlen, sm, smlen, pk)) {
                 printf("  X flipping bit %d DID NOT invalidate sig + m!\n", j);
@@ -105,9 +110,10 @@ int main()
             }
             sm[j] ^= 1;
         }
-        if (j >= (int)(smlen - MLEN)) {
+        if (j >= (int)(smlen - XMSS_MLEN)) {
             printf("    changing any signature hash invalidates signature.\n");
         }
+#endif
     }
 
     free(m);
