@@ -33,6 +33,7 @@ int main()
 {
     xmss_params params;
     uint32_t oid;
+    int ret = 0;
     int i;
 
     // TODO test more different variants
@@ -61,6 +62,7 @@ int main()
         if (smlen != params.sig_bytes + XMSS_MLEN) {
             printf("  X smlen incorrect [%llu != %u]!\n",
                    smlen, params.sig_bytes);
+            ret = -1;
         }
         else {
             printf("    smlen as expected [%llu].\n", smlen);
@@ -69,6 +71,7 @@ int main()
         /* Test if signature is valid. */
         if (XMSS_SIGN_OPEN(mout, &mlen, sm, smlen, pk)) {
             printf("  X verification failed!\n");
+            ret = -1;
         }
         else {
             printf("    verification succeeded.\n");
@@ -77,12 +80,14 @@ int main()
         /* Test if the correct message was recovered. */
         if (mlen != XMSS_MLEN) {
             printf("  X mlen incorrect [%llu != %u]!\n", mlen, XMSS_MLEN);
+            ret = -1;
         }
         else {
             printf("    mlen as expected [%llu].\n", mlen);
         }
         if (memcmp(m, mout, XMSS_MLEN)) {
             printf("  X output message incorrect!\n");
+            ret = -1;
         }
         else {
             printf("    output message as expected.\n");
@@ -94,6 +99,7 @@ int main()
         sm[smlen - 1] ^= 1;
         if (!XMSS_SIGN_OPEN(mout, &mlen, sm, smlen, pk)) {
             printf("  X flipping a bit of m DID NOT invalidate signature!\n");
+            ret = -1;
         }
         else {
             printf("    flipping a bit of m invalidates signature.\n");
@@ -109,6 +115,7 @@ int main()
             if (!XMSS_SIGN_OPEN(mout, &mlen, sm, smlen, pk)) {
                 printf("  X flipping bit %d DID NOT invalidate sig + m!\n", j);
                 sm[j] ^= 1;
+                ret = -1;
                 break;
             }
             sm[j] ^= 1;
@@ -123,5 +130,5 @@ int main()
     free(sm);
     free(mout);
 
-    return 0;
+    return ret;
 }
