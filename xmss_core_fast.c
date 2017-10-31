@@ -8,26 +8,187 @@
 #include "randombytes.h"
 #include "wots.h"
 #include "xmss_commons.h"
-#include "xmss_core_fast.h"
+#include "xmss_core.h"
+
+typedef struct{
+    unsigned char h;
+    unsigned long next_idx;
+    unsigned char stackusage;
+    unsigned char completed;
+    unsigned char *node;
+} treehash_inst;
+
+typedef struct {
+    unsigned char *stack;
+    unsigned int stackoffset;
+    unsigned char *stacklevels;
+    unsigned char *auth;
+    unsigned char *keep;
+    treehash_inst *treehash;
+    unsigned char *retain;
+    unsigned int next_leaf;
+} bds_state;
+
+/* These serialization functions provide a transition between the current
+   way of storing the state in an exposed struct, and storing it as part of the
+   byte array that is the secret key.
+   They will probably be refactored in a non-backwards-compatible way, soon. */
+
+static void xmssmt_serialize_state(const xmss_params *params,
+                                   unsigned char *sk, bds_state *states)
+{
+    unsigned int i, j;
+
+    /* Skip past the 'regular' sk */
+    sk += params->index_bytes + 4*params->n;
+
+    for (i = 0; i < 2*params->d - 1; i++) {
+        sk += (params->tree_height + 1) * params->n; /* stack */
+
+        ull_to_bytes(sk, 4, states[i].stackoffset);
+        sk += 4;
+
+        sk += params->tree_height + 1; /* stacklevels */
+        sk += params->tree_height * params->n; /* auth */
+        sk += (params->tree_height >> 1) * params->n; /* keep */
+
+        for (j = 0; j < params->tree_height - params->bds_k; j++) {
+            ull_to_bytes(sk, 1, states[i].treehash[j].h);
+            sk += 1;
+
+            ull_to_bytes(sk, 4, states[i].treehash[j].next_idx);
+            sk += 4;
+
+            ull_to_bytes(sk, 1, states[i].treehash[j].stackusage);
+            sk += 1;
+
+            ull_to_bytes(sk, 1, states[i].treehash[j].completed);
+            sk += 1;
+
+            sk += params->n; /* node */
+        }
+
+        /* retain */
+        sk += ((1 << params->bds_k) - params->bds_k - 1) * params->n;
+
+        ull_to_bytes(sk, 4, states[i].next_leaf);
+        sk += 4;
+    }
+}
+
+static void xmssmt_deserialize_state(const xmss_params *params,
+                                     bds_state *states,
+                                     unsigned char **wots_sigs,
+                                     unsigned char *sk)
+{
+    unsigned int i, j;
+
+    /* Skip past the 'regular' sk */
+    sk += params->index_bytes + 4*params->n;
+
+    // TODO These data sizes follow from the (former) test xmss_core_fast.c
+    // TODO They should be reconsidered / motivated more explicitly
+
+    for (i = 0; i < 2*params->d - 1; i++) {
+        states[i].stack = sk;
+        sk += (params->tree_height + 1) * params->n;
+
+        states[i].stackoffset = bytes_to_ull(sk, 4);
+        sk += 4;
+
+        states[i].stacklevels = sk;
+        sk += params->tree_height + 1;
+
+        states[i].auth = sk;
+        sk += params->tree_height * params->n;
+
+        states[i].keep = sk;
+        sk += (params->tree_height >> 1) * params->n;
+
+        for (j = 0; j < params->tree_height - params->bds_k; j++) {
+            states[i].treehash[j].h = bytes_to_ull(sk, 1);
+            sk += 1;
+
+            states[i].treehash[j].next_idx = bytes_to_ull(sk, 4);
+            sk += 4;
+
+            states[i].treehash[j].stackusage = bytes_to_ull(sk, 1);
+            sk += 1;
+
+            states[i].treehash[j].completed = bytes_to_ull(sk, 1);
+            sk += 1;
+
+            states[i].treehash[j].node = sk;
+            sk += params->n;
+        }
+
+        states[i].retain = sk;
+        sk += ((1 << params->bds_k) - params->bds_k - 1) * params->n;
+
+        states[i].next_leaf = bytes_to_ull(sk, 4);
+        sk += 4;
+    }
+
+    if (params->d > 1) {
+        *wots_sigs = sk;
+    }
+}
+
+static void xmss_serialize_state(const xmss_params *params,
+                                 unsigned char *sk, bds_state *state)
+{
+    xmssmt_serialize_state(params, sk, state);
+}
+
+static void xmss_deserialize_state(const xmss_params *params,
+                                   bds_state *state, unsigned char *sk)
+{
+    xmssmt_deserialize_state(params, state, NULL, sk);
+}
+
+static void memswap(void *a, void *b, void *t, unsigned long long len)
+{
+    memcpy(t, a, len);
+    memcpy(a, b, len);
+    memcpy(b, t, len);
+}
 
 /**
- * Initialize BDS state struct
- * parameter names are the same as used in the description of the BDS traversal
+ * Swaps the content of two bds_state objects, swapping actual memory rather
+ * than pointers.
+ * As we're mapping memory chunks in the secret key to bds state objects,
+ * it is now necessary to make swaps 'real swaps'. This could be done in the
+ * serialization function as well, but that causes more overhead
  */
-void xmss_set_bds_state(bds_state *state, unsigned char *stack,
-                        int stackoffset, unsigned char *stacklevels,
-                        unsigned char *auth, unsigned char *keep,
-                        treehash_inst *treehash, unsigned char *retain,
-                        int next_leaf)
+// TODO this should not be necessary if we keep better track of the states
+static void deep_state_swap(const xmss_params *params,
+                            bds_state *a, bds_state *b)
 {
-    state->stack = stack;
-    state->stackoffset = stackoffset;
-    state->stacklevels = stacklevels;
-    state->auth = auth;
-    state->keep = keep;
-    state->treehash = treehash;
-    state->retain = retain;
-    state->next_leaf = next_leaf;
+    // TODO this is extremely ugly and should be refactored
+    // TODO right now, this ensures that both 'stack' and 'retain' fit
+    unsigned char t[
+        ((params->tree_height + 1) > ((1 << params->bds_k) - params->bds_k - 1)
+         ? (params->tree_height + 1)
+         : ((1 << params->bds_k) - params->bds_k - 1))
+        * params->n];
+    unsigned int i;
+
+    memswap(a->stack, b->stack, t, (params->tree_height + 1) * params->n);
+    memswap(&a->stackoffset, &b->stackoffset, t, sizeof(a->stackoffset));
+    memswap(a->stacklevels, b->stacklevels, t, params->tree_height + 1);
+    memswap(a->auth, b->auth, t, params->tree_height * params->n);
+    memswap(a->keep, b->keep, t, (params->tree_height >> 1) * params->n);
+
+    for (i = 0; i < params->tree_height - params->bds_k; i++) {
+        memswap(&a->treehash[i].h, &b->treehash[i].h, t, sizeof(a->treehash[i].h));
+        memswap(&a->treehash[i].next_idx, &b->treehash[i].next_idx, t, sizeof(a->treehash[i].next_idx));
+        memswap(&a->treehash[i].stackusage, &b->treehash[i].stackusage, t, sizeof(a->treehash[i].stackusage));
+        memswap(&a->treehash[i].completed, &b->treehash[i].completed, t, sizeof(a->treehash[i].completed));
+        memswap(a->treehash[i].node, b->treehash[i].node, t, params->n);
+    }
+
+    memswap(a->retain, b->retain, t, ((1 << params->bds_k) - params->bds_k - 1) * params->n);
+    memswap(&a->next_leaf, &b->next_leaf, t, sizeof(a->next_leaf));
 }
 
 static int treehash_minheight_on_stack(const xmss_params *params,
@@ -351,7 +512,7 @@ static void bds_round(const xmss_params *params,
  */
 unsigned long long xmss_core_sk_bytes(const xmss_params *params)
 {
-    return params->index_bytes + 4 * params->n;
+    return xmssmt_core_sk_bytes(params);
 }
 
 /*
@@ -360,9 +521,19 @@ unsigned long long xmss_core_sk_bytes(const xmss_params *params)
  * Format pk: [root || PUB_SEED] omitting algo oid.
  */
 int xmss_core_keypair(const xmss_params *params,
-                      unsigned char *pk, unsigned char *sk, bds_state *state)
+                      unsigned char *pk, unsigned char *sk)
 {
     uint32_t addr[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+
+    // TODO refactor BDS state not to need separate treehash instances
+    bds_state state;
+    treehash_inst treehash[params->tree_height - params->bds_k];
+    state.treehash = treehash;
+
+    xmss_deserialize_state(params, &state, sk);
+
+    state.stackoffset = 0;
+    state.next_leaf = 0;
 
     // Set idx = 0
     sk[0] = 0;
@@ -375,9 +546,13 @@ int xmss_core_keypair(const xmss_params *params,
     memcpy(pk + params->n, sk + params->index_bytes + 2*params->n, params->n);
 
     // Compute root
-    treehash_init(params, pk, params->tree_height, 0, state, sk + params->index_bytes, sk + params->index_bytes + 2*params->n, addr);
+    treehash_init(params, pk, params->tree_height, 0, &state, sk + params->index_bytes, sk + params->index_bytes + 2*params->n, addr);
     // copy root o sk
     memcpy(sk + params->index_bytes + 3*params->n, pk, params->n);
+
+    /* Write the BDS state into sk. */
+    xmss_serialize_state(params, sk, &state);
+
     return 0;
 }
 
@@ -389,13 +564,21 @@ int xmss_core_keypair(const xmss_params *params,
  *
  */
 int xmss_core_sign(const xmss_params *params,
-                   unsigned char *sk, bds_state *state,
+                   unsigned char *sk,
                    unsigned char *sm, unsigned long long *smlen,
                    const unsigned char *m, unsigned long long mlen)
 {
     const unsigned char *pub_root = sk + params->index_bytes + 3*params->n;
 
     uint16_t i = 0;
+
+    // TODO refactor BDS state not to need separate treehash instances
+    bds_state state;
+    treehash_inst treehash[params->tree_height - params->bds_k];
+    state.treehash = treehash;
+
+    /* Load the BDS state from sk. */
+    xmss_deserialize_state(params, &state, sk);
 
     // Extract SK
     unsigned long idx = ((unsigned long)sk[0] << 24) | ((unsigned long)sk[1] << 16) | ((unsigned long)sk[2] << 8) | sk[3];
@@ -479,11 +662,11 @@ int xmss_core_sign(const xmss_params *params,
     *smlen += params->wots_sig_bytes;
 
     // the auth path was already computed during the previous round
-    memcpy(sm, state->auth, params->tree_height*params->n);
+    memcpy(sm, state.auth, params->tree_height*params->n);
 
     if (idx < (1U << params->tree_height) - 1) {
-        bds_round(params, state, idx, sk_seed, pub_seed, ots_addr);
-        bds_treehash_update(params, state, (params->tree_height - params->bds_k) >> 1, sk_seed, pub_seed, ots_addr);
+        bds_round(params, &state, idx, sk_seed, pub_seed, ots_addr);
+        bds_treehash_update(params, &state, (params->tree_height - params->bds_k) >> 1, sk_seed, pub_seed, ots_addr);
     }
 
     sm += params->tree_height*params->n;
@@ -491,6 +674,9 @@ int xmss_core_sign(const xmss_params *params,
 
     memcpy(sm, m, mlen);
     *smlen += mlen;
+
+    /* Write the updated BDS state back into sk. */
+    xmss_serialize_state(params, sk, &state);
 
     return 0;
 }
@@ -502,7 +688,18 @@ int xmss_core_sign(const xmss_params *params,
  */
 unsigned long long xmssmt_core_sk_bytes(const xmss_params *params)
 {
-    return params->index_bytes + 4 * params->n;
+    return params->index_bytes + 4 * params->n
+            + (2 * params->d - 1) * (
+                (params->tree_height + 1) * params->n
+                + 4
+                + params->tree_height + 1
+                + params->tree_height * params->n
+                + (params->tree_height >> 1) * params->n
+                + (params->tree_height - params->bds_k) * (7 + params->n)
+                + ((1 << params->bds_k) - params->bds_k - 1) * params->n
+                + 4
+             )
+            + (params->d - 1) * params->wots_sig_bytes;
 }
 
 /*
@@ -511,12 +708,26 @@ unsigned long long xmssmt_core_sk_bytes(const xmss_params *params)
  * Format pk: [root || PUB_SEED] omitting algo oid.
  */
 int xmssmt_core_keypair(const xmss_params *params,
-                        unsigned char *pk, unsigned char *sk,
-                        bds_state *states, unsigned char *wots_sigs)
+                        unsigned char *pk, unsigned char *sk)
 {
     unsigned char ots_seed[params->n];
     uint32_t addr[8] = {0, 0, 0, 0, 0, 0, 0, 0};
     unsigned int i;
+    unsigned char *wots_sigs;
+
+    // TODO refactor BDS state not to need separate treehash instances
+    bds_state states[2*params->d - 1];
+    treehash_inst treehash[(2*params->d - 1) * (params->tree_height - params->bds_k)];
+    for (i = 0; i < 2*params->d - 1; i++) {
+        states[i].treehash = treehash + i * (params->tree_height - params->bds_k);
+    }
+
+    xmssmt_deserialize_state(params, states, &wots_sigs, sk);
+
+    for (i = 0; i < 2 * params->d - 1; i++) {
+        states[i].stackoffset = 0;
+        states[i].next_leaf = 0;
+    }
 
     // Set idx = 0
     for (i = 0; i < params->index_bytes; i++) {
@@ -540,6 +751,9 @@ int xmssmt_core_keypair(const xmss_params *params,
     // Address now points to the single tree on layer d-1
     treehash_init(params, pk, params->tree_height, 0, states + i, sk+params->index_bytes, pk+params->n, addr);
     memcpy(sk + params->index_bytes + 3*params->n, pk, params->n);
+
+    xmssmt_serialize_state(params, sk, states);
+
     return 0;
 }
 
@@ -552,7 +766,6 @@ int xmssmt_core_keypair(const xmss_params *params,
  */
 int xmssmt_core_sign(const xmss_params *params,
                      unsigned char *sk,
-                     bds_state *states, unsigned char *wots_sigs,
                      unsigned char *sm, unsigned long long *smlen,
                      const unsigned char *m, unsigned long long mlen)
 {
@@ -574,7 +787,17 @@ int xmssmt_core_sign(const xmss_params *params,
     uint32_t addr[8] = {0, 0, 0, 0, 0, 0, 0, 0};
     uint32_t ots_addr[8] = {0, 0, 0, 0, 0, 0, 0, 0};
     unsigned char idx_bytes_32[32];
-    bds_state tmp;
+
+    unsigned char *wots_sigs;
+
+    // TODO refactor BDS state not to need separate treehash instances
+    bds_state states[2*params->d - 1];
+    treehash_inst treehash[(2*params->d - 1) * (params->tree_height - params->bds_k)];
+    for (i = 0; i < 2*params->d - 1; i++) {
+        states[i].treehash = treehash + i * (params->tree_height - params->bds_k);
+    }
+
+    xmssmt_deserialize_state(params, states, &wots_sigs, sk);
 
     // Extract SK
     unsigned long long idx = 0;
@@ -700,9 +923,7 @@ int xmssmt_core_sign(const xmss_params *params,
             }
         }
         else if (idx < (1ULL << params->full_height) - 1) {
-            memcpy(&tmp, states+params->d + i, sizeof(bds_state));
-            memcpy(states+params->d + i, states + i, sizeof(bds_state));
-            memcpy(states + i, &tmp, sizeof(bds_state));
+            deep_state_swap(params, states+params->d + i, states + i);
 
             set_layer_addr(ots_addr, (i+1));
             set_tree_addr(ots_addr, ((idx + 1) >> ((i+2) * params->tree_height)));
@@ -724,6 +945,8 @@ int xmssmt_core_sign(const xmss_params *params,
 
     memcpy(sm, m, mlen);
     *smlen += mlen;
+
+    xmssmt_serialize_state(params, sk, states);
 
     return 0;
 }

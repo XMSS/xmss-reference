@@ -4,9 +4,7 @@ This repository contains the reference implementation that accompanies the Inter
 
 This reference implementation supports all parameter sets as defined in the Draft at run-time (specified by prefixing the public and private keys with a 32-bit `oid`). Implementations that want to use compile-time parameter sets can remove the `struct xmss_params` function parameter.
 
-_While the behavior of the code in this repository is supposed to be stable, the API is not yet fully complete. **In particular, the wrapper for run-time parameters does not yet support the back-end functions that make use of BDS traversal. This means that the `xmss_core_fast.c` back-end is somewhat hard to use. This is the most immediate open TODO, and will be resolved soon.**_
-
-_When using the current code base, please be careful, expect changes and watch this document for further documentation._
+_When using the current code base, please be careful, expect changes and watch this document for further documentation. In particular, `xmss_core_fast.c` is long due for a serious clean-up. While this will not change its public API or output, it may affect the storage format of the BDS state (i.e. part of the secret key)._
 
 ### Dependencies
 
