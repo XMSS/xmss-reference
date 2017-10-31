@@ -1,4 +1,4 @@
-## XMSS reference code
+## XMSS reference code [![Build Status](https://travis-ci.org/joostrijneveld/xmss-reference.svg?branch=master)](https://travis-ci.org/joostrijneveld/xmss-reference)
 
 This repository contains the reference implementation that accompanies the Internet Draft _"XMSS: Extended Hash-Based Signatures"_, [`draft-irtf-cfrg-xmss-hash-based-signatures`](https://datatracker.ietf.org/doc/draft-irtf-cfrg-xmss-hash-based-signatures/).
 
