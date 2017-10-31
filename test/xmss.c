@@ -15,12 +15,14 @@
 
 #ifdef XMSSMT
     #define XMSS_PARSE_OID xmssmt_parse_oid
+    #define XMSS_STR_TO_OID xmssmt_str_to_oid
     #define XMSS_KEYPAIR xmssmt_keypair
     #define XMSS_SIGN xmssmt_sign
     #define XMSS_SIGN_OPEN xmssmt_sign_open
     #define XMSS_VARIANT "XMSSMT-SHA2_20/2_256"
 #else
     #define XMSS_PARSE_OID xmss_parse_oid
+    #define XMSS_STR_TO_OID xmss_str_to_oid
     #define XMSS_KEYPAIR xmss_keypair
     #define XMSS_SIGN xmss_sign
     #define XMSS_SIGN_OPEN xmss_sign_open
@@ -30,10 +32,11 @@
 int main()
 {
     xmss_params params;
-    // TODO test more different OIDs
-    uint32_t oid = 0x01000001;
+    uint32_t oid;
     int i;
 
+    // TODO test more different variants
+    XMSS_STR_TO_OID(&oid, XMSS_VARIANT);
     XMSS_PARSE_OID(&params, oid);
 
     unsigned char pk[XMSS_OID_LEN + params.pk_bytes];
