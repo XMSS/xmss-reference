@@ -13,12 +13,7 @@ void set_tree_addr(uint32_t addr[8], uint64_t tree)
 
 void set_type(uint32_t addr[8], uint32_t type)
 {
-    int i;
-
     addr[3] = type;
-    for (i = 4; i < 8; i++) {
-        addr[i] = 0;
-    }
 }
 
 void set_key_and_mask(uint32_t addr[8], uint32_t key_and_mask)

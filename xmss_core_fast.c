@@ -218,16 +218,16 @@ static void treehash_init(const xmss_params *params,
 {
     unsigned int idx = index;
     // use three different addresses because at this point we use all three formats in parallel
-    uint32_t ots_addr[8];
-    uint32_t ltree_addr[8];
-    uint32_t node_addr[8];
+    uint32_t ots_addr[8] = {0};
+    uint32_t ltree_addr[8] = {0};
+    uint32_t node_addr[8] = {0};
     // only copy layer and tree address parts
-    memcpy(ots_addr, addr, 12);
+    copy_subtree_addr(ots_addr, addr);
     // type = ots
     set_type(ots_addr, 0);
-    memcpy(ltree_addr, addr, 12);
+    copy_subtree_addr(ltree_addr, addr);
     set_type(ltree_addr, 1);
-    memcpy(node_addr, addr, 12);
+    copy_subtree_addr(node_addr, addr);
     set_type(node_addr, 2);
 
     uint32_t lastnode, i;
@@ -287,16 +287,16 @@ static void treehash_update(const xmss_params *params,
                             const unsigned char *pub_seed,
                             const uint32_t addr[8])
 {
-    uint32_t ots_addr[8];
-    uint32_t ltree_addr[8];
-    uint32_t node_addr[8];
+    uint32_t ots_addr[8] = {0};
+    uint32_t ltree_addr[8] = {0};
+    uint32_t node_addr[8] = {0};
     // only copy layer and tree address parts
-    memcpy(ots_addr, addr, 12);
+    copy_subtree_addr(ots_addr, addr);
     // type = ots
     set_type(ots_addr, 0);
-    memcpy(ltree_addr, addr, 12);
+    copy_subtree_addr(ltree_addr, addr);
     set_type(ltree_addr, 1);
-    memcpy(node_addr, addr, 12);
+    copy_subtree_addr(node_addr, addr);
     set_type(node_addr, 2);
 
     set_ltree_addr(ltree_addr, treehash->next_idx);
@@ -378,9 +378,9 @@ static char bds_state_update(const xmss_params *params,
                              const unsigned char *pub_seed,
                              const uint32_t addr[8])
 {
-    uint32_t ltree_addr[8];
-    uint32_t node_addr[8];
-    uint32_t ots_addr[8];
+    uint32_t ltree_addr[8] = {0};
+    uint32_t node_addr[8] = {0};
+    uint32_t ots_addr[8] = {0};
 
     unsigned int nodeh;
     int idx = state->next_leaf;
@@ -389,12 +389,12 @@ static char bds_state_update(const xmss_params *params,
     }
 
     // only copy layer and tree address parts
-    memcpy(ots_addr, addr, 12);
+    copy_subtree_addr(ots_addr, addr);
     // type = ots
     set_type(ots_addr, 0);
-    memcpy(ltree_addr, addr, 12);
+    copy_subtree_addr(ltree_addr, addr);
     set_type(ltree_addr, 1);
-    memcpy(node_addr, addr, 12);
+    copy_subtree_addr(node_addr, addr);
     set_type(node_addr, 2);
 
     set_ots_addr(ots_addr, idx);
@@ -447,16 +447,17 @@ static void bds_round(const xmss_params *params,
     unsigned int offset, rowidx;
     unsigned char buf[2 * params->n];
 
-    uint32_t ots_addr[8];
-    uint32_t ltree_addr[8];
-    uint32_t node_addr[8];
+    uint32_t ots_addr[8] = {0};
+    uint32_t ltree_addr[8] = {0};
+    uint32_t node_addr[8] = {0};
+
     // only copy layer and tree address parts
-    memcpy(ots_addr, addr, 12);
+    copy_subtree_addr(ots_addr, addr);
     // type = ots
     set_type(ots_addr, 0);
-    memcpy(ltree_addr, addr, 12);
+    copy_subtree_addr(ltree_addr, addr);
     set_type(ltree_addr, 1);
-    memcpy(node_addr, addr, 12);
+    copy_subtree_addr(node_addr, addr);
     set_type(node_addr, 2);
 
     for (i = 0; i < params->tree_height; i++) {
@@ -524,7 +525,7 @@ unsigned long long xmss_core_sk_bytes(const xmss_params *params)
 int xmss_core_keypair(const xmss_params *params,
                       unsigned char *pk, unsigned char *sk)
 {
-    uint32_t addr[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+    uint32_t addr[8] = {0};
 
     // TODO refactor BDS state not to need separate treehash instances
     bds_state state;
@@ -607,7 +608,7 @@ int xmss_core_sign(const xmss_params *params,
     unsigned char R[params->n];
     unsigned char msg_h[params->n];
     unsigned char ots_seed[params->n];
-    uint32_t ots_addr[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+    uint32_t ots_addr[8] = {0};
 
     // ---------------------------------
     // Message Hashing
@@ -712,7 +713,7 @@ int xmssmt_core_keypair(const xmss_params *params,
                         unsigned char *pk, unsigned char *sk)
 {
     unsigned char ots_seed[params->n];
-    uint32_t addr[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+    uint32_t addr[8] = {0};
     unsigned int i;
     unsigned char *wots_sigs;
 
@@ -785,8 +786,8 @@ int xmssmt_core_sign(const xmss_params *params,
     unsigned char R[params->n];
     unsigned char msg_h[params->n];
     unsigned char ots_seed[params->n];
-    uint32_t addr[8] = {0, 0, 0, 0, 0, 0, 0, 0};
-    uint32_t ots_addr[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+    uint32_t addr[8] = {0};
+    uint32_t ots_addr[8] = {0};
     unsigned char idx_bytes_32[32];
 
     unsigned char *wots_sigs;
