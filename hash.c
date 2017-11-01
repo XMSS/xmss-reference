@@ -3,7 +3,7 @@
 #include <openssl/sha.h>
 
 #include "hash_address.h"
-#include "xmss_commons.h"
+#include "utils.h"
 #include "params.h"
 #include "hash.h"
 #include "fips202.h"

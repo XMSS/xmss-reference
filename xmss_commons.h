@@ -5,17 +5,6 @@
 #include "params.h"
 
 /**
- * Converts the value of 'in' to 'len' bytes in big-endian byte order.
- */
-void ull_to_bytes(unsigned char *out, unsigned int outlen,
-                  unsigned long long in);
-
-/**
- * Converts the inlen bytes in 'in' from big-endian byte order to an integer.
- */
-unsigned long long bytes_to_ull(const unsigned char *in, unsigned int inlen);
-
-/**
  * Computes the leaf at a given address. First generates the WOTS key pair,
  * then computes leaf using l_tree. As this happens position independent, we
  * only require that addr encodes the right ltree-address.

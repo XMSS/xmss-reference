@@ -1,7 +1,7 @@
 #include <stdint.h>
 #include <string.h>
 
-#include "xmss_commons.h"
+#include "utils.h"
 #include "hash.h"
 #include "wots.h"
 #include "hash_address.h"

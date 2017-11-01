@@ -7,6 +7,7 @@
 #include "params.h"
 #include "randombytes.h"
 #include "wots.h"
+#include "utils.h"
 #include "xmss_commons.h"
 #include "xmss_core.h"
 
