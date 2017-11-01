@@ -126,7 +126,7 @@ void wots_pkgen(const xmss_params *params,
 }
 
 /**
- * Takes a m-byte message and the 32-byte seed for the private key to compute a
+ * Takes a n-byte message and the 32-byte seed for the private key to compute a
  * signature that is placed at 'sig'.
  */
 void wots_sign(const xmss_params *params,
@@ -150,7 +150,7 @@ void wots_sign(const xmss_params *params,
 }
 
 /**
- * Takes a WOTS signature and an m-byte message, computes a WOTS public key.
+ * Takes a WOTS signature and an n-byte message, computes a WOTS public key.
  *
  * Writes the computed public key to 'pk'.
  */
