@@ -68,7 +68,7 @@ void l_tree(const xmss_params *params,
         for (i = 0; i < parent_nodes; i++) {
             set_tree_index(addr, i);
             /* Hashes the nodes at (i*2)*params->n and (i*2)*params->n + 1 */
-            hash_h(params, wots_pk + i*params->n,
+            thash_h(params, wots_pk + i*params->n,
                            wots_pk + (i*2)*params->n, pub_seed, addr);
         }
         /* If the row contained an odd number of nodes, the last node was not
@@ -117,11 +117,11 @@ static void compute_root(const xmss_params *params, unsigned char *root,
 
         /* Pick the right or left neighbor, depending on parity of the node. */
         if (leafidx & 1) {
-            hash_h(params, buffer + params->n, buffer, pub_seed, addr);
+            thash_h(params, buffer + params->n, buffer, pub_seed, addr);
             memcpy(buffer, auth_path, params->n);
         }
         else {
-            hash_h(params, buffer, buffer, pub_seed, addr);
+            thash_h(params, buffer, buffer, pub_seed, addr);
             memcpy(buffer + params->n, auth_path, params->n);
         }
         auth_path += params->n;
@@ -131,7 +131,7 @@ static void compute_root(const xmss_params *params, unsigned char *root,
     set_tree_height(addr, params->tree_height - 1);
     leafidx >>= 1;
     set_tree_index(addr, leafidx);
-    hash_h(params, root, buffer, pub_seed, addr);
+    thash_h(params, root, buffer, pub_seed, addr);
 }
 
 /**

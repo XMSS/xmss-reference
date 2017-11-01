@@ -269,7 +269,7 @@ static void treehash_init(const xmss_params *params,
             }
             set_tree_height(node_addr, stacklevels[stackoffset-1]);
             set_tree_index(node_addr, (idx >> (stacklevels[stackoffset-1]+1)));
-            hash_h(params, stack+(stackoffset-2)*params->n, stack+(stackoffset-2)*params->n, pub_seed, node_addr);
+            thash_h(params, stack+(stackoffset-2)*params->n, stack+(stackoffset-2)*params->n, pub_seed, node_addr);
             stacklevels[stackoffset-2]++;
             stackoffset--;
         }
@@ -310,7 +310,7 @@ static void treehash_update(const xmss_params *params,
         memcpy(nodebuffer, state->stack + (state->stackoffset-1)*params->n, params->n);
         set_tree_height(node_addr, nodeheight);
         set_tree_index(node_addr, (treehash->next_idx >> (nodeheight+1)));
-        hash_h(params, nodebuffer, nodebuffer, pub_seed, node_addr);
+        thash_h(params, nodebuffer, nodebuffer, pub_seed, node_addr);
         nodeheight++;
         treehash->stackusage--;
         state->stackoffset--;
@@ -422,7 +422,7 @@ static char bds_state_update(const xmss_params *params,
         }
         set_tree_height(node_addr, state->stacklevels[state->stackoffset-1]);
         set_tree_index(node_addr, (idx >> (state->stacklevels[state->stackoffset-1]+1)));
-        hash_h(params, state->stack+(state->stackoffset-2)*params->n, state->stack+(state->stackoffset-2)*params->n, pub_seed, node_addr);
+        thash_h(params, state->stack+(state->stackoffset-2)*params->n, state->stack+(state->stackoffset-2)*params->n, pub_seed, node_addr);
 
         state->stacklevels[state->stackoffset-2]++;
         state->stackoffset--;
@@ -482,7 +482,7 @@ static void bds_round(const xmss_params *params,
     else {
         set_tree_height(node_addr, (tau-1));
         set_tree_index(node_addr, leaf_idx >> tau);
-        hash_h(params, state->auth + tau * params->n, buf, pub_seed, node_addr);
+        thash_h(params, state->auth + tau * params->n, buf, pub_seed, node_addr);
         for (i = 0; i < tau; i++) {
             if (i < params->tree_height - params->bds_k) {
                 memcpy(state->auth + i * params->n, state->treehash[i].node, params->n);

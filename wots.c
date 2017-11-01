@@ -43,7 +43,7 @@ static void gen_chain(const xmss_params *params,
     /* Iterate 'steps' calls to the hash function. */
     for (i = start; i < (start+steps) && i < params->wots_w; i++) {
         set_hash_addr(addr, i);
-        hash_f(params, out, out, pub_seed, addr);
+        thash_f(params, out, out, pub_seed, addr);
     }
 }
 

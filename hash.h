@@ -15,13 +15,13 @@ int h_msg(const xmss_params *params,
           const unsigned char *in, unsigned long long inlen,
           const unsigned char *key, const unsigned int keylen);
 
-int hash_h(const xmss_params *params,
-           unsigned char *out, const unsigned char *in,
-           const unsigned char *pub_seed, uint32_t addr[8]);
+int thash_h(const xmss_params *params,
+            unsigned char *out, const unsigned char *in,
+            const unsigned char *pub_seed, uint32_t addr[8]);
 
-int hash_f(const xmss_params *params,
-           unsigned char *out, const unsigned char *in,
-           const unsigned char *pub_seed, uint32_t addr[8]);
+int thash_f(const xmss_params *params,
+            unsigned char *out, const unsigned char *in,
+            const unsigned char *pub_seed, uint32_t addr[8]);
 
 int hash_message(const xmss_params *params, unsigned char *out,
                  const unsigned char *R, const unsigned char *root,

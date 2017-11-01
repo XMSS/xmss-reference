@@ -83,9 +83,9 @@ int hash_message(const xmss_params *params, unsigned char *out,
 /**
  * We assume the left half is in in[0]...in[n-1]
  */
-int hash_h(const xmss_params *params,
-           unsigned char *out, const unsigned char *in,
-           const unsigned char *pub_seed, uint32_t addr[8])
+int thash_h(const xmss_params *params,
+            unsigned char *out, const unsigned char *in,
+            const unsigned char *pub_seed, uint32_t addr[8])
 {
     unsigned char buf[4 * params->n];
     unsigned char bitmask[2 * params->n];
@@ -115,9 +115,9 @@ int hash_h(const xmss_params *params,
     return core_hash(params, out, buf, 4 * params->n);
 }
 
-int hash_f(const xmss_params *params,
-           unsigned char *out, const unsigned char *in,
-           const unsigned char *pub_seed, uint32_t addr[8])
+int thash_f(const xmss_params *params,
+            unsigned char *out, const unsigned char *in,
+            const unsigned char *pub_seed, uint32_t addr[8])
 {
     unsigned char buf[3 * params->n];
     unsigned char bitmask[params->n];

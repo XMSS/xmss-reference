@@ -69,7 +69,7 @@ static void treehash(const xmss_params *params,
                from the fact that we address the hash function calls. */
             set_tree_height(node_addr, heights[offset - 1]);
             set_tree_index(node_addr, tree_idx);
-            hash_h(params, stack + (offset-2)*params->n,
+            thash_h(params, stack + (offset-2)*params->n,
                            stack + (offset-2)*params->n, pub_seed, node_addr);
             offset--;
             /* Note that the top-most node is now one layer higher. */
