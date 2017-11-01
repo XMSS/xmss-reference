@@ -56,7 +56,7 @@ int prf(const xmss_params *params,
     memcpy(buf + params->n, key, params->n);
     memcpy(buf + 2*params->n, in, 32);
 
-    return core_hash(params, out, buf, 3 * params->n);
+    return core_hash(params, out, buf, 2*params->n + 32);
 }
 
 /*
