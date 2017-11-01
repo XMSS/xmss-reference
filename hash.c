@@ -38,7 +38,7 @@ static int core_hash(const xmss_params *params,
         shake256(out, 64, in, inlen);
     }
     else {
-        return 1;
+        return -1;
     }
     return 0;
 }

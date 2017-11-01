@@ -328,8 +328,8 @@ static void treehash_update(const xmss_params *params,
 }
 
 /**
- * Performs one treehash update on the instance that needs it the most.
- * Returns 1 if such an instance was not found
+ * Performs treehash updates on the instance that needs it the most.
+ * Returns the updated number of available updates.
  **/
 static char bds_treehash_update(const xmss_params *params,
                                 bds_state *state, unsigned int updates,
@@ -370,7 +370,7 @@ static char bds_treehash_update(const xmss_params *params,
 
 /**
  * Updates the state (typically NEXT_i) by adding a leaf and updating the stack
- * Returns 1 if all leaf nodes have already been processed
+ * Returns -1 if all leaf nodes have already been processed
  **/
 static char bds_state_update(const xmss_params *params,
                              bds_state *state, const unsigned char *sk_seed,
@@ -384,7 +384,7 @@ static char bds_state_update(const xmss_params *params,
     unsigned int nodeh;
     int idx = state->next_leaf;
     if (idx == 1 << params->tree_height) {
-        return 1;
+        return -1;
     }
 
     // only copy layer and tree address parts

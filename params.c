@@ -174,7 +174,7 @@ int xmss_parse_oid(xmss_params *params, const uint32_t oid)
             break;
 
         default:
-            return 1;
+            return -1;
     }
     switch (oid) {
         case 0x01000001:
@@ -198,7 +198,7 @@ int xmss_parse_oid(xmss_params *params, const uint32_t oid)
             break;
 
         default:
-            return 1;
+            return -1;
     }
     switch (oid) {
         case 0x01000001:
@@ -223,7 +223,7 @@ int xmss_parse_oid(xmss_params *params, const uint32_t oid)
 
             break;
         default:
-            return 1;
+            return -1;
     }
     params->d = 1;
     params->tree_height = params->full_height  / params->d;
@@ -289,7 +289,7 @@ int xmssmt_parse_oid(xmss_params *params, const uint32_t oid)
             break;
 
         default:
-            return 1;
+            return -1;
     }
     switch (oid) {
         case 0x01000001:
@@ -333,7 +333,7 @@ int xmssmt_parse_oid(xmss_params *params, const uint32_t oid)
             break;
 
         default:
-            return 1;
+            return -1;
     }
     switch (oid) {
         case 0x01000001:
@@ -387,7 +387,7 @@ int xmssmt_parse_oid(xmss_params *params, const uint32_t oid)
             break;
 
         default:
-            return 1;
+            return -1;
     }
     switch (oid) {
         case 0x01000001:
@@ -441,7 +441,7 @@ int xmssmt_parse_oid(xmss_params *params, const uint32_t oid)
             break;
 
         default:
-            return 1;
+            return -1;
     }
 
     params->tree_height = params->full_height  / params->d;

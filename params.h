@@ -33,26 +33,26 @@ typedef struct {
 /**
  * Accepts strings such as "XMSS-SHA2_10_256"
  *  and outputs OIDs such as 0x01000001.
- * Returns 1 when the parameter set is not found, 0 otherwise
+ * Returns -1 when the parameter set is not found, 0 otherwise
  */
 int xmss_str_to_oid(uint32_t *oid, const char* s);
 
 /**
  * Accepts takes strings such as "XMSSMT-SHA2_20/2_256"
  *  and outputs OIDs such as 0x01000001.
- * Returns 1 when the parameter set is not found, 0 otherwise
+ * Returns -1 when the parameter set is not found, 0 otherwise
  */
 int xmssmt_str_to_oid(uint32_t *oid, const char* s);
 
 /**
  * Accepts OIDs such as 0x01000001, and configures params accordingly.
- * Returns 1 when the OID is not found, 0 otherwise.
+ * Returns -1 when the OID is not found, 0 otherwise.
  */
 int xmss_parse_oid(xmss_params *params, const uint32_t oid);
 
 /**
  * Accepts OIDs such as 0x01000001, and configures params accordingly.
- * Returns 1 when the OID is not found, 0 otherwise.
+ * Returns -1 when the OID is not found, 0 otherwise.
  */
 int xmssmt_parse_oid(xmss_params *params, const uint32_t oid);
 
