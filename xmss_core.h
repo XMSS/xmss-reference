@@ -45,7 +45,7 @@ unsigned long long xmssmt_core_sk_bytes(const xmss_params *params);
 
 /*
  * Generates a XMSSMT key pair for a given parameter set.
- * Format sk: [(ceil(h/8) bit) index || SK_SEED || SK_PRF || PUB_SEED]
+ * Format sk: [(ceil(h/8) bit) index || SK_SEED || SK_PRF || PUB_SEED || root]
  * Format pk: [root || PUB_SEED] omitting algorithm OID.
  */
 int xmssmt_core_keypair(const xmss_params *params,
