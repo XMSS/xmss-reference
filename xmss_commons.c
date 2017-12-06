@@ -10,51 +10,12 @@
 #include "xmss_commons.h"
 
 /**
- * Computes the leaf at a given address. First generates the WOTS key pair,
- * then computes leaf using l_tree. As this happens position independent, we
- * only require that addr encodes the right ltree-address.
- */
-void gen_leaf_wots(const xmss_params *params, unsigned char *leaf,
-                   const unsigned char *sk_seed, const unsigned char *pub_seed,
-                   uint32_t ltree_addr[8], uint32_t ots_addr[8])
-{
-    unsigned char seed[params->n];
-    unsigned char pk[params->wots_sig_bytes];
-
-    get_seed(params, seed, sk_seed, ots_addr);
-    wots_pkgen(params, pk, seed, pub_seed, ots_addr);
-
-    l_tree(params, leaf, pk, pub_seed, ltree_addr);
-}
-
-/**
- * Used for pseudo-random key generation.
- * Generates the seed for the WOTS key pair at address 'addr'.
- *
- * Takes n-byte sk_seed and returns n-byte seed using 32 byte address 'addr'.
- */
-void get_seed(const xmss_params *params, unsigned char *seed,
-              const unsigned char *sk_seed, uint32_t addr[8])
-{
-    unsigned char bytes[32];
-
-    /* Make sure that chain addr, hash addr, and key bit are zeroed. */
-    set_chain_addr(addr, 0);
-    set_hash_addr(addr, 0);
-    set_key_and_mask(addr, 0);
-
-    /* Generate seed. */
-    addr_to_bytes(bytes, addr);
-    prf(params, seed, bytes, sk_seed);
-}
-
-/**
  * Computes a leaf node from a WOTS public key using an L-tree.
  * Note that this destroys the used WOTS public key.
  */
-void l_tree(const xmss_params *params,
-            unsigned char *leaf, unsigned char *wots_pk,
-            const unsigned char *pub_seed, uint32_t addr[8])
+static void l_tree(const xmss_params *params,
+                   unsigned char *leaf, unsigned char *wots_pk,
+                   const unsigned char *pub_seed, uint32_t addr[8])
 {
     unsigned int l = params->wots_len;
     unsigned int parent_nodes;
@@ -127,11 +88,51 @@ static void compute_root(const xmss_params *params, unsigned char *root,
         auth_path += params->n;
     }
 
-    /* The last iteration is exceptional; we do not copy an auth)path node. */
+    /* The last iteration is exceptional; we do not copy an auth_path node. */
     set_tree_height(addr, params->tree_height - 1);
     leafidx >>= 1;
     set_tree_index(addr, leafidx);
     thash_h(params, root, buffer, pub_seed, addr);
+}
+
+
+/**
+ * Computes the leaf at a given address. First generates the WOTS key pair,
+ * then computes leaf using l_tree. As this happens position independent, we
+ * only require that addr encodes the right ltree-address.
+ */
+void gen_leaf_wots(const xmss_params *params, unsigned char *leaf,
+                   const unsigned char *sk_seed, const unsigned char *pub_seed,
+                   uint32_t ltree_addr[8], uint32_t ots_addr[8])
+{
+    unsigned char seed[params->n];
+    unsigned char pk[params->wots_sig_bytes];
+
+    get_seed(params, seed, sk_seed, ots_addr);
+    wots_pkgen(params, pk, seed, pub_seed, ots_addr);
+
+    l_tree(params, leaf, pk, pub_seed, ltree_addr);
+}
+
+/**
+ * Used for pseudo-random key generation.
+ * Generates the seed for the WOTS key pair at address 'addr'.
+ *
+ * Takes n-byte sk_seed and returns n-byte seed using 32 byte address 'addr'.
+ */
+void get_seed(const xmss_params *params, unsigned char *seed,
+              const unsigned char *sk_seed, uint32_t addr[8])
+{
+    unsigned char bytes[32];
+
+    /* Make sure that chain addr, hash addr, and key bit are zeroed. */
+    set_chain_addr(addr, 0);
+    set_hash_addr(addr, 0);
+    set_key_and_mask(addr, 0);
+
+    /* Generate seed. */
+    addr_to_bytes(bytes, addr);
+    prf(params, seed, bytes, sk_seed);
 }
 
 /**

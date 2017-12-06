@@ -23,14 +23,6 @@ void get_seed(const xmss_params *params, unsigned char *seed,
               const unsigned char *sk_seed, uint32_t addr[8]);
 
 /**
- * Computes a leaf node from a WOTS public key using an L-tree.
- * Note that the WOTS public key is destroyed.
- */
-void l_tree(const xmss_params *params,
-            unsigned char *leaf, unsigned char *wots_pk,
-            const unsigned char *pub_seed, uint32_t addr[8]);
-
-/**
  * Verifies a given message signature pair under a given public key.
  * Note that this assumes a pk without an OID, i.e. [root || PUB_SEED]
  */
