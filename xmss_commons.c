@@ -160,6 +160,7 @@ int xmssmt_core_sign_open(const xmss_params *params,
                           const unsigned char *sm, unsigned long long smlen,
                           const unsigned char *pk)
 {
+    const unsigned char *pub_root = pk;
     const unsigned char *pub_seed = pk + params->n;
     unsigned char wots_pk[params->wots_sig_bytes];
     unsigned char leaf[params->n];
@@ -221,7 +222,7 @@ int xmssmt_core_sign_open(const xmss_params *params,
     }
 
     /* Check if the root node equals the root node in the public key. */
-    if (memcmp(root, pk, params->n)) {
+    if (memcmp(root, pub_root, params->n)) {
         /* If not, zero the message */
         memset(m, 0, *mlen);
         *mlen = 0;
