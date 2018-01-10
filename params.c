@@ -7,40 +7,40 @@
 int xmss_str_to_oid(uint32_t *oid, const char *s)
 {
     if (!strcmp(s, "XMSS-SHA2_10_256")) {
-        *oid = 0x01000001;
+        *oid = 0x00000001;
     }
     else if (!strcmp(s, "XMSS-SHA2_16_256")) {
-        *oid = 0x02000002;
+        *oid = 0x00000002;
     }
     else if (!strcmp(s, "XMSS-SHA2_20_256")) {
-        *oid = 0x03000003;
+        *oid = 0x00000003;
     }
     else if (!strcmp(s, "XMSS-SHA2_10_512")) {
-        *oid = 0x04000004;
+        *oid = 0x00000004;
     }
     else if (!strcmp(s, "XMSS-SHA2_16_512")) {
-        *oid = 0x05000005;
+        *oid = 0x00000005;
     }
     else if (!strcmp(s, "XMSS-SHA2_20_512")) {
-        *oid = 0x06000006;
+        *oid = 0x00000006;
     }
     else if (!strcmp(s, "XMSS-SHAKE_10_256")) {
-        *oid = 0x07000007;
+        *oid = 0x00000007;
     }
     else if (!strcmp(s, "XMSS-SHAKE_16_256")) {
-        *oid = 0x08000008;
+        *oid = 0x00000008;
     }
     else if (!strcmp(s, "XMSS-SHAKE_20_256")) {
-        *oid = 0x09000009;
+        *oid = 0x00000009;
     }
     else if (!strcmp(s, "XMSS-SHAKE_10_512")) {
-        *oid = 0x0a00000a;
+        *oid = 0x0000000a;
     }
     else if (!strcmp(s, "XMSS-SHAKE_16_512")) {
-        *oid = 0x0b00000b;
+        *oid = 0x0000000b;
     }
     else if (!strcmp(s, "XMSS-SHAKE_20_512")) {
-        *oid = 0x0c00000c;
+        *oid = 0x0000000c;
     }
     else {
         return -1;
@@ -51,100 +51,100 @@ int xmss_str_to_oid(uint32_t *oid, const char *s)
 int xmssmt_str_to_oid(uint32_t *oid, const char *s)
 {
     if (!strcmp(s, "XMSSMT-SHA2_20/2_256")) {
-       *oid = 0x01000001;
+        *oid = 0x00000001;
     }
     else if (!strcmp(s, "XMSSMT-SHA2_20/4_256")) {
-       *oid = 0x02000002;
+        *oid = 0x00000002;
     }
     else if (!strcmp(s, "XMSSMT-SHA2_40/2_256")) {
-       *oid = 0x03000003;
+        *oid = 0x00000003;
     }
     else if (!strcmp(s, "XMSSMT-SHA2_40/4_256")) {
-       *oid = 0x04000004;
+        *oid = 0x00000004;
     }
     else if (!strcmp(s, "XMSSMT-SHA2_40/8_256")) {
-       *oid = 0x05000005;
+        *oid = 0x00000005;
     }
     else if (!strcmp(s, "XMSSMT-SHA2_60/3_256")) {
-       *oid = 0x06000006;
+        *oid = 0x00000006;
     }
     else if (!strcmp(s, "XMSSMT-SHA2_60/6_256")) {
-       *oid = 0x07000007;
+        *oid = 0x00000007;
     }
     else if (!strcmp(s, "XMSSMT-SHA2_60/12_256")) {
-      *oid = 0x08000008;
+        *oid = 0x00000008;
     }
     else if (!strcmp(s, "XMSSMT-SHA2_20/2_512")) {
-       *oid = 0x09000009;
+        *oid = 0x00000009;
     }
     else if (!strcmp(s, "XMSSMT-SHA2_20/4_512")) {
-       *oid = 0x0a00000a;
+        *oid = 0x0000000a;
     }
     else if (!strcmp(s, "XMSSMT-SHA2_40/2_512")) {
-       *oid = 0x0b00000b;
+        *oid = 0x0000000b;
     }
     else if (!strcmp(s, "XMSSMT-SHA2_40/4_512")) {
-       *oid = 0x0c00000c;
+        *oid = 0x0000000c;
     }
     else if (!strcmp(s, "XMSSMT-SHA2_40/8_512")) {
-       *oid = 0x0d00000d;
+        *oid = 0x0000000d;
     }
     else if (!strcmp(s, "XMSSMT-SHA2_60/3_512")) {
-       *oid = 0x0e00000e;
+        *oid = 0x0000000e;
     }
     else if (!strcmp(s, "XMSSMT-SHA2_60/6_512")) {
-       *oid = 0x0f00000f;
+        *oid = 0x0000000f;
     }
     else if (!strcmp(s, "XMSSMT-SHA2_60/12_512")) {
-      *oid = 0x01010101;
+        *oid = 0x00000010;
     }
     else if (!strcmp(s, "XMSSMT-SHAKE_20/2_256")) {
-      *oid = 0x02010102;
+        *oid = 0x00000011;
     }
     else if (!strcmp(s, "XMSSMT-SHAKE_20/4_256")) {
-      *oid = 0x03010103;
+        *oid = 0x00000012;
     }
     else if (!strcmp(s, "XMSSMT-SHAKE_40/2_256")) {
-      *oid = 0x04010104;
+        *oid = 0x00000013;
     }
     else if (!strcmp(s, "XMSSMT-SHAKE_40/4_256")) {
-      *oid = 0x05010105;
+        *oid = 0x00000014;
     }
     else if (!strcmp(s, "XMSSMT-SHAKE_40/8_256")) {
-      *oid = 0x06010106;
+        *oid = 0x00000015;
     }
     else if (!strcmp(s, "XMSSMT-SHAKE_60/3_256")) {
-      *oid = 0x07010107;
+        *oid = 0x00000016;
     }
     else if (!strcmp(s, "XMSSMT-SHAKE_60/6_256")) {
-      *oid = 0x08010108;
+        *oid = 0x00000017;
     }
     else if (!strcmp(s, "XMSSMT-SHAKE_60/12_256")) {
-     *oid = 0x09010109;
+        *oid = 0x00000018;
     }
     else if (!strcmp(s, "XMSSMT-SHAKE_20/2_512")) {
-      *oid = 0x0a01010a;
+        *oid = 0x00000019;
     }
     else if (!strcmp(s, "XMSSMT-SHAKE_20/4_512")) {
-      *oid = 0x0b01010b;
+        *oid = 0x0000001a;
     }
     else if (!strcmp(s, "XMSSMT-SHAKE_40/2_512")) {
-      *oid = 0x0c01010c;
+        *oid = 0x0000001b;
     }
     else if (!strcmp(s, "XMSSMT-SHAKE_40/4_512")) {
-      *oid = 0x0d01010d;
+        *oid = 0x0000001c;
     }
     else if (!strcmp(s, "XMSSMT-SHAKE_40/8_512")) {
-      *oid = 0x0e01010e;
+        *oid = 0x0000001d;
     }
     else if (!strcmp(s, "XMSSMT-SHAKE_60/3_512")) {
-      *oid = 0x0f01010f;
+        *oid = 0x0000001e;
     }
     else if (!strcmp(s, "XMSSMT-SHAKE_60/6_512")) {
-      *oid = 0x01020201;
+        *oid = 0x0000001f;
     }
     else if (!strcmp(s, "XMSSMT-SHAKE_60/12_512")) {
-     *oid = 0x02020202;
+        *oid = 0x00000020;
     }
     else {
         return -1;
@@ -155,21 +155,21 @@ int xmssmt_str_to_oid(uint32_t *oid, const char *s)
 int xmss_parse_oid(xmss_params *params, const uint32_t oid)
 {
     switch (oid) {
-        case 0x01000001:
-        case 0x02000002:
-        case 0x03000003:
-        case 0x04000004:
-        case 0x05000005:
-        case 0x06000006:
+        case 0x00000001:
+        case 0x00000002:
+        case 0x00000003:
+        case 0x00000004:
+        case 0x00000005:
+        case 0x00000006:
             params->func = XMSS_SHA2;
             break;
 
-        case 0x07000007:
-        case 0x08000008:
-        case 0x09000009:
-        case 0x0a00000a:
-        case 0x0b00000b:
-        case 0x0c00000c:
+        case 0x00000007:
+        case 0x00000008:
+        case 0x00000009:
+        case 0x0000000a:
+        case 0x0000000b:
+        case 0x0000000c:
             params->func = XMSS_SHAKE;
             break;
 
@@ -177,23 +177,23 @@ int xmss_parse_oid(xmss_params *params, const uint32_t oid)
             return -1;
     }
     switch (oid) {
-        case 0x01000001:
-        case 0x02000002:
-        case 0x03000003:
+        case 0x00000001:
+        case 0x00000002:
+        case 0x00000003:
 
-        case 0x07000007:
-        case 0x08000008:
-        case 0x09000009:
+        case 0x00000007:
+        case 0x00000008:
+        case 0x00000009:
             params->n = 32;
             break;
 
-        case 0x04000004:
-        case 0x05000005:
-        case 0x06000006:
+        case 0x00000004:
+        case 0x00000005:
+        case 0x00000006:
 
-        case 0x0a00000a:
-        case 0x0b00000b:
-        case 0x0c00000c:
+        case 0x0000000a:
+        case 0x0000000b:
+        case 0x0000000c:
             params->n = 64;
             break;
 
@@ -201,24 +201,24 @@ int xmss_parse_oid(xmss_params *params, const uint32_t oid)
             return -1;
     }
     switch (oid) {
-        case 0x01000001:
-        case 0x04000004:
-        case 0x07000007:
-        case 0x0a00000a:
+        case 0x00000001:
+        case 0x00000004:
+        case 0x00000007:
+        case 0x0000000a:
             params->full_height = 10;
             break;
 
-        case 0x02000002:
-        case 0x05000005:
-        case 0x08000008:
-        case 0x0b00000b:
+        case 0x00000002:
+        case 0x00000005:
+        case 0x00000008:
+        case 0x0000000b:
             params->full_height = 16;
             break;
 
-        case 0x03000003:
-        case 0x06000006:
-        case 0x09000009:
-        case 0x0c00000c:
+        case 0x00000003:
+        case 0x00000006:
+        case 0x00000009:
+        case 0x0000000c:
             params->full_height = 20;
 
             break;
@@ -250,41 +250,41 @@ int xmss_parse_oid(xmss_params *params, const uint32_t oid)
 int xmssmt_parse_oid(xmss_params *params, const uint32_t oid)
 {
     switch (oid) {
-        case 0x01000001:
-        case 0x02000002:
-        case 0x03000003:
-        case 0x04000004:
-        case 0x05000005:
-        case 0x06000006:
-        case 0x07000007:
-        case 0x08000008:
-        case 0x09000009:
-        case 0x0a00000a:
-        case 0x0b00000b:
-        case 0x0c00000c:
-        case 0x0d00000d:
-        case 0x0e00000e:
-        case 0x0f00000f:
-        case 0x01010101:
+        case 0x00000001:
+        case 0x00000002:
+        case 0x00000003:
+        case 0x00000004:
+        case 0x00000005:
+        case 0x00000006:
+        case 0x00000007:
+        case 0x00000008:
+        case 0x00000009:
+        case 0x0000000a:
+        case 0x0000000b:
+        case 0x0000000c:
+        case 0x0000000d:
+        case 0x0000000e:
+        case 0x0000000f:
+        case 0x00000010:
             params->func = XMSS_SHA2;
             break;
 
-        case 0x02010102:
-        case 0x03010103:
-        case 0x04010104:
-        case 0x05010105:
-        case 0x06010106:
-        case 0x07010107:
-        case 0x08010108:
-        case 0x09010109:
-        case 0x0a01010a:
-        case 0x0b01010b:
-        case 0x0c01010c:
-        case 0x0d01010d:
-        case 0x0e01010e:
-        case 0x0f01010f:
-        case 0x01020201:
-        case 0x02020202:
+        case 0x00000011:
+        case 0x00000012:
+        case 0x00000013:
+        case 0x00000014:
+        case 0x00000015:
+        case 0x00000016:
+        case 0x00000017:
+        case 0x00000018:
+        case 0x00000019:
+        case 0x0000001a:
+        case 0x0000001b:
+        case 0x0000001c:
+        case 0x0000001e:
+        case 0x0000001d:
+        case 0x0000001f:
+        case 0x00000020:
             params->func = XMSS_SHAKE;
             break;
 
@@ -292,43 +292,43 @@ int xmssmt_parse_oid(xmss_params *params, const uint32_t oid)
             return -1;
     }
     switch (oid) {
-        case 0x01000001:
-        case 0x02000002:
-        case 0x03000003:
-        case 0x04000004:
-        case 0x05000005:
-        case 0x06000006:
-        case 0x07000007:
-        case 0x08000008:
+        case 0x00000001:
+        case 0x00000002:
+        case 0x00000003:
+        case 0x00000004:
+        case 0x00000005:
+        case 0x00000006:
+        case 0x00000007:
+        case 0x00000008:
 
-        case 0x02010102:
-        case 0x03010103:
-        case 0x04010104:
-        case 0x05010105:
-        case 0x06010106:
-        case 0x07010107:
-        case 0x08010108:
-        case 0x09010109:
+        case 0x00000011:
+        case 0x00000012:
+        case 0x00000013:
+        case 0x00000014:
+        case 0x00000015:
+        case 0x00000016:
+        case 0x00000017:
+        case 0x00000018:
             params->n = 32;
             break;
 
-        case 0x09000009:
-        case 0x0a00000a:
-        case 0x0b00000b:
-        case 0x0c00000c:
-        case 0x0d00000d:
-        case 0x0e00000e:
-        case 0x0f00000f:
-        case 0x01010101:
+        case 0x00000009:
+        case 0x0000000a:
+        case 0x0000000b:
+        case 0x0000000c:
+        case 0x0000000d:
+        case 0x0000000e:
+        case 0x0000000f:
+        case 0x00000010:
 
-        case 0x0a01010a:
-        case 0x0b01010b:
-        case 0x0c01010c:
-        case 0x0d01010d:
-        case 0x0e01010e:
-        case 0x0f01010f:
-        case 0x01020201:
-        case 0x02020202:
+        case 0x00000019:
+        case 0x0000001a:
+        case 0x0000001b:
+        case 0x0000001c:
+        case 0x0000001d:
+        case 0x0000001e:
+        case 0x0000001f:
+        case 0x00000020:
             params->n = 64;
             break;
 
@@ -336,53 +336,53 @@ int xmssmt_parse_oid(xmss_params *params, const uint32_t oid)
             return -1;
     }
     switch (oid) {
-        case 0x01000001:
-        case 0x02000002:
+        case 0x00000001:
+        case 0x00000002:
 
-        case 0x09000009:
-        case 0x0a00000a:
+        case 0x00000009:
+        case 0x0000000a:
 
-        case 0x02010102:
-        case 0x03010103:
+        case 0x00000011:
+        case 0x00000012:
 
-        case 0x0a01010a:
-        case 0x0b01010b:
+        case 0x00000019:
+        case 0x0000001a:
             params->full_height = 20;
             break;
 
-        case 0x03000003:
-        case 0x04000004:
-        case 0x05000005:
+        case 0x00000003:
+        case 0x00000004:
+        case 0x00000005:
 
-        case 0x0b00000b:
-        case 0x0c00000c:
-        case 0x0d00000d:
+        case 0x0000000b:
+        case 0x0000000c:
+        case 0x0000000d:
 
-        case 0x04010104:
-        case 0x05010105:
-        case 0x06010106:
+        case 0x00000013:
+        case 0x00000014:
+        case 0x00000015:
 
-        case 0x0c01010c:
-        case 0x0d01010d:
-        case 0x0e01010e:
+        case 0x0000001b:
+        case 0x0000001c:
+        case 0x0000001d:
             params->full_height = 40;
             break;
 
-        case 0x06000006:
-        case 0x07000007:
-        case 0x08000008:
+        case 0x00000006:
+        case 0x00000007:
+        case 0x00000008:
 
-        case 0x0e00000e:
-        case 0x0f00000f:
-        case 0x01010101:
+        case 0x0000000e:
+        case 0x0000000f:
+        case 0x00000010:
 
-        case 0x07010107:
-        case 0x08010108:
-        case 0x09010109:
+        case 0x00000016:
+        case 0x00000017:
+        case 0x00000018:
 
-        case 0x0f01010f:
-        case 0x01020201:
-        case 0x02020202:
+        case 0x0000001e:
+        case 0x0000001f:
+        case 0x00000020:
             params->full_height = 60;
             break;
 
@@ -390,53 +390,53 @@ int xmssmt_parse_oid(xmss_params *params, const uint32_t oid)
             return -1;
     }
     switch (oid) {
-        case 0x01000001:
-        case 0x03000003:
-        case 0x09000009:
-        case 0x0b00000b:
-        case 0x02010102:
-        case 0x04010104:
-        case 0x0a01010a:
-        case 0x0c01010c:
+        case 0x00000001:
+        case 0x00000003:
+        case 0x00000009:
+        case 0x0000000b:
+        case 0x00000011:
+        case 0x00000013:
+        case 0x00000019:
+        case 0x0000001b:
             params->d = 2;
             break;
 
-        case 0x02000002:
-        case 0x04000004:
-        case 0x0a00000a:
-        case 0x0c00000c:
-        case 0x03010103:
-        case 0x05010105:
-        case 0x0b01010b:
-        case 0x0d01010d:
+        case 0x00000002:
+        case 0x00000004:
+        case 0x0000000a:
+        case 0x0000000c:
+        case 0x00000012:
+        case 0x00000014:
+        case 0x0000001a:
+        case 0x0000001c:
             params->d = 4;
             break;
 
-        case 0x05000005:
-        case 0x0d00000d:
-        case 0x06010106:
-        case 0x0e01010e:
+        case 0x00000005:
+        case 0x0000000d:
+        case 0x00000015:
+        case 0x0000001d:
             params->d = 8;
             break;
 
-        case 0x06000006:
-        case 0x0e00000e:
-        case 0x07010107:
-        case 0x0f01010f:
+        case 0x00000006:
+        case 0x0000000e:
+        case 0x00000016:
+        case 0x0000001e:
             params->d = 3;
             break;
 
-        case 0x07000007:
-        case 0x0f00000f:
-        case 0x08010108:
-        case 0x01020201:
+        case 0x00000007:
+        case 0x0000000f:
+        case 0x00000017:
+        case 0x0000001f:
             params->d = 6;
             break;
 
-        case 0x08000008:
-        case 0x01010101:
-        case 0x09010109:
-        case 0x02020202:
+        case 0x00000008:
+        case 0x00000010:
+        case 0x00000018:
+        case 0x00000020:
             params->d = 12;
             break;
 

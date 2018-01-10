@@ -10,7 +10,7 @@ int main()
 {
     xmss_params params;
     // TODO test more different OIDs
-    uint32_t oid = 0x01000001;
+    uint32_t oid = 0x00000001;
 
     /* For WOTS it doesn't matter if we use XMSS or XMSSMT. */
     xmss_parse_oid(&params, oid);
