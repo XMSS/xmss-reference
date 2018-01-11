@@ -9,6 +9,7 @@ SOURCES_FAST = $(subst xmss_core.c,xmss_core_fast.c,$(SOURCES))
 HEADERS_FAST = $(subst xmss_core.c,xmss_core_fast.c,$(HEADERS))
 
 TESTS = test/wots \
+		test/oid \
 		test/xmss_determinism \
 		test/xmss \
 		test/xmss_fast \
