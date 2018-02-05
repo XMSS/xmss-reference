@@ -2,6 +2,9 @@
 #define XMSS_H
 
 #include <stdint.h>
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /**
  * Generates a XMSS key pair for a given parameter set.
@@ -58,4 +61,9 @@ int xmssmt_sign(unsigned char *sk,
 int xmssmt_sign_open(unsigned char *m, unsigned long long *mlen,
                      const unsigned char *sm, unsigned long long smlen,
                      const unsigned char *pk);
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif
