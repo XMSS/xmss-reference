@@ -109,6 +109,15 @@ int xmss_core_keypair(const xmss_params *params,
     return xmssmt_core_keypair(params, pk, sk);
 }
 
+int xmss_core_keypair_seed(const xmss_params *params,
+                      unsigned char *pk, unsigned char *sk, XMSSSeedFunc seedFunc)
+{
+    /* The key generation procedure of XMSS and XMSSMT is exactly the same.
+       The only important detail is that the right subtree must be selected;
+       this requires us to correctly set the d=1 parameter for XMSS. */
+    return xmssmt_core_keypair_seed(params, pk, sk, seedFunc);
+}
+
 /**
  * Signs a message. Returns an array containing the signature followed by the
  * message and an updated secret key.
@@ -143,6 +152,15 @@ unsigned long long xmssmt_core_sk_bytes(const xmss_params *params)
 int xmssmt_core_keypair(const xmss_params *params,
                         unsigned char *pk, unsigned char *sk)
 {
+    return xmssmt_core_keypair_seed(params, pk, sk, randombytes);
+}
+
+int xmssmt_core_keypair_seed(const xmss_params *params,
+                            unsigned char *pk, unsigned char *sk, XMSSSeedFunc seedFunc)
+{
+    if (!seedFunc) {
+        seedFunc = randombytes;
+    }
     /* We do not need the auth path in key generation, but it simplifies the
        code to have just one treehash routine that computes both root and path
        in one function. */
@@ -155,7 +173,7 @@ int xmssmt_core_keypair(const xmss_params *params,
     sk += params->index_bytes;
 
     /* Initialize SK_SEED, SK_PRF and PUB_SEED. */
-    randombytes(sk, 3 * params->n);
+    seedFunc(sk, 3 * params->n);
     memcpy(pk + params->n, sk + 2*params->n, params->n);
 
     /* Compute root node of the top-most subtree. */
