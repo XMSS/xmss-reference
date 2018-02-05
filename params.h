@@ -35,14 +35,14 @@ typedef struct {
  *  and outputs OIDs such as 0x01000001.
  * Returns -1 when the parameter set is not found, 0 otherwise
  */
-int xmss_str_to_oid(uint32_t *oid, const char* s);
+int xmss_str_to_oid(uint32_t *oid, const char *s);
 
 /**
  * Accepts takes strings such as "XMSSMT-SHA2_20/2_256"
  *  and outputs OIDs such as 0x01000001.
  * Returns -1 when the parameter set is not found, 0 otherwise
  */
-int xmssmt_str_to_oid(uint32_t *oid, const char* s);
+int xmssmt_str_to_oid(uint32_t *oid, const char *s);
 
 /**
  * Accepts OIDs such as 0x01000001, and configures params accordingly.

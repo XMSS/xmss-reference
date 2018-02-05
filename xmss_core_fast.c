@@ -193,7 +193,7 @@ static void deep_state_swap(const xmss_params *params,
 }
 
 static int treehash_minheight_on_stack(const xmss_params *params,
-                                       bds_state* state,
+                                       bds_state *state,
                                        const treehash_inst *treehash)
 {
     unsigned int r = params->tree_height, i;
