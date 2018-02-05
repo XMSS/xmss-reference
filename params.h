@@ -2,7 +2,9 @@
 #define XMSS_PARAMS_H
 
 #include <stdint.h>
-
+#ifdef __cplusplus
+extern "C" {
+#endif
 /* These are merely internal identifiers for the supported hash functions. */
 #define XMSS_SHA2 0
 #define XMSS_SHAKE 1
@@ -35,14 +37,14 @@ typedef struct {
  *  and outputs OIDs such as 0x01000001.
  * Returns -1 when the parameter set is not found, 0 otherwise
  */
-int xmss_str_to_oid(uint32_t *oid, const char* s);
+int xmss_str_to_oid(uint32_t *oid, const char *s);
 
 /**
  * Accepts takes strings such as "XMSSMT-SHA2_20/2_256"
  *  and outputs OIDs such as 0x01000001.
  * Returns -1 when the parameter set is not found, 0 otherwise
  */
-int xmssmt_str_to_oid(uint32_t *oid, const char* s);
+int xmssmt_str_to_oid(uint32_t *oid, const char *s);
 
 /**
  * Accepts OIDs such as 0x01000001, and configures params accordingly.
@@ -56,4 +58,7 @@ int xmss_parse_oid(xmss_params *params, const uint32_t oid);
  */
 int xmssmt_parse_oid(xmss_params *params, const uint32_t oid);
 
+#ifdef __cplusplus
+}
+#endif
 #endif
