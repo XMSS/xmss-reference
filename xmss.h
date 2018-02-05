@@ -2,6 +2,11 @@
 #define XMSS_H
 
 #include <stdint.h>
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+typedef void (* XMSSSeedFunc)(unsigned char *x, unsigned long long xlen);
 
 /**
  * Generates a XMSS key pair for a given parameter set.
@@ -9,6 +14,8 @@
  * Format pk: [OID || root || PUB_SEED]
  */
 int xmss_keypair(unsigned char *pk, unsigned char *sk, const uint32_t oid);
+
+int xmss_keypair_seed(unsigned char *pk, unsigned char *sk, const uint32_t oid, XMSSSeedFunc seedFunc);
 
 /**
  * Signs a message using an XMSS secret key.
@@ -38,6 +45,8 @@ int xmss_sign_open(unsigned char *m, unsigned long long *mlen,
  */
 int xmssmt_keypair(unsigned char *pk, unsigned char *sk, const uint32_t oid);
 
+int xmssmt_keypair_seed(unsigned char *pk, unsigned char *sk, const uint32_t oid, XMSSSeedFunc seedFunc);
+
 /**
  * Signs a message using an XMSSMT secret key.
  * Returns
@@ -58,4 +67,9 @@ int xmssmt_sign(unsigned char *sk,
 int xmssmt_sign_open(unsigned char *m, unsigned long long *mlen,
                      const unsigned char *sm, unsigned long long smlen,
                      const unsigned char *pk);
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif

@@ -25,6 +25,25 @@ int xmss_keypair(unsigned char *pk, unsigned char *sk, const uint32_t oid)
     return xmss_core_keypair(&params, pk + XMSS_OID_LEN, sk + XMSS_OID_LEN);
 }
 
+int xmss_keypair_seed(unsigned char *pk, unsigned char *sk, const uint32_t oid, XMSSSeedFunc seedFunc)
+{
+    xmss_params params;
+    unsigned int i;
+
+    if (xmss_parse_oid(&params, oid)) {
+        return -1;
+    }
+    for (i = 0; i < XMSS_OID_LEN; i++) {
+        pk[XMSS_OID_LEN - i - 1] = (oid >> (8 * i)) & 0xFF;
+        /* For an implementation that uses runtime parameters, it is crucial
+        that the OID is part of the secret key as well;
+        i.e. not just for interoperability, but also for internal use. */
+        sk[XMSS_OID_LEN - i - 1] = (oid >> (8 * i)) & 0xFF;
+    }
+    return xmss_core_keypair_seed(&params, pk + XMSS_OID_LEN, sk + XMSS_OID_LEN, seedFunc);
+}
+
+
 int xmss_sign(unsigned char *sk,
               unsigned char *sm, unsigned long long *smlen,
               const unsigned char *m, unsigned long long mlen)
@@ -72,6 +91,21 @@ int xmssmt_keypair(unsigned char *pk, unsigned char *sk, const uint32_t oid)
         sk[XMSS_OID_LEN - i - 1] = (oid >> (8 * i)) & 0xFF;
     }
     return xmssmt_core_keypair(&params, pk + XMSS_OID_LEN, sk + XMSS_OID_LEN);
+}
+
+int xmssmt_keypair_seed(unsigned char *pk, unsigned char *sk, const uint32_t oid, XMSSSeedFunc seedFunc)
+{
+    xmss_params params;
+    unsigned int i;
+
+    if (xmssmt_parse_oid(&params, oid)) {
+        return -1;
+    }
+    for (i = 0; i < XMSS_OID_LEN; i++) {
+        pk[XMSS_OID_LEN - i - 1] = (oid >> (8 * i)) & 0xFF;
+        sk[XMSS_OID_LEN - i - 1] = (oid >> (8 * i)) & 0xFF;
+    }
+    return xmssmt_core_keypair_seed(&params, pk + XMSS_OID_LEN, sk + XMSS_OID_LEN, seedFunc);
 }
 
 int xmssmt_sign(unsigned char *sk,

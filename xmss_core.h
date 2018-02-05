@@ -2,7 +2,7 @@
 #define XMSS_CORE_H
 
 #include "params.h"
-
+#include "xmss.h"
 /**
  * Given a set of parameters, this function returns the size of the secret key.
  * This is implementation specific, as varying choices in tree traversal will
@@ -18,6 +18,8 @@ unsigned long long xmss_core_sk_bytes(const xmss_params *params);
 int xmss_core_keypair(const xmss_params *params,
                       unsigned char *pk, unsigned char *sk);
 
+int xmss_core_keypair_seed(const xmss_params *params,
+                           unsigned char *pk, unsigned char *sk, XMSSSeedFunc seedFunc);
 /**
  * Signs a message. Returns an array containing the signature followed by the
  * message and an updated secret key.
@@ -50,6 +52,15 @@ unsigned long long xmssmt_core_sk_bytes(const xmss_params *params);
  */
 int xmssmt_core_keypair(const xmss_params *params,
                         unsigned char *pk, unsigned char *sk);
+
+/*
+ * Generates a XMSSMT key pair for a given parameter set.
+ * Format sk: [(ceil(h/8) bit) index || SK_SEED || SK_PRF || PUB_SEED || root]
+ * Format pk: [root || PUB_SEED] omitting algorithm OID.
+ * Format seed: seed init function
+ */
+int xmssmt_core_keypair_seed(const xmss_params *params,
+                            unsigned char *pk, unsigned char *sk, XMSSSeedFunc seedFunc);
 
 /**
  * Signs a message. Returns an array containing the signature followed by the

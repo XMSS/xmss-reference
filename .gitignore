@@ -2,3 +2,5 @@ test/*
 !test/*.c
 ui/*
 !ui/*.c
+.idea
+cmake-build-debug
