@@ -17,7 +17,8 @@
 int main(int argc, char **argv)
 {
     xmss_params params;
-    uint32_t oid;
+    uint32_t oid = 0;
+    int parse_oid_result = 0;
 
     if (argc != 2) {
         fprintf(stderr, "Expected parameter string (e.g. 'XMSS-SHA2_10_256')"
@@ -27,7 +28,11 @@ int main(int argc, char **argv)
     }
 
     XMSS_STR_TO_OID(&oid, argv[1]);
-    XMSS_PARSE_OID(&params, oid);
+    parse_oid_result = XMSS_PARSE_OID(&params, oid);
+    if (parse_oid_result != 0) {
+        fprintf(stderr, "Error parsing oid.\n");
+        return parse_oid_result;
+    }
 
     unsigned char pk[XMSS_OID_LEN + params.pk_bytes];
     unsigned char sk[XMSS_OID_LEN + params.sk_bytes];
@@ -38,4 +43,6 @@ int main(int argc, char **argv)
     fwrite(sk, 1, XMSS_OID_LEN + params.sk_bytes, stdout);
 
     fclose(stdout);
+
+    return 0;
 }

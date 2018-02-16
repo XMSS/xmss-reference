@@ -3,6 +3,7 @@
 
 #include "../params.h"
 #include "../xmss.h"
+#include "../utils.h"
 
 #ifdef XMSSMT
     #define XMSS_PARSE_OID xmssmt_parse_oid
@@ -17,8 +18,10 @@ int main(int argc, char **argv) {
     FILE *m_file;
 
     xmss_params params;
-    uint32_t oid_pk;
-    uint32_t oid_sk;
+    uint32_t oid_pk = 0;
+    uint32_t oid_sk = 0;
+    uint8_t buffer[XMSS_OID_LEN];
+    int parse_oid_result;
 
     unsigned long long mlen;
 
@@ -39,6 +42,7 @@ int main(int argc, char **argv) {
     m_file = fopen(argv[2], "rb");
     if (m_file == NULL) {
         fprintf(stderr, "Could not open message file.\n");
+        fclose(keypair_file);
         return -1;
     }
 
@@ -47,14 +51,29 @@ int main(int argc, char **argv) {
     mlen = ftell(m_file);
 
     /* Read the OID from the public key, as we need its length to seek past it */
-    fread(&oid_pk, 1, XMSS_OID_LEN, keypair_file);
-    XMSS_PARSE_OID(&params, oid_pk);
+    fread(&buffer, 1, XMSS_OID_LEN, keypair_file);
+    /* The XMSS_OID_LEN bytes in buffer are a big-endian uint32. */
+    oid_pk = (uint32_t)bytes_to_ull(buffer, XMSS_OID_LEN);
+    parse_oid_result = XMSS_PARSE_OID(&params, oid_pk);
+    if (parse_oid_result != 0) {
+        fprintf(stderr, "Error parsing public key oid.\n");
+        fclose(keypair_file);
+        fclose(m_file);
+        return parse_oid_result;
+    }
 
     /* fseek past the public key */
     fseek(keypair_file, params.pk_bytes, SEEK_CUR);
     /* This is the OID we're actually going to use. Likely the same, but still. */
-    fread(&oid_sk, 1, XMSS_OID_LEN, keypair_file);
-    XMSS_PARSE_OID(&params, oid_sk);
+    fread(&buffer, 1, XMSS_OID_LEN, keypair_file);
+    oid_sk = (uint32_t)bytes_to_ull(buffer, XMSS_OID_LEN);
+    parse_oid_result = XMSS_PARSE_OID(&params, oid_sk);
+    if (parse_oid_result != 0) {
+        fprintf(stderr, "Error parsing secret key oid.\n");
+        fclose(keypair_file);
+        fclose(m_file);
+        return parse_oid_result;
+    }
 
     unsigned char sk[XMSS_OID_LEN + params.sk_bytes];
     unsigned char *m = malloc(mlen);
