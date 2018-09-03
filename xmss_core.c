@@ -90,7 +90,7 @@ static void treehash(const xmss_params *params,
  * This is implementation specific, as varying choices in tree traversal will
  * result in varying requirements for state storage.
  */
-unsigned long long xmss_core_sk_bytes(const xmss_params *params)
+unsigned long long xmss_xmssmt_core_sk_bytes(const xmss_params *params)
 {
     return params->index_bytes + 4 * params->n;
 }
@@ -123,16 +123,6 @@ int xmss_core_sign(const xmss_params *params,
        routine become vacuous (i.e. the loop only iterates once, and address
        management can be simplified a bit).*/
     return xmssmt_core_sign(params, sk, sm, smlen, m, mlen);
-}
-
-/**
- * Given a set of parameters, this function returns the size of the secret key.
- * This is implementation specific, as varying choices in tree traversal will
- * result in varying requirements for state storage.
- */
-unsigned long long xmssmt_core_sk_bytes(const xmss_params *params)
-{
-    return params->index_bytes + 4 * params->n;
 }
 
 /*

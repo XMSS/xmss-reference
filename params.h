@@ -56,4 +56,15 @@ int xmss_parse_oid(xmss_params *params, const uint32_t oid);
  */
 int xmssmt_parse_oid(xmss_params *params, const uint32_t oid);
 
+
+/* Given a params struct where the following properties have been initialized;
+    - full_height; the height of the complete (hyper)tree
+    - n; the number of bytes of hash function output
+    - d; the number of layers (d > 1 implies XMSSMT)
+    - func; one of {XMSS_SHA2, XMSS_SHAKE}
+    - wots_w; the Winternitz parameter
+    - optionally, bds_k; the BDS traversal trade-off parameter,
+    this function initializes the remainder of the params structure. */
+int xmss_xmssmt_initialize_params(xmss_params *params);
+
 #endif

@@ -511,10 +511,23 @@ static void bds_round(const xmss_params *params,
  * Given a set of parameters, this function returns the size of the secret key.
  * This is implementation specific, as varying choices in tree traversal will
  * result in varying requirements for state storage.
+ *
+ * This function handles both XMSS and XMSSMT parameter sets.
  */
-unsigned long long xmss_core_sk_bytes(const xmss_params *params)
+unsigned long long xmss_xmssmt_core_sk_bytes(const xmss_params *params)
 {
-    return xmssmt_core_sk_bytes(params);
+    return params->index_bytes + 4 * params->n
+        + (2 * params->d - 1) * (
+            (params->tree_height + 1) * params->n
+            + 4
+            + params->tree_height + 1
+            + params->tree_height * params->n
+            + (params->tree_height >> 1) * params->n
+            + (params->tree_height - params->bds_k) * (7 + params->n)
+            + ((1 << params->bds_k) - params->bds_k - 1) * params->n
+            + 4
+         )
+        + (params->d - 1) * params->wots_sig_bytes;
 }
 
 /*
@@ -681,27 +694,6 @@ int xmss_core_sign(const xmss_params *params,
     xmss_serialize_state(params, sk, &state);
 
     return 0;
-}
-
-/**
- * Given a set of parameters, this function returns the size of the secret key.
- * This is implementation specific, as varying choices in tree traversal will
- * result in varying requirements for state storage.
- */
-unsigned long long xmssmt_core_sk_bytes(const xmss_params *params)
-{
-    return params->index_bytes + 4 * params->n
-            + (2 * params->d - 1) * (
-                (params->tree_height + 1) * params->n
-                + 4
-                + params->tree_height + 1
-                + params->tree_height * params->n
-                + (params->tree_height >> 1) * params->n
-                + (params->tree_height - params->bds_k) * (7 + params->n)
-                + ((1 << params->bds_k) - params->bds_k - 1) * params->n
-                + 4
-             )
-            + (params->d - 1) * params->wots_sig_bytes;
 }
 
 /*
