@@ -10,6 +10,7 @@ HEADERS_FAST = $(subst xmss_core.c,xmss_core_fast.c,$(HEADERS))
 
 TESTS = test/wots \
 		test/oid \
+		test/speed \
 		test/xmss_determinism \
 		test/xmss \
 		test/xmss_fast \
@@ -52,6 +53,9 @@ test/xmssmt_fast: test/xmss.c $(SOURCES_FAST) $(OBJS) $(HEADERS_FAST)
 
 test/xmssmt: test/xmss.c $(SOURCES) $(OBJS) $(HEADERS)
 	$(CC) -DXMSSMT $(CFLAGS) -o $@ $(SOURCES) $< $(LDLIBS)
+
+test/speed: test/speed.c $(SOURCES_FAST) $(OBJS) $(HEADERS_FAST)
+	$(CC) -DXMSSMT -DXMSS_VARIANT=\"XMSSMT-SHA2_20/2_256\" $(CFLAGS) -o $@ $(SOURCES_FAST) $< $(LDLIBS)
 
 test/%: test/%.c $(SOURCES) $(OBJS) $(HEADERS)
 	$(CC) $(CFLAGS) -o $@ $(SOURCES) $< $(LDLIBS)
