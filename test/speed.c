@@ -108,7 +108,7 @@ int main()
     unsigned long long mlen;
 
     unsigned long long t0, t1;
-    unsigned long long t[XMSS_SIGNATURES];
+    unsigned long long *t = malloc(sizeof(unsigned long long) * XMSS_SIGNATURES);
     struct timespec start, stop;
     double result;
 
@@ -153,6 +153,7 @@ int main()
     free(m);
     free(sm);
     free(mout);
+    free(t);
 
     return ret;
 }
