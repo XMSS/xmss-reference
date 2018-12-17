@@ -97,7 +97,7 @@ unsigned long long xmss_xmssmt_core_sk_bytes(const xmss_params *params)
 
 /*
  * Generates a XMSS key pair for a given parameter set.
- * Format sk: [(32bit) index || SK_SEED || SK_PRF || PUB_SEED || root]
+ * Format sk: [(32bit) index || SK_SEED || SK_PRF || root || PUB_SEED]
  * Format pk: [root || PUB_SEED], omitting algorithm OID.
  */
 int xmss_core_keypair(const xmss_params *params,
@@ -127,7 +127,7 @@ int xmss_core_sign(const xmss_params *params,
 
 /*
  * Generates a XMSSMT key pair for a given parameter set.
- * Format sk: [(ceil(h/8) bit) index || SK_SEED || SK_PRF || PUB_SEED || root]
+ * Format sk: [(ceil(h/8) bit) index || SK_SEED || SK_PRF || root || PUB_SEED]
  * Format pk: [root || PUB_SEED] omitting algorithm OID.
  */
 int xmssmt_core_keypair(const xmss_params *params,
@@ -144,13 +144,16 @@ int xmssmt_core_keypair(const xmss_params *params,
     memset(sk, 0, params->index_bytes);
     sk += params->index_bytes;
 
-    /* Initialize SK_SEED, SK_PRF and PUB_SEED. */
-    randombytes(sk, 3 * params->n);
-    memcpy(pk + params->n, sk + 2*params->n, params->n);
+    /* Initialize SK_SEED and SK_PRF. */
+    randombytes(sk, 2 * params->n);
+
+    /* Initialize PUB_SEED. */
+    randombytes(sk + 3 * params->n, params->n);
+    memcpy(pk + params->n, sk + 3*params->n, params->n);
 
     /* Compute root node of the top-most subtree. */
     treehash(params, pk, auth_path, sk, pk + params->n, 0, top_tree_addr);
-    memcpy(sk + 3*params->n, pk, params->n);
+    memcpy(sk + 2*params->n, pk, params->n);
 
     return 0;
 }
@@ -166,8 +169,8 @@ int xmssmt_core_sign(const xmss_params *params,
 {
     const unsigned char *sk_seed = sk + params->index_bytes;
     const unsigned char *sk_prf = sk + params->index_bytes + params->n;
-    const unsigned char *pub_seed = sk + params->index_bytes + 2*params->n;
-    const unsigned char *pub_root = sk + params->index_bytes + 3*params->n;
+    const unsigned char *pub_root = sk + params->index_bytes + 2*params->n;
+    const unsigned char *pub_seed = sk + params->index_bytes + 3*params->n;
 
     unsigned char root[params->n];
     unsigned char *mhash = root;

@@ -532,7 +532,7 @@ unsigned long long xmss_xmssmt_core_sk_bytes(const xmss_params *params)
 
 /*
  * Generates a XMSS key pair for a given parameter set.
- * Format sk: [(32bit) idx || SK_SEED || SK_PRF || PUB_SEED || root]
+ * Format sk: [(32bit) idx || SK_SEED || SK_PRF || root || PUB_SEED]
  * Format pk: [root || PUB_SEED] omitting algo oid.
  */
 int xmss_core_keypair(const xmss_params *params,
@@ -555,15 +555,18 @@ int xmss_core_keypair(const xmss_params *params,
     sk[1] = 0;
     sk[2] = 0;
     sk[3] = 0;
-    // Init SK_SEED (n byte), SK_PRF (n byte), and PUB_SEED (n byte)
-    randombytes(sk + params->index_bytes, 3*params->n);
+    // Init SK_SEED (n byte) and SK_PRF (n byte)
+    randombytes(sk + params->index_bytes, 2*params->n);
+
+    // Init PUB_SEED (n byte)
+    randombytes(sk + params->index_bytes + 3*params->n, params->n);
     // Copy PUB_SEED to public key
-    memcpy(pk + params->n, sk + params->index_bytes + 2*params->n, params->n);
+    memcpy(pk + params->n, sk + params->index_bytes + 3*params->n, params->n);
 
     // Compute root
-    treehash_init(params, pk, params->tree_height, 0, &state, sk + params->index_bytes, sk + params->index_bytes + 2*params->n, addr);
-    // copy root o sk
-    memcpy(sk + params->index_bytes + 3*params->n, pk, params->n);
+    treehash_init(params, pk, params->tree_height, 0, &state, sk + params->index_bytes, sk + params->index_bytes + 3*params->n, addr);
+    // copy root to sk
+    memcpy(sk + params->index_bytes + 2*params->n, pk, params->n);
 
     /* Write the BDS state into sk. */
     xmss_serialize_state(params, sk, &state);
@@ -583,7 +586,7 @@ int xmss_core_sign(const xmss_params *params,
                    unsigned char *sm, unsigned long long *smlen,
                    const unsigned char *m, unsigned long long mlen)
 {
-    const unsigned char *pub_root = sk + params->index_bytes + 3*params->n;
+    const unsigned char *pub_root = sk + params->index_bytes + 2*params->n;
 
     uint16_t i = 0;
 
@@ -602,7 +605,7 @@ int xmss_core_sign(const xmss_params *params,
     unsigned char sk_prf[params->n];
     memcpy(sk_prf, sk + params->index_bytes + params->n, params->n);
     unsigned char pub_seed[params->n];
-    memcpy(pub_seed, sk + params->index_bytes + 2*params->n, params->n);
+    memcpy(pub_seed, sk + params->index_bytes + 3*params->n, params->n);
 
     // index as 32 bytes string
     unsigned char idx_bytes_32[32];
@@ -698,7 +701,7 @@ int xmss_core_sign(const xmss_params *params,
 
 /*
  * Generates a XMSSMT key pair for a given parameter set.
- * Format sk: [(ceil(h/8) bit) idx || SK_SEED || SK_PRF || PUB_SEED || root]
+ * Format sk: [(ceil(h/8) bit) idx || SK_SEED || SK_PRF || root || PUB_SEED]
  * Format pk: [root || PUB_SEED] omitting algo oid.
  */
 int xmssmt_core_keypair(const xmss_params *params,
@@ -727,10 +730,13 @@ int xmssmt_core_keypair(const xmss_params *params,
     for (i = 0; i < params->index_bytes; i++) {
         sk[i] = 0;
     }
-    // Init SK_SEED (params->n byte), SK_PRF (params->n byte), and PUB_SEED (params->n byte)
-    randombytes(sk+params->index_bytes, 3*params->n);
+    // Init SK_SEED (params->n byte) and SK_PRF (params->n byte)
+    randombytes(sk+params->index_bytes, 2*params->n);
+
+    // Init PUB_SEED (params->n byte)
+    randombytes(sk+params->index_bytes + 3*params->n, params->n);
     // Copy PUB_SEED to public key
-    memcpy(pk+params->n, sk+params->index_bytes+2*params->n, params->n);
+    memcpy(pk+params->n, sk+params->index_bytes+3*params->n, params->n);
 
     // Start with the bottom-most layer
     set_layer_addr(addr, 0);
@@ -744,7 +750,7 @@ int xmssmt_core_keypair(const xmss_params *params,
     }
     // Address now points to the single tree on layer d-1
     treehash_init(params, pk, params->tree_height, 0, states + i, sk+params->index_bytes, pk+params->n, addr);
-    memcpy(sk + params->index_bytes + 3*params->n, pk, params->n);
+    memcpy(sk + params->index_bytes + 2*params->n, pk, params->n);
 
     xmssmt_serialize_state(params, sk, states);
 
@@ -763,7 +769,7 @@ int xmssmt_core_sign(const xmss_params *params,
                      unsigned char *sm, unsigned long long *smlen,
                      const unsigned char *m, unsigned long long mlen)
 {
-    const unsigned char *pub_root = sk + params->index_bytes + 3*params->n;
+    const unsigned char *pub_root = sk + params->index_bytes + 2*params->n;
 
     uint64_t idx_tree;
     uint32_t idx_leaf;
@@ -801,7 +807,7 @@ int xmssmt_core_sign(const xmss_params *params,
 
     memcpy(sk_seed, sk+params->index_bytes, params->n);
     memcpy(sk_prf, sk+params->index_bytes+params->n, params->n);
-    memcpy(pub_seed, sk+params->index_bytes+2*params->n, params->n);
+    memcpy(pub_seed, sk+params->index_bytes+3*params->n, params->n);
 
     // Update SK
     for (i = 0; i < params->index_bytes; i++) {
