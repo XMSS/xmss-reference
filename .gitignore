@@ -2,3 +2,4 @@ test/*
 !test/*.c
 ui/*
 !ui/*.c
+hacspec/__pycache__
