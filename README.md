@@ -1,8 +1,8 @@
-## XMSS reference code [![Build Status](https://travis-ci.org/joostrijneveld/xmss-reference.svg?branch=master)](https://travis-ci.org/joostrijneveld/xmss-reference)
+## XMSS reference code [![Build Status](https://travis-ci.org/XMSS/xmss-reference.svg?branch=master)](https://travis-ci.org/XMSS/xmss-reference)
 
-This repository contains the reference implementation that accompanies the Internet Draft _"XMSS: Extended Hash-Based Signatures"_, [`draft-irtf-cfrg-xmss-hash-based-signatures`](https://datatracker.ietf.org/doc/draft-irtf-cfrg-xmss-hash-based-signatures/).
+This repository contains the reference implementation that accompanies [RFC 8391: _"XMSS: eXtended Merkle Signature Scheme"_](https://tools.ietf.org/html/rfc8391).
 
-This reference implementation supports all parameter sets as defined in the Draft at run-time (specified by prefixing the public and private keys with a 32-bit `oid`). Implementations that want to use compile-time parameter sets can remove the `struct xmss_params` function parameter.
+This reference implementation supports all parameter sets as defined in the RFC at run-time (specified by prefixing the public and private keys with a 32-bit `oid`). Implementations that want to use compile-time parameter sets can remove the `struct xmss_params` function parameter.
 
 _When using the current code base, please be careful, expect changes and watch this document for further documentation. In particular, `xmss_core_fast.c` is long due for a serious clean-up. While this will not change its public API or output, it may affect the storage format of the BDS state (i.e. part of the secret key)._
 
