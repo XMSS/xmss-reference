@@ -12,6 +12,7 @@
 #define XMSS_HASH_PADDING_H 1
 #define XMSS_HASH_PADDING_HASH 2
 #define XMSS_HASH_PADDING_PRF 3
+#define XMSS_HASH_PADDING_PRF_KEYGEN 4
 
 void addr_to_bytes(unsigned char *bytes, const uint32_t addr[8])
 {
@@ -57,6 +58,23 @@ int prf(const xmss_params *params,
     memcpy(buf + params->padding_len + params->n, in, 32);
 
     return core_hash(params, out, buf, params->padding_len + params->n + 32);
+}
+
+/*
+ * Computes PRF_keygen(key, in), for a key of params->n bytes, and an input
+ * of 32 + params->n bytes
+ */
+int prf_keygen(const xmss_params *params,
+        unsigned char *out, const unsigned char *in,
+        const unsigned char *key)
+{
+    unsigned char buf[params->padding_len + 2*params->n + 32];
+
+    ull_to_bytes(buf, params->padding_len, XMSS_HASH_PADDING_PRF_KEYGEN);
+    memcpy(buf + params->padding_len, key, params->n);
+    memcpy(buf + params->padding_len + params->n, in, params->n + 32);
+
+    return core_hash(params, out, buf, params->padding_len + 2*params->n + 32);
 }
 
 /*

@@ -14,15 +14,6 @@ void gen_leaf_wots(const xmss_params *params, unsigned char *leaf,
                    uint32_t ltree_addr[8], uint32_t ots_addr[8]);
 
 /**
- * Used for pseudo-random key generation.
- * Generates the seed for the WOTS key pair at address 'addr'.
- *
- * Takes n-byte sk_seed and returns n-byte seed using 32 byte address 'addr'.
- */
-void get_seed(const xmss_params *params, unsigned char *seed,
-              const unsigned char *sk_seed, uint32_t addr[8]);
-
-/**
  * Verifies a given message signature pair under a given public key.
  * Note that this assumes a pk without an OID, i.e. [root || PUB_SEED]
  */

@@ -10,6 +10,10 @@ int prf(const xmss_params *params,
         unsigned char *out, const unsigned char in[32],
         const unsigned char *key);
 
+int prf_keygen(const xmss_params *params,
+        unsigned char *out, const unsigned char *in,
+        const unsigned char *key);
+
 int h_msg(const xmss_params *params,
           unsigned char *out,
           const unsigned char *in, unsigned long long inlen,

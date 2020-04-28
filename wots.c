@@ -9,17 +9,22 @@
 
 /**
  * Helper method for pseudorandom key generation.
- * Expands an n-byte array into a len*n byte array using the `prf` function.
+ * Expands an n-byte array into a len*n byte array using the `prf_keygen` function.
  */
 static void expand_seed(const xmss_params *params,
-                        unsigned char *outseeds, const unsigned char *inseed)
+                        unsigned char *outseeds, const unsigned char *inseed, 
+                        const unsigned char *pub_seed, uint32_t addr[8])
 {
     uint32_t i;
-    unsigned char ctr[32];
+    unsigned char buf[params->n + 32];
 
+    set_hash_addr(addr, 0);
+    set_key_and_mask(addr, 0);
+    memcpy(buf, pub_seed, params->n);
     for (i = 0; i < params->wots_len; i++) {
-        ull_to_bytes(ctr, 32, i);
-        prf(params, outseeds + i*params->n, ctr, inseed);
+        set_chain_addr(addr, i);
+        addr_to_bytes(buf + params->n, addr);
+        prf_keygen(params, outseeds + i*params->n, buf, inseed);
     }
 }
 
@@ -116,7 +121,7 @@ void wots_pkgen(const xmss_params *params,
     uint32_t i;
 
     /* The WOTS+ private key is derived from the seed. */
-    expand_seed(params, pk, seed);
+    expand_seed(params, pk, seed, pub_seed, addr);
 
     for (i = 0; i < params->wots_len; i++) {
         set_chain_addr(addr, i);
@@ -140,7 +145,7 @@ void wots_sign(const xmss_params *params,
     chain_lengths(params, lengths, msg);
 
     /* The WOTS+ private key is derived from the seed. */
-    expand_seed(params, sig, seed);
+    expand_seed(params, sig, seed, pub_seed, addr);
 
     for (i = 0; i < params->wots_len; i++) {
         set_chain_addr(addr, i);
