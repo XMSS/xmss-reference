@@ -185,6 +185,7 @@ int xmss_parse_oid(xmss_params *params, const uint32_t oid)
         case 0x00000008:
         case 0x00000009:
             params->n = 32;
+            params->padding_len = 32;
             break;
 
         case 0x00000004:
@@ -195,6 +196,7 @@ int xmss_parse_oid(xmss_params *params, const uint32_t oid)
         case 0x0000000b:
         case 0x0000000c:
             params->n = 64;
+            params->padding_len = 64;
             break;
 
         default:
@@ -298,6 +300,7 @@ int xmssmt_parse_oid(xmss_params *params, const uint32_t oid)
         case 0x00000017:
         case 0x00000018:
             params->n = 32;
+            params->padding_len = 32;
             break;
 
         case 0x00000009:
@@ -318,6 +321,7 @@ int xmssmt_parse_oid(xmss_params *params, const uint32_t oid)
         case 0x0000001f:
         case 0x00000020:
             params->n = 64;
+            params->padding_len = 64;
             break;
 
         default:
