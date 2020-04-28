@@ -26,16 +26,28 @@ static int core_hash(const xmss_params *params,
                      unsigned char *out,
                      const unsigned char *in, unsigned long long inlen)
 {
-    if (params->n == 32 && params->func == XMSS_SHA2) {
+    unsigned char buf[64];
+
+    if (params->n == 24 && params->func == XMSS_SHA2) {
+        SHA256(in, inlen, buf);
+        memcpy(out, buf, 24);
+    }
+    else if (params->n == 24 && params->func == XMSS_SHAKE256) {
+        shake256(out, 24, in, inlen);
+    }   
+    else if (params->n == 32 && params->func == XMSS_SHA2) {
         SHA256(in, inlen, out);
     }
-    else if (params->n == 32 && params->func == XMSS_SHAKE) {
+    else if (params->n == 32 && params->func == XMSS_SHAKE128) {
         shake128(out, 32, in, inlen);
+    }
+    else if (params->n == 32 && params->func == XMSS_SHAKE256) {
+        shake256(out, 32, in, inlen);
     }
     else if (params->n == 64 && params->func == XMSS_SHA2) {
         SHA512(in, inlen, out);
     }
-    else if (params->n == 64 && params->func == XMSS_SHAKE) {
+    else if (params->n == 64 && params->func == XMSS_SHAKE256) {
         shake256(out, 64, in, inlen);
     }
     else {
