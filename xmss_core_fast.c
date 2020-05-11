@@ -623,7 +623,6 @@ int xmss_core_sign(const xmss_params *params,
     // Init working params
     unsigned char R[params->n];
     unsigned char msg_h[params->n];
-    unsigned char ots_seed[params->n];
     uint32_t ots_addr[8] = {0};
 
     // ---------------------------------
@@ -670,11 +669,8 @@ int xmss_core_sign(const xmss_params *params,
     set_type(ots_addr, 0);
     set_ots_addr(ots_addr, idx);
 
-    // Compute seed for OTS key pair
-    get_seed(params, ots_seed, sk_seed, ots_addr);
-
     // Compute WOTS signature
-    wots_sign(params, sm, msg_h, ots_seed, pub_seed, ots_addr);
+    wots_sign(params, sm, msg_h, sk_seed, pub_seed, ots_addr);
 
     sm += params->wots_sig_bytes;
     *smlen += params->wots_sig_bytes;
@@ -707,7 +703,6 @@ int xmss_core_sign(const xmss_params *params,
 int xmssmt_core_keypair(const xmss_params *params,
                         unsigned char *pk, unsigned char *sk)
 {
-    unsigned char ots_seed[params->n];
     uint32_t addr[8] = {0};
     unsigned int i;
     unsigned char *wots_sigs;
@@ -745,8 +740,7 @@ int xmssmt_core_keypair(const xmss_params *params,
         // Compute seed for OTS key pair
         treehash_init(params, pk, params->tree_height, 0, states + i, sk+params->index_bytes, pk+params->n, addr);
         set_layer_addr(addr, (i+1));
-        get_seed(params, ots_seed, sk + params->index_bytes, addr);
-        wots_sign(params, wots_sigs + i*params->wots_sig_bytes, pk, ots_seed, pk+params->n, addr);
+        wots_sign(params, wots_sigs + i*params->wots_sig_bytes, pk, sk + params->index_bytes, pk+params->n, addr);
     }
     // Address now points to the single tree on layer d-1
     treehash_init(params, pk, params->tree_height, 0, states + i, sk+params->index_bytes, pk+params->n, addr);
@@ -783,7 +777,6 @@ int xmssmt_core_sign(const xmss_params *params,
     // Init working params
     unsigned char R[params->n];
     unsigned char msg_h[params->n];
-    unsigned char ots_seed[params->n];
     uint32_t addr[8] = {0};
     uint32_t ots_addr[8] = {0};
     unsigned char idx_bytes_32[32];
@@ -867,11 +860,8 @@ int xmssmt_core_sign(const xmss_params *params,
     set_tree_addr(ots_addr, idx_tree);
     set_ots_addr(ots_addr, idx_leaf);
 
-    // Compute seed for OTS key pair
-    get_seed(params, ots_seed, sk_seed, ots_addr);
-
     // Compute WOTS signature
-    wots_sign(params, sm, msg_h, ots_seed, pub_seed, ots_addr);
+    wots_sign(params, sm, msg_h, sk_seed, pub_seed, ots_addr);
 
     sm += params->wots_sig_bytes;
     *smlen += params->wots_sig_bytes;
@@ -929,8 +919,7 @@ int xmssmt_core_sign(const xmss_params *params,
             set_tree_addr(ots_addr, ((idx + 1) >> ((i+2) * params->tree_height)));
             set_ots_addr(ots_addr, (((idx >> ((i+1) * params->tree_height)) + 1) & ((1 << params->tree_height)-1)));
 
-            get_seed(params, ots_seed, sk+params->index_bytes, ots_addr);
-            wots_sign(params, wots_sigs + i*params->wots_sig_bytes, states[i].stack, ots_seed, pub_seed, ots_addr);
+            wots_sign(params, wots_sigs + i*params->wots_sig_bytes, states[i].stack, sk_seed, pub_seed, ots_addr);
 
             states[params->d + i].stackoffset = 0;
             states[params->d + i].next_leaf = 0;

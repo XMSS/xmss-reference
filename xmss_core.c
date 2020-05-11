@@ -174,7 +174,6 @@ int xmssmt_core_sign(const xmss_params *params,
 
     unsigned char root[params->n];
     unsigned char *mhash = root;
-    unsigned char ots_seed[params->n];
     unsigned long long idx;
     unsigned char idx_bytes_32[32];
     unsigned int i;
@@ -217,13 +216,10 @@ int xmssmt_core_sign(const xmss_params *params,
         set_tree_addr(ots_addr, idx);
         set_ots_addr(ots_addr, idx_leaf);
 
-        /* Get a seed for the WOTS keypair. */
-        get_seed(params, ots_seed, sk_seed, ots_addr);
-
         /* Compute a WOTS signature. */
         /* Initially, root = mhash, but on subsequent iterations it is the root
            of the subtree below the currently processed subtree. */
-        wots_sign(params, sm, root, ots_seed, pub_seed, ots_addr);
+        wots_sign(params, sm, root, sk_seed, pub_seed, ots_addr);
         sm += params->wots_sig_bytes;
 
         /* Compute the authentication path for the used WOTS leaf. */
