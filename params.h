@@ -5,7 +5,8 @@
 
 /* These are merely internal identifiers for the supported hash functions. */
 #define XMSS_SHA2 0
-#define XMSS_SHAKE 1
+#define XMSS_SHAKE128 1
+#define XMSS_SHAKE256 2
 
 /* This is a result of the OID definitions in the draft; needed for parsing. */
 #define XMSS_OID_LEN 4
@@ -62,7 +63,7 @@ int xmssmt_parse_oid(xmss_params *params, const uint32_t oid);
     - full_height; the height of the complete (hyper)tree
     - n; the number of bytes of hash function output
     - d; the number of layers (d > 1 implies XMSSMT)
-    - func; one of {XMSS_SHA2, XMSS_SHAKE}
+    - func; one of {XMSS_SHA2, XMSS_SHAKE128, XMSS_SHAKE256}
     - wots_w; the Winternitz parameter
     - optionally, bds_k; the BDS traversal trade-off parameter,
     this function initializes the remainder of the params structure. */
