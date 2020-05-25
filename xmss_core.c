@@ -131,9 +131,9 @@ int xmss_core_sign(const xmss_params *params,
  * Format sk: [(ceil(h/8) bit) index || SK_SEED || SK_PRF || root || PUB_SEED]
  * Format pk: [root || PUB_SEED] omitting algorithm OID.
  */
-int xmssmt_core_keypair2(const xmss_params *params,
-                        unsigned char *pk, unsigned char *sk,
-                        unsigned char *seed)
+int xmssmt_core_seed_keypair(const xmss_params *params,
+                             unsigned char *pk, unsigned char *sk,
+                             unsigned char *seed)
 {
     /* We do not need the auth path in key generation, but it simplifies the
        code to have just one treehash routine that computes both root and path
@@ -168,27 +168,10 @@ int xmssmt_core_keypair2(const xmss_params *params,
 int xmssmt_core_keypair(const xmss_params *params,
                         unsigned char *pk, unsigned char *sk)
 {
-    /* We do not need the auth path in key generation, but it simplifies the
-       code to have just one treehash routine that computes both root and path
-       in one function. */
-    unsigned char auth_path[params->tree_height * params->n];
-    uint32_t top_tree_addr[8] = {0};
-    set_layer_addr(top_tree_addr, params->d - 1);
+    unsigned char seed[3 * params->n];
 
-    /* Initialize index to 0. */
-    memset(sk, 0, params->index_bytes);
-    sk += params->index_bytes;
-
-    /* Initialize SK_SEED and SK_PRF. */
-    randombytes(sk, 2 * params->n);
-
-    /* Initialize PUB_SEED. */
-    randombytes(sk + 3 * params->n, params->n);
-    memcpy(pk + params->n, sk + 3*params->n, params->n);
-
-    /* Compute root node of the top-most subtree. */
-    treehash(params, pk, auth_path, sk, pk + params->n, 0, top_tree_addr);
-    memcpy(sk + 2*params->n, pk, params->n);
+    randombytes(seed, 3 * params->n);
+    xmssmt_core_seed_keypair(params, pk, sk, seed);
 
     return 0;
 }

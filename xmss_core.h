@@ -52,9 +52,9 @@ int xmssmt_core_keypair(const xmss_params *params,
  * Format sk: [(ceil(h/8) bit) index || SK_SEED || SK_PRF || root || PUB_SEED]
  * Format pk: [root || PUB_SEED] omitting algorithm OID.
  */
-int xmssmt_core_keypair2(const xmss_params *params,
-                        unsigned char *pk, unsigned char *sk,
-                        unsigned char *seed);
+int xmssmt_core_seed_keypair(const xmss_params *params,
+                             unsigned char *pk, unsigned char *sk,
+                             unsigned char *seed);
 
 /**
  * Signs a message. Returns an array containing the signature followed by the

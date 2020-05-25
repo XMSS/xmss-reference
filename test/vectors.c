@@ -45,7 +45,7 @@ int vectors_xmss(uint32_t oid, int mt) {
         seed[i] = i;
     }
 
-    xmssmt_core_keypair2(&params, pk, sk, seed);
+    xmssmt_core_seed_keypair(&params, pk, sk, seed);
 
     ull_to_bytes(sk, params.index_bytes, 1 << (params.full_height - 1));
 
