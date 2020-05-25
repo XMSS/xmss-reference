@@ -57,6 +57,9 @@ test/xmssmt: test/xmss.c $(SOURCES) $(OBJS) $(HEADERS)
 test/speed: test/speed.c $(SOURCES_FAST) $(OBJS) $(HEADERS_FAST)
 	$(CC) -DXMSSMT -DXMSS_VARIANT=\"XMSSMT-SHA2_20/2_256\" $(CFLAGS) -o $@ $(SOURCES_FAST) $< $(LDLIBS)
 
+test/vectors: test/vectors.c $(SOURCES) $(OBJS) $(HEADERS)
+	$(CC) -DXMSSMT $(CFLAGS) -o $@ $(SOURCES) $< $(LDLIBS)
+
 test/%: test/%.c $(SOURCES) $(OBJS) $(HEADERS)
 	$(CC) $(CFLAGS) -o $@ $(SOURCES) $< $(LDLIBS)
 
@@ -74,4 +77,5 @@ ui/xmssmt_%: ui/%.c $(SOURCES) $(OBJS) $(HEADERS)
 
 clean:
 	-$(RM) $(TESTS)
+	-$(RM) test/vectors
 	-$(RM) $(UI)
