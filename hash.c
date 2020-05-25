@@ -91,9 +91,10 @@ int prf_keygen(const xmss_params *params,
 
 /*
  * Computes the message hash using R, the public root, the index of the leaf
- * node, and the message. Notably, it requires m_with_prefix to have 4*n bytes
- * of space before the message, to use for the prefix. This is necessary to
- * prevent having to move the message around (and thus allocate memory for it).
+ * node, and the message. Notably, it requires m_with_prefix to have 3*n plus
+ * the length of the padding as free space available before the message,
+ * to use for the prefix. This is necessary to prevent having to move the
+ * message around (and thus allocate memory for it).
  */
 int hash_message(const xmss_params *params, unsigned char *out,
                  const unsigned char *R, const unsigned char *root,

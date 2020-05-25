@@ -639,7 +639,8 @@ int xmss_core_sign(const xmss_params *params,
 
     /* Compute the message hash. */
     hash_message(params, msg_h, R, pub_root, idx,
-                 sm + params->sig_bytes - 4*params->n, mlen);
+                 sm + params->sig_bytes - params->padding_len - 3*params->n,
+                 mlen);
 
     // Start collecting signature
     *smlen = 0;
@@ -825,7 +826,8 @@ int xmssmt_core_sign(const xmss_params *params,
 
     /* Compute the message hash. */
     hash_message(params, msg_h, R, pub_root, idx,
-                 sm + params->sig_bytes - 4*params->n, mlen);
+                 sm + params->sig_bytes - params->padding_len - 3*params->n,
+                 mlen);
 
     // Start collecting signature
     *smlen = 0;
