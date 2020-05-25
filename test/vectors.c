@@ -10,6 +10,7 @@
 #include "../randombytes.h"
 #include "../params.h"
 #include "../fips202.h"
+#include "../utils.h"
 #include "../xmss_commons.h"
 #include "../xmss_core.h"
 
@@ -25,7 +26,7 @@ void print_hash(unsigned char *buf, int len) {
     print_hex(tmp, 10);
 }
 
-int vectors_xmss(uint32_t oid, int mt) {
+void vectors_xmss(uint32_t oid, int mt) {
     xmss_params params;
 
     if (mt) {
@@ -41,7 +42,7 @@ int vectors_xmss(uint32_t oid, int mt) {
     unsigned char sm[params.sig_bytes + 1];
     unsigned long long smlen = 0;
 
-    for (int i = 0; i < 3*params.n; i++) {
+    for (unsigned int i = 0; i < 3*params.n; i++) {
         seed[i] = i;
     }
 
@@ -67,7 +68,7 @@ int vectors_xmss(uint32_t oid, int mt) {
     printf("\n");
 }
 
-int vectors_wots(uint32_t oid) {
+void vectors_wots(uint32_t oid) {
     xmss_params params;
 
     xmss_parse_oid(&params, oid);
@@ -83,12 +84,12 @@ int vectors_wots(uint32_t oid) {
     uint32_t addr[8] = {0};
     uint32_t addr2[8] = {0};
 
-    for (int i = 0; i < 8; i++) {
+    for (unsigned int i = 0; i < 8; i++) {
         addr[i] = 500000000*i;
         addr2[i] = 400000000*i;
     }
 
-    for (int i = 0; i < params.n; i++) {
+    for (unsigned int i = 0; i < params.n; i++) {
         m[i] = 3*i;
         pub_seed[i] = 2*i;
         sk_seed[i] = i;
@@ -108,8 +109,6 @@ int vectors_wots(uint32_t oid) {
     print_hash(leaf, params.n);
 
     printf("\n");
-
-    return 0;
 }
 
 int main() {

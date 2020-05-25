@@ -77,4 +77,5 @@ ui/xmssmt_%: ui/%.c $(SOURCES) $(OBJS) $(HEADERS)
 
 clean:
 	-$(RM) $(TESTS)
+	-$(RM) test/vectors
 	-$(RM) $(UI)
