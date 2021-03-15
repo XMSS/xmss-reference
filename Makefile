@@ -16,6 +16,8 @@ TESTS = test/wots \
 		test/xmss_fast \
 		test/xmssmt \
 		test/xmssmt_fast \
+		test/maxsigsxmss \
+		test/maxsigsxmssmt \
 
 UI = ui/xmss_keypair \
 	 ui/xmss_sign \
@@ -59,7 +61,13 @@ test/speed: test/speed.c $(SOURCES_FAST) $(OBJS) $(HEADERS_FAST)
 
 test/vectors: test/vectors.c $(SOURCES) $(OBJS) $(HEADERS)
 	$(CC) -DXMSSMT $(CFLAGS) -o $@ $(SOURCES) $< $(LDLIBS)
+	
+test/maxsigsxmss: test/xmss_max_signatures.c $(SOURCES_FAST) $(OBJS) $(HEADERS_FAST)
+	$(CC) $(CFLAGS) -o $@ $(SOURCES_FAST) $< $(LDLIBS)
 
+test/maxsigsxmssmt: test/xmss_max_signatures.c $(SOURCES_FAST) $(OBJS) $(HEADERS_FAST)
+	$(CC) -DXMSSMT $(CFLAGS) -o $@ $(SOURCES_FAST) $< $(LDLIBS)
+	
 test/%: test/%.c $(SOURCES) $(OBJS) $(HEADERS)
 	$(CC) $(CFLAGS) -o $@ $(SOURCES) $< $(LDLIBS)
 
