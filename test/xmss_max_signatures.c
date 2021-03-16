@@ -21,7 +21,7 @@
     #define XMSS_SIGN xmssmt_sign
     #define XMSS_SIGN_OPEN xmssmt_sign_open
     #define XMSS_VARIANT "XMSSMT-SHA2_20/2_256"
-    #define XMSS_SIGNATURES 1 << 20
+    #define XMSS_SIGNATURES (1 << 20)
 #else
     #define XMSS_PARSE_OID xmss_parse_oid
     #define XMSS_STR_TO_OID xmss_str_to_oid
@@ -29,7 +29,7 @@
     #define XMSS_SIGN xmss_sign
     #define XMSS_SIGN_OPEN xmss_sign_open
     #define XMSS_VARIANT "XMSS-SHA2_10_256"
-    #define XMSS_SIGNATURES 1 << 10
+    #define XMSS_SIGNATURES (1 << 10)
 #endif
 
 int main()
@@ -72,26 +72,27 @@ int main()
     }
     if(ret == 0)
             printf("As expected, return code was 0\n");
-    i++;
-    printf("  - iteration #%d:\n", i);
+    for (; i < (XMSS_SIGNATURES) + 2; i++) {
+        printf("  - iteration #%d:\n", i);
 
-    return_code = XMSS_SIGN(sk, sm, &smlen, m, XMSS_MLEN);
+        return_code = XMSS_SIGN(sk, sm, &smlen, m, XMSS_MLEN);
 
-    if (return_code == 0) {
-        printf("  Error! Return code was %d\n",return_code);
-        ret = -1;
+        if (return_code == 0) {
+                printf("  Error! Return code was %d\n",return_code);
+                ret = -1;
+        }
+        else {
+                printf("Return code as expected [%d].\n", return_code);
+        }
+        
+        idx = (unsigned long)bytes_to_ull(sk, params.index_bytes);
+        printf("Index: %llu\n", idx);
+        printf("Secret key: %llu\n", idx);
+        for (j = 0; j < XMSS_OID_LEN + params.sk_bytes;j++)
+                printf("%d ", sk[j]);
+        
+        printf("\n");
     }
-    else {
-        printf("Return code as expected [%d].\n", return_code);
-    }
-    
-    idx = (unsigned long)bytes_to_ull(sk, params.index_bytes);
-    printf("Index: %llu\n", idx);
-    printf("Secret key: %llu\n", idx);
-    for (j = 0; j < XMSS_OID_LEN + params.sk_bytes;j++)
-            printf("%d ", sk[j]);
-    
-    printf("\n");
     
     free(m);
     free(sm);

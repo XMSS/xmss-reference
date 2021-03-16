@@ -615,14 +615,11 @@ int xmss_core_sign(const xmss_params *params,
     if (idx >= ((1ULL << params->full_height) - 1)) {
         // Delete secret key here. We only do this in memory, production code
         // has to make sure that this happens on disk.
-        sk[0] = 255;
-        sk[1] = 255;
-        sk[2] = 255;
-        sk[3] = 255;
+        memset(sk, 0xFF, params->index_bytes);
         memset(sk + params->index_bytes, 0, (params->sk_bytes - params->index_bytes));
         if (idx > ((1ULL << params->full_height) - 1))
             return -2; // We already used all one-time keys
-        if ((params->full_height == 64) && (idx = ((1ULL << params->full_height) - 1))) 
+        if ((params->full_height == 64) && (idx == ((1ULL << params->full_height) - 1))) 
                 return -2; // We already used all one-time keys
     }
     
@@ -839,14 +836,11 @@ int xmssmt_core_sign(const xmss_params *params,
     if (idx >= ((1ULL << params->full_height) - 1)) {
         // Delete secret key here. We only do this in memory, production code
         // has to make sure that this happens on disk.
-        sk[0] = 255;
-        sk[1] = 255;
-        sk[2] = 255;
-        sk[3] = 255;
+        memset(sk, 0xFF, params->index_bytes);
         memset(sk + params->index_bytes, 0, (params->sk_bytes - params->index_bytes));
         if (idx > ((1ULL << params->full_height) - 1))
             return -2; // We already used all one-time keys
-        if ((params->full_height == 64) && (idx = ((1ULL << params->full_height) - 1))) 
+        if ((params->full_height == 64) && (idx == ((1ULL << params->full_height) - 1))) 
                 return -2; // We already used all one-time keys
     }
     
