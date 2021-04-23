@@ -207,29 +207,21 @@ int xmssmt_core_sign(const xmss_params *params,
 
     /* Read and use the current index from the secret key. */
     idx = (unsigned long)bytes_to_ull(sk, params->index_bytes);
-    
+
     /* Check if we can still sign with this sk.
      * If not, return -2
-     * 
-     * If this is the last possible signature (because the max index value 
-     * is reached), production implementations should delete the secret key 
-     * to prevent accidental further use.
-     * 
-     * For the case of total tree height of 64 we do not use the last signature 
-     * to be on the safe side (there is no index value left to indicate that the 
+     *
+     * For the case of total tree height of 64 we do not use the last signature
+     * to be on the safe side (there is no index value left to indicate that the
      * key is finished, hence external handling would be necessary)
-     */ 
-    if (idx >= ((1ULL << params->full_height) - 1)) {
-        // Delete secret key here. We only do this in memory, production code
-        // has to make sure that this happens on disk.
-        memset(sk, 0xFF, params->index_bytes);
-        memset(sk + params->index_bytes, 0, (params->sk_bytes - params->index_bytes));
-        if (idx > ((1ULL << params->full_height) - 1))
-            return -2; // We already used all one-time keys
-        if ((params->full_height == 64) && (idx == ((1ULL << params->full_height) - 1))) 
-                return -2; // We already used all one-time keys
+     */
+    if (idx > ((1ULL << params->full_height) - 1)) {
+        return -2; // We already used all one-time keys
     }
-    
+    if ((params->full_height == 64) && (idx == ((1ULL << params->full_height) - 1))) {
+        return -2; // We already used all one-time keys
+    }
+
     memcpy(sm, sk, params->index_bytes);
 
     /*************************************************************************
@@ -267,6 +259,17 @@ int xmssmt_core_sign(const xmss_params *params,
         /* Compute the authentication path for the used WOTS leaf. */
         treehash(params, root, sm, sk_seed, pub_seed, idx_leaf, ots_addr);
         sm += params->tree_height*params->n;
+    }
+
+    /* If this is the last possible signature (because the max index value
+     * is reached), production implementations should delete the secret key
+     * to prevent accidental further use.
+     */
+    if (idx >= ((1ULL << params->full_height) - 1)) {
+        // Delete secret key here. We only do this in memory, production code
+        // has to make sure that this happens on disk.
+        memset(sk, 0xFF, params->index_bytes);
+        memset(sk + params->index_bytes, 0, (params->sk_bytes - params->index_bytes));
     }
 
     return 0;
