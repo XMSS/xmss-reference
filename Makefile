@@ -18,6 +18,7 @@ TESTS = test/wots \
 		test/xmssmt_fast \
 		test/maxsigsxmss \
 		test/maxsigsxmssmt \
+		test/vectors \
 
 UI = ui/xmss_keypair \
 	 ui/xmss_sign \
