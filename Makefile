@@ -1,5 +1,5 @@
 CC = /usr/bin/gcc
-CFLAGS = -Wall -g -O3 -Wextra -Wpedantic
+CFLAGS = -Wall -g -O3 -Wextra -Wpedantic -I/opt/homebrew/opt/openssl@3/include -L/opt/homebrew/opt/openssl@3/lib
 LDLIBS = -lcrypto
 
 SOURCES = params.c hash.c fips202.c hash_address.c randombytes.c wots.c xmss.c xmss_core.c xmss_commons.c utils.c
@@ -56,8 +56,14 @@ test/xmssmt_fast: test/xmss.c $(SOURCES_FAST) $(OBJS) $(HEADERS_FAST)
 test/xmssmt: test/xmss.c $(SOURCES) $(OBJS) $(HEADERS)
 	$(CC) -DXMSSMT $(CFLAGS) -o $@ $(SOURCES) $< $(LDLIBS)
 
+# test/speed: test/speed.c $(SOURCES_FAST) $(OBJS) $(HEADERS_FAST)
+# 	$(CC) -DXMSSMT -DXMSS_VARIANT=\"XMSSMT-SHA2_20/2_256\" $(CFLAGS) -o $@ $(SOURCES_FAST) $< $(LDLIBS)
+
 test/speed: test/speed.c $(SOURCES_FAST) $(OBJS) $(HEADERS_FAST)
-	$(CC) -DXMSSMT -DXMSS_VARIANT=\"XMSSMT-SHA2_20/2_256\" $(CFLAGS) -o $@ $(SOURCES_FAST) $< $(LDLIBS)
+	$(CC) -DXMSS_SIGNATURES=64 $(CFLAGS) -o $@ $(SOURCES_FAST) $< $(LDLIBS)
+
+test/speedmt: test/speed.c $(SOURCES_FAST) $(OBJS) $(HEADERS_FAST)
+	$(CC) -DXMSSMT -DXMSS_SIGNATURES=64 $(CFLAGS) -o $@ $(SOURCES_FAST) $< $(LDLIBS)
 
 test/vectors: test/vectors.c $(SOURCES) $(OBJS) $(HEADERS)
 	$(CC) -DXMSSMT $(CFLAGS) -o $@ $(SOURCES) $< $(LDLIBS)
