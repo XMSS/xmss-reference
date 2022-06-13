@@ -2,6 +2,7 @@
 
 #include "params.h"
 #include "xmss_core.h"
+#include "utils.h"
 
 /* This file provides wrapper functions that take keys that include OIDs to
 identify the parameter set to be used. After setting the parameters accordingly
@@ -59,6 +60,30 @@ int xmss_sign_open(unsigned char *m, unsigned long long *mlen,
     return xmss_core_sign_open(&params, m, mlen, sm, smlen, pk + XMSS_OID_LEN);
 }
 
+int xmss_remain_signatures(unsigned long long *remain, 
+                           unsigned long long *max, const unsigned  char *sk)
+{
+    xmss_params params;
+    uint32_t oid = 0;
+    unsigned int i;
+    unsigned long long idx; 
+
+    for (i = 0; i < XMSS_OID_LEN; i++) {
+        oid |= sk[XMSS_OID_LEN - i - 1] << (i * 8);
+    }
+
+    if (xmss_parse_oid(&params, oid)) {
+        return -1;
+    }
+
+    idx = bytes_to_ull(sk + XMSS_OID_LEN, params.index_bytes);
+
+    *max = ((1ULL << params.full_height) - 1);
+    *remain = *max - idx;
+
+    return 0;
+}
+
 int xmssmt_keypair(unsigned char *pk, unsigned char *sk, const uint32_t oid)
 {
     xmss_params params;
@@ -106,4 +131,29 @@ int xmssmt_sign_open(unsigned char *m, unsigned long long *mlen,
         return -1;
     }
     return xmssmt_core_sign_open(&params, m, mlen, sm, smlen, pk + XMSS_OID_LEN);
+}
+
+
+int xmssmt_remain_signatures(unsigned long long *remain, 
+                             unsigned long long *max, const unsigned  char *sk)
+{
+    xmss_params params;
+    uint32_t oid = 0;
+    unsigned int i;
+    unsigned long long idx; 
+
+    for (i = 0; i < XMSS_OID_LEN; i++) {
+        oid |= sk[XMSS_OID_LEN - i - 1] << (i * 8);
+    }
+
+    if (xmssmt_parse_oid(&params, oid)) {
+        return -1;
+    }
+
+    idx = bytes_to_ull(sk + XMSS_OID_LEN, params.index_bytes);
+
+    *max = ((1ULL << params.full_height) - 1);
+    *remain = *max - idx;
+
+    return 0;
 }
