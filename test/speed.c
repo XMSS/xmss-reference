@@ -147,7 +147,7 @@ int main()
             clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &start);
             XMSS_SIGN(sk, sm, &smlen, m, XMSS_MLEN);
             clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &stop);
-            t[i] = (stop.tv_sec - start.tv_sec) * 1e9 + (stop.tv_nsec - start.tv_nsec);
+            t[i] = (stop.tv_sec - start.tv_sec) * 1e6 + (stop.tv_nsec - start.tv_nsec) / 1e3;
         }
         print_results(t, XMSS_SIGNATURES);
 
@@ -157,7 +157,7 @@ int main()
             clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &start);
             ret |= XMSS_SIGN_OPEN(mout, &mlen, sm, smlen, pk);
             clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &stop);
-            t[i] = (stop.tv_sec - start.tv_sec) * 1e9 + (stop.tv_nsec - start.tv_nsec);
+            t[i] = (stop.tv_sec - start.tv_sec) * 1e6 + (stop.tv_nsec - start.tv_nsec) / 1e3;
         }
         print_results(t, XMSS_SIGNATURES);
 

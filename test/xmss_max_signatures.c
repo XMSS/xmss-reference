@@ -89,8 +89,8 @@ int main()
         printf("Index: %llu\n", idx);
         printf("Secret key: %llu\n", idx);
         for (j = 0; j < XMSS_OID_LEN + params.sk_bytes;j++)
-                printf("%d ", sk[j]);
-        
+                printf("%02x", sk[j]);
+
         printf("\n");
     }
     
