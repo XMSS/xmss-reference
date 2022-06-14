@@ -1,6 +1,6 @@
 CC = /usr/bin/gcc
-CFLAGS = -Wall -g -O3 -Wextra -Wpedantic -I/opt/homebrew/opt/openssl@3/include -L/opt/homebrew/opt/openssl@3/lib
-LDLIBS = -lcrypto
+CFLAGS = -Wall -g -O3 -Wextra -Wpedantic -fsanitize-address-use-after-return=always -fsanitize=address
+LDLIBS = -lcrypto -I/opt/homebrew/opt/openssl@3/include -L/opt/homebrew/opt/openssl@3/lib
 
 SOURCES = params.c hash.c fips202.c hash_address.c randombytes.c wots.c xmss.c xmss_core.c xmss_commons.c utils.c
 HEADERS = params.h hash.h fips202.h hash_address.h randombytes.h wots.h xmss.h xmss_core.h xmss_commons.h utils.h
@@ -18,6 +18,7 @@ TESTS = test/wots \
 		test/xmssmt_fast \
 		test/maxsigsxmss \
 		test/maxsigsxmssmt \
+		test/nist_test
 
 UI = ui/xmss_keypair \
 	 ui/xmss_sign \
@@ -43,6 +44,9 @@ test: $(TESTS:=.exec)
 
 test/%.exec: test/%
 	@$<
+
+test/nist_test: nist.c nist_test.c nist_params.h api.h $(SOURCES) $(OBJS) $(HEADERS)
+	$(CC) $(CFLAGS) -o $@ $(SOURCES) nist_test.c $< $(LDLIBS)
 
 test/xmss_fast: test/xmss.c $(SOURCES_FAST) $(OBJS) $(HEADERS_FAST)
 	$(CC) -DXMSS_SIGNATURES=1024 $(CFLAGS) -o $@ $(SOURCES_FAST) $< $(LDLIBS)
