@@ -1,11 +1,13 @@
 #ifndef NIST_PARAM_H
 #define NIST_PARAM_H
 
-#ifndef NIST_LEVEL 
-#define NIST_LEVEL 1
-#endif 
+#define NIST_LEVEL 0
 
-/* 
+#ifndef NIST_LEVEL
+#define NIST_LEVEL 0
+#endif
+
+/*
  * NIST_LEVEL below does not make sense in term of security
  * I use it as place holder for the total number of signatures
  */
@@ -16,7 +18,7 @@
 #define XMSSMT 0
 
 #define XMSS_PUBLICKEYBYTES 64
-#define XMSS_SECRETKEYBYTES 1373
+#define XMSS_SECRETKEYBYTES 132
 
 #define XMSS_SIGNBYTES 2500
 
@@ -26,7 +28,7 @@
 #define XMSSMT 0
 
 #define XMSS_PUBLICKEYBYTES 64
-#define XMSS_SECRETKEYBYTES 2093
+#define XMSS_SECRETKEYBYTES 132
 
 #define XMSS_SIGNBYTES 2692
 
@@ -36,7 +38,7 @@
 #define XMSSMT 0
 
 #define XMSS_PUBLICKEYBYTES 64
-#define XMSS_SECRETKEYBYTES 2573
+#define XMSS_SECRETKEYBYTES 132
 
 #define XMSS_SIGNBYTES 2820
 
@@ -46,7 +48,7 @@
 #define XMSSMT 1
 
 #define XMSS_PUBLICKEYBYTES 64
-#define XMSS_SECRETKEYBYTES 5998
+#define XMSS_SECRETKEYBYTES 131
 
 #define XMSS_SIGNBYTES 4963
 
@@ -56,7 +58,7 @@
 #define XMSSMT 1
 
 #define XMSS_PUBLICKEYBYTES 64
-#define XMSS_SECRETKEYBYTES 9600
+#define XMSS_SECRETKEYBYTES 133
 
 #define XMSS_SIGNBYTES 5605
 
@@ -66,7 +68,7 @@
 #define XMSSMT 1
 
 #define XMSS_PUBLICKEYBYTES 64
-#define XMSS_SECRETKEYBYTES 16629
+#define XMSS_SECRETKEYBYTES 136
 
 #define XMSS_SIGNBYTES 8392
 
@@ -75,7 +77,6 @@
 #error "Unspecified NIST_LEVEL {0,1,2,3,4,5}"
 
 #endif
-
 
 #if XMSSMT == 1
     #define XMSS_PARSE_OID xmssmt_parse_oid
@@ -93,11 +94,8 @@
     #define XMSS_REMAIN_SIG xmss_remain_signatures
 #endif
 
-
 #define CRYPTO_PUBLIC_KEY XMSS_PUBLICKEYBYTES
 #define CRYPTO_SECRET_KEY XMSS_SECRETKEYBYTES
 #define CRYPTO_BYTES XMSS_SIGNBYTES
-
-
 
 #endif
