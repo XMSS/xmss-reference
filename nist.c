@@ -9,46 +9,54 @@ int crypto_sign_keypair(unsigned char *pk, unsigned char *sk)
 {
     xmss_params params;
     uint32_t oid;
+    int ret = 0;
 
-    if (XMSS_STR_TO_OID(&oid, XMSS_OID))
+    ret |= XMSS_STR_TO_OID(&oid, XMSS_OID);
+    if (ret)
     {
         printf("Did not recognize %s!\n", XMSS_OID);
-        return OQS_ERROR; 
+        return OQS_ERROR;
     }
-    
-    if (XMSS_PARSE_OID(&params, oid))
+
+    ret |= XMSS_PARSE_OID(&params, oid);
+    if (ret)
     {
         printf("Could not parse OID for %s!\n", XMSS_OID);
         return OQS_ERROR;
     }
 
-    if (XMSS_KEYPAIR(pk, sk, oid))
-    {
-        printf("Error generating keypair\n");
-        return OQS_ERROR; 
-    }
+    printf("pk = %u, sk = %llu, smlen = %u\n", params.pk_bytes, params.sk_bytes, params.sig_bytes);
 
-    return OQS_SUCCESS; 
-}
-
-int crypto_sign(unsigned char *sm, unsigned long *smlen,
-                const unsigned char *m, unsigned long mlen, unsigned char *sk)
-{
-    if (XMSS_SIGN(sk, sm, &smlen, m, mlen))
+    ret |= XMSS_KEYPAIR(pk, sk, oid);
+    if (ret)
     {
-        printf("Error generating signature\n");
+        printf("Error generating keypair %d\n", ret);
         return OQS_ERROR;
     }
 
     return OQS_SUCCESS;
 }
 
-int crypto_sign_open(unsigned char *m, unsigned long *mlen,
-                     const unsigned char *sm, unsigned long smlen, const unsigned char *pk)
+int crypto_sign(unsigned char *sm, unsigned long long *smlen,
+                const unsigned char *m, unsigned long long mlen, unsigned char *sk)
 {
-    if (XMSS_SIGN_OPEN(m, mlen, sm, smlen, pk))
+    int ret = XMSS_SIGN(sk, sm, smlen, m, mlen);
+    if (ret)
     {
-        printf("Error verifying signature\n");
+        printf("Error generating signature %d\n", ret);
+        return OQS_ERROR;
+    }
+
+    return OQS_SUCCESS;
+}
+
+int crypto_sign_open(unsigned char *m, unsigned long long *mlen,
+                     const unsigned char *sm, unsigned long long smlen, const unsigned char *pk)
+{
+    int ret = XMSS_SIGN_OPEN(m, mlen, sm, smlen, pk);
+    if (ret)
+    {
+        printf("Error verifying signature %d\n", ret);
         return OQS_ERROR;
     }
 
