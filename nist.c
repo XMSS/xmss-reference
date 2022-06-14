@@ -25,8 +25,6 @@ int crypto_sign_keypair(unsigned char *pk, unsigned char *sk)
         return OQS_ERROR;
     }
 
-    printf("pk = %u, sk = %llu, smlen = %u\n", params.pk_bytes, params.sk_bytes, params.sig_bytes);
-
     ret |= XMSS_KEYPAIR(pk, sk, oid);
     if (ret)
     {
