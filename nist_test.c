@@ -6,10 +6,11 @@
 #include <string.h>
 #include "xmss.h"
 
-#define XMSS_SIGNATURES 32
+#define XMSS_SIGNATURES 64
 
 unsigned long long t[XMSS_SIGNATURES];
 
+#if DEBUG
 static void print_hex(const unsigned char *a, int length, const char *string)
 {
     printf("%s[%d] = \n", string, length);
@@ -19,6 +20,7 @@ static void print_hex(const unsigned char *a, int length, const char *string)
     }
     printf("\n");
 }
+#endif
 
 static int cmp_llu(const void *a, const void *b)
 {
@@ -71,7 +73,7 @@ int test_keygen(unsigned char *pk, unsigned char *sk)
     int ret;
     double result;
 
-    printf("Generating keypair.. ");
+    printf("Generating keypair.. %s\n", XMSS_OID);
 
     clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &start);
     ret = crypto_sign_keypair(pk, sk);
@@ -130,8 +132,7 @@ int test_verify(unsigned char *mout, unsigned long long *moutlen,
     for (int i = 0; i < XMSS_SIGNATURES; i++)
     {
         clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &start);
-        // ret = crypto_sign_open(mout, moutlen, sm, smlen, pk);
-        ret = xmss_sign_open(mout, moutlen, sm, smlen, pk);
+        ret = crypto_sign_open(mout, moutlen, sm, smlen, pk);
         clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &stop);
 
         t[i] = (stop.tv_sec - start.tv_sec) * 1e6 + (stop.tv_nsec - start.tv_nsec) / 1e3;
@@ -183,7 +184,7 @@ int main(void)
 {
     // Keygen test
     int ret;
-    unsigned char pk[5000] = {0}, sk[5000] = {0};
+    unsigned char pk[CRYPTO_PUBLIC_KEY], sk[CRYPTO_SECRET_KEY];
     unsigned long long smlen, mlen, mlen_out;
 
     // Signature test
