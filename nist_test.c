@@ -8,6 +8,8 @@
 
 #define XMSS_SIGNATURES 64
 
+#define CALC(start, stop) ((stop.tv_sec - start.tv_sec) * 1e6 + (stop.tv_nsec - start.tv_nsec) / 1e3)
+
 /* 
  * This array collect the performance number
  * and then use it to compute average and median number
@@ -81,7 +83,7 @@ int test_keygen(unsigned char *pk, unsigned char *sk)
     ret = crypto_sign_keypair(pk, sk);
     clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &stop);
 
-    result = (stop.tv_sec - start.tv_sec) * 1e6 + (stop.tv_nsec - start.tv_nsec) / 1e3;
+    result = CALC(start, stop);
     printf("took %lf us (%.2lf sec)\n", result, result / 1e6);
 
     return ret;
@@ -103,7 +105,7 @@ int test_sign(unsigned char *sm, unsigned long long *smlen,
         ret = crypto_sign(sm, smlen, m, mlen, sk);
         clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &stop);
 
-        t[i] = (stop.tv_sec - start.tv_sec) * 1e6 + (stop.tv_nsec - start.tv_nsec) / 1e3;
+        t[i] = CALC(start, stop);
 
         if (*smlen != CRYPTO_BYTES + mlen)
         {
@@ -137,7 +139,7 @@ int test_verify(unsigned char *mout, unsigned long long *moutlen,
         ret = crypto_sign_open(mout, moutlen, sm, smlen, pk);
         clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &stop);
 
-        t[i] = (stop.tv_sec - start.tv_sec) * 1e6 + (stop.tv_nsec - start.tv_nsec) / 1e3;
+        t[i] = CALC(start, stop);
 
         if (*moutlen != mlen)
         {
