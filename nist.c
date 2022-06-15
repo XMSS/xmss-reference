@@ -98,8 +98,7 @@ int crypto_sign(unsigned char *sm, unsigned long long *smlen,
 int crypto_sign_open(unsigned char *m, unsigned long long *mlen,
                      const unsigned char *sm, unsigned long long smlen, const unsigned char *pk)
 {
-    int ret = XMSS_SIGN_OPEN(m, mlen, sm, smlen, pk);
-    if (ret)
+    if (XMSS_SIGN_OPEN(m, mlen, sm, smlen, pk))
     {
 #if DEBUG
         printf("Error verifying signature %d\n", ret);

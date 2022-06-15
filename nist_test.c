@@ -8,6 +8,10 @@
 
 #define XMSS_SIGNATURES 64
 
+/* 
+ * This array collect the performance number
+ * and then use it to compute average and median number
+ */
 unsigned long long t[XMSS_SIGNATURES];
 
 #if DEBUG
@@ -44,18 +48,16 @@ static unsigned long long median(unsigned long long *l, size_t llen)
 static unsigned long long average(unsigned long long *t, size_t tlen)
 {
     unsigned long long acc = 0;
-    size_t i;
-    for (i = 0; i < tlen; i++)
+    for (size_t i = 0; i < tlen; i++)
     {
         acc += t[i];
     }
-    return acc / (tlen);
+    return acc / tlen;
 }
 
 static void print_results(unsigned long long *t, size_t tlen)
 {
-    size_t i;
-    for (i = 0; i < tlen - 1; i++)
+    for (size_t i = 0; i < tlen - 1; i++)
     {
         t[i] = t[i + 1] - t[i];
     }
