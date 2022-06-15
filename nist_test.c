@@ -161,9 +161,11 @@ int test_verify(unsigned char *mout, unsigned long long *moutlen,
     return ret;
 }
 
+/* 
+ * Testing remaining signatures
+ */
 int test_remain(unsigned char *sk)
 {
-    // Remaining signature test
     unsigned long long remain = 0, max = 0;
     int ret;
     ret = crypto_remain_signatures(&remain, &max, sk);

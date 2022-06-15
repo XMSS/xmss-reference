@@ -13,6 +13,9 @@
  * I use it as place holder for the total number of signatures
  */
 
+/* 
+ * Maximum signatures: 2^h = 2^10
+ */
 #if NIST_LEVEL == 0
 
 #define XMSS_OID "XMSS-SHA2_10_256"
@@ -24,6 +27,9 @@
 
 #define XMSS_SIGNBYTES 2500
 
+/* 
+ * Maximum signatures: 2^h = 2^16
+ */
 #elif NIST_LEVEL == 1
 
 #define XMSS_OID "XMSS-SHA2_16_256"
@@ -35,6 +41,9 @@
 
 #define XMSS_SIGNBYTES 2692
 
+/* 
+ * Maximum signatures: 2^h = 2^20
+ */
 #elif NIST_LEVEL == 2
 
 #define XMSS_OID "XMSS-SHA2_20_256"
@@ -46,6 +55,10 @@
 
 #define XMSS_SIGNBYTES 2820
 
+/* 
+ * Maximum signatures: 2^h = 2^20
+ * XMSS^MT has bigger signature and secret key (secret is not transfer), but better speed
+ */
 #elif NIST_LEVEL == 3
 
 #define XMSS_OID "XMSSMT-SHA2_20/2_256"
@@ -57,6 +70,10 @@
 
 #define XMSS_SIGNBYTES 4963
 
+/* 
+ * Maximum signatures: 2^h = 2^40
+ * XMSS^MT has bigger signature and secret key (secret is not transfer), but better speed
+ */
 #elif NIST_LEVEL == 4
 
 #define XMSS_OID "XMSSMT-SHA2_40/2_256"
@@ -68,6 +85,10 @@
 
 #define XMSS_SIGNBYTES 5605
 
+/* 
+ * Maximum signatures: 2^h = 2^60
+ * XMSS^MT has bigger signature and secret key (secret is not transfer), but better speed
+ */
 #elif NIST_LEVEL == 5
 
 #define XMSS_OID "XMSSMT-SHA2_60/3_256"
