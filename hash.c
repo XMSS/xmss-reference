@@ -1,6 +1,27 @@
 #include <stdint.h>
 #include <string.h>
-#include <openssl/sha.h>
+
+
+/* 
+ * TODO: By default, libOQS build point to OpenSSL hash algorithm
+ * To use SHA2 native instruction in lib, we must either
+ * - Build libQOS with OQS_USE_SHA2_OPENSSL to `OFF`
+ * - Include direct SHA2-NI from libOQS here
+ * 
+ * The 1st approach needs to rebuild the library
+ * The 2nd approach needs libOQS to expose SHA2_NI in file `src/common/sha2/sha2.c`
+ * 
+ * Since this is the reference implementation of XMSS, I will rebuild library in the 1st approach,
+ * hence, to reproduce this code, please rebuild your libOQS. 
+ * 
+ * From: 
+ * `alg_support.cmake`: `cmake_dependent_option(OQS_USE_SHA2_OPENSSL "" ON "OQS_USE_OPENSSL" OFF)`
+ * To
+ * `alg_support.cmake`: `cmake_dependent_option(OQS_USE_SHA2_OPENSSL "" OFF "OQS_USE_OPENSSL" OFF)`
+ */
+
+#include <oqs/sha2.h>
+#include <oqs/sha3.h>
 
 #include "hash_address.h"
 #include "utils.h"
@@ -29,26 +50,26 @@ static int core_hash(const xmss_params *params,
     unsigned char buf[64];
 
     if (params->n == 24 && params->func == XMSS_SHA2) {
-        SHA256(in, inlen, buf);
+        OQS_SHA2_sha256(buf, in, inlen);
         memcpy(out, buf, 24);
     }
     else if (params->n == 24 && params->func == XMSS_SHAKE256) {
-        shake256(out, 24, in, inlen);
+        OQS_SHA3_shake256(out, 24, in, inlen);
     }   
     else if (params->n == 32 && params->func == XMSS_SHA2) {
-        SHA256(in, inlen, out);
+        OQS_SHA2_sha256(out, in, inlen);
     }
     else if (params->n == 32 && params->func == XMSS_SHAKE128) {
-        shake128(out, 32, in, inlen);
+        OQS_SHA3_shake128(out, 32, in, inlen);
     }
     else if (params->n == 32 && params->func == XMSS_SHAKE256) {
-        shake256(out, 32, in, inlen);
+        OQS_SHA3_shake256(out, 32, in, inlen);
     }
     else if (params->n == 64 && params->func == XMSS_SHA2) {
-        SHA512(in, inlen, out);
+        OQS_SHA2_sha512(out, in, inlen);
     }
     else if (params->n == 64 && params->func == XMSS_SHAKE256) {
-        shake256(out, 64, in, inlen);
+        OQS_SHA3_shake256(out, 64, in, inlen);
     }
     else {
         return -1;
