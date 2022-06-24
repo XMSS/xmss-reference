@@ -60,12 +60,8 @@ static unsigned long long average(unsigned long long *t, size_t tlen)
 
 static void print_results(unsigned long long *t, size_t tlen)
 {
-    for (size_t i = 0; i < tlen - 1; i++)
-    {
-        t[i] = t[i + 1] - t[i];
-    }
     printf("\tmedian        : %llu us\n", median(t, tlen));
-    printf("\taverage       : %llu us\n", average(t, tlen - 1));
+    printf("\taverage       : %llu us\n", average(t, tlen));
     printf("\n");
 }
 
