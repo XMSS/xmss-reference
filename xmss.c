@@ -60,13 +60,12 @@ int xmss_sign_open(unsigned char *m, unsigned long long *mlen,
     return xmss_core_sign_open(&params, m, mlen, sm, smlen, pk + XMSS_OID_LEN);
 }
 
-int xmss_remain_signatures(unsigned long long *remain, 
-                           unsigned long long *max, const unsigned  char *sk)
+int xmss_remain_signatures(unsigned long long *remain, const unsigned  char *sk)
 {
     xmss_params params;
     uint32_t oid = 0;
     unsigned int i;
-    unsigned long long idx; 
+    unsigned long long idx, max; 
 
     for (i = 0; i < XMSS_OID_LEN; i++) {
         oid |= sk[XMSS_OID_LEN - i - 1] << (i * 8);
@@ -77,9 +76,9 @@ int xmss_remain_signatures(unsigned long long *remain,
     }
 
     idx = bytes_to_ull(sk + XMSS_OID_LEN, params.index_bytes);
+    max = ((1ULL << params.full_height) - 1);
 
-    *max = ((1ULL << params.full_height) - 1);
-    *remain = *max - idx;
+    *remain = max - idx;
 
     return 0;
 }
@@ -134,13 +133,12 @@ int xmssmt_sign_open(unsigned char *m, unsigned long long *mlen,
 }
 
 
-int xmssmt_remain_signatures(unsigned long long *remain, 
-                             unsigned long long *max, const unsigned  char *sk)
+int xmssmt_remain_signatures(unsigned long long *remain, const unsigned  char *sk)
 {
     xmss_params params;
     uint32_t oid = 0;
     unsigned int i;
-    unsigned long long idx; 
+    unsigned long long idx, max; 
 
     for (i = 0; i < XMSS_OID_LEN; i++) {
         oid |= sk[XMSS_OID_LEN - i - 1] << (i * 8);
@@ -151,9 +149,9 @@ int xmssmt_remain_signatures(unsigned long long *remain,
     }
 
     idx = bytes_to_ull(sk + XMSS_OID_LEN, params.index_bytes);
+    max = ((1ULL << params.full_height) - 1);
 
-    *max = ((1ULL << params.full_height) - 1);
-    *remain = *max - idx;
+    *remain = max - idx;
 
     return 0;
 }

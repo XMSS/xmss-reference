@@ -5,6 +5,7 @@
 #include <time.h>
 #include <string.h>
 #include "xmss.h"
+#include "params.h"
 
 #define XMSS_SIGNATURES 64
 
@@ -170,9 +171,24 @@ int test_verify(unsigned char *mout, unsigned long long *moutlen,
  */
 int test_remain(unsigned char *sk)
 {
-    unsigned long long remain = 0, max = 0;
+    unsigned long long remain = 0, max;
+    uint32_t oid = 0;
+    xmss_params params;
     int ret;
-    ret = crypto_remain_signatures(&remain, &max, sk);
+    ret = crypto_remain_signatures(&remain, sk);
+
+    for (int i = 0; i < XMSS_OID_LEN; i++) {
+        oid |= sk[XMSS_OID_LEN - i - 1] << (i * 8);
+    }
+
+#if XMSSMT
+    if (xmssmt_parse_oid(&params, oid)) {
+#else
+    if (xmss_parse_oid(&params, oid)) {
+#endif 
+        return -1;
+    }
+    max = ((1ULL << params.full_height) - 1);
 
     printf("used = %lld, remain = %lld, max = %lld\n", max - remain, remain, max);
 

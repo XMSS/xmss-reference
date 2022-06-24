@@ -16,7 +16,7 @@
 int crypto_sign_keypair(unsigned char *pk, unsigned char *sk);
 
 /*************************************************
- * Name:        crypto_sign
+ * Name:        XMSS_crypto_sign
  *
  * Description: Computes signature.
  *
@@ -32,7 +32,7 @@ int crypto_sign(unsigned char *sm, unsigned long long *smlen,
                 const unsigned char *m, unsigned long long mlen, unsigned char *sk);
 
 /*************************************************
- * Name:        crypto_sign_open
+ * Name:        XMSS_crypto_sign_open
  *
  * Description: Verify signed message.
  *
@@ -49,18 +49,16 @@ int crypto_sign_open(unsigned char *m, unsigned long long *mlen,
                      const unsigned char *sm, unsigned long long smlen, const unsigned char *pk);
 
 /*************************************************
- * Name:        crypto_remain_signatures
+ * Name:        XMSS_crypto_remain_signatures
  *
  * Description: Return number of signature left
  *
  * Arguments:   - unsigned long long *remain: remaining signatures
- *              - unsigned long long *max: maximum number of possibile signature
  *              - const uint8_t *sk: pointer to bit-packed private key
  *
  * Returns 0 (sucess), -1 otherwise
  **************************************************/
-int crypto_remain_signatures(unsigned long long *remain,
-                             unsigned long long *max, const unsigned char *sk);
+int crypto_remain_signatures(unsigned long long *remain, const unsigned char *sk);
 
 #endif 
 

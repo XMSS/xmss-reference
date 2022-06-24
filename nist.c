@@ -115,15 +115,13 @@ int crypto_sign_open(unsigned char *m, unsigned long long *mlen,
  * Description: Return number of signature left
  *
  * Arguments:   - unsigned long long *remain: remaining signatures
- *              - unsigned long long *max: maximum number of possibile signature
  *              - const uint8_t *sk: pointer to bit-packed private key
  *
  * Returns 0 (sucess), -1 otherwise
  **************************************************/
-int crypto_remain_signatures(unsigned long long *remain,
-                             unsigned long long *max, const unsigned char *sk)
+int crypto_remain_signatures(unsigned long long *remain, const unsigned char *sk)
 {
-    if (XMSS_REMAIN_SIG(remain, max, sk))
+    if (XMSS_REMAIN_SIG(remain, sk))
     {
 #if DEBUG
         printf("Error counting remaining signatures\n");
