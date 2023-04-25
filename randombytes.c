@@ -1,41 +1,36 @@
-/*
-This code was taken from the SPHINCS reference implementation and is public domain.
-*/
+/*=============================================================================
+ * Copyright (c) 2022 by SandboxAQ Inc
+ * Author: Duc Tri Nguyen
+ * SPDX-License-Identifier: MIT
+=============================================================================*/
+#include <oqs/common.h>
+#include <oqs/rand.h>
 
-#include <fcntl.h>
-#include <unistd.h>
+int runonce(void)
+{
+    unsigned char buf[48] = {0};
+    OQS_randombytes(buf, 48);
 
-static int fd = -1;
+    /* Using AES as random generator */
+    if (OQS_randombytes_switch_algorithm("NIST-KAT") != OQS_SUCCESS)
+    {
+        return OQS_ERROR;
+    }
+
+    /* Initialize NIST KAT, this time it reads from /dev/urandom */
+    OQS_randombytes_nist_kat_init_256bit(buf, NULL);
+    return OQS_SUCCESS;
+}
 
 void randombytes(unsigned char *x, unsigned long long xlen)
 {
-    int i;
-
-    if (fd == -1) {
-        for (;;) {
-            fd = open("/dev/urandom", O_RDONLY);
-            if (fd != -1) {
-                break;
-            }
-            sleep(1);
+    static int initialized = 0;
+    if (!initialized)
+    {
+        if (runonce() == OQS_SUCCESS)
+        {
+            initialized = 1;
         }
     }
-
-    while (xlen > 0) {
-        if (xlen < 1048576) {
-            i = xlen;
-        }
-        else {
-            i = 1048576;
-        }
-
-        i = read(fd, x, i);
-        if (i < 1) {
-            sleep(1);
-            continue;
-        }
-
-        x += i;
-        xlen -= i;
-    }
+    OQS_randombytes(x, xlen);
 }
