@@ -82,7 +82,7 @@ static void base_w(const xmss_params *params,
 static void wots_checksum(const xmss_params *params,
                           int *csum_base_w, const unsigned int *msg_base_w)
 {
-    int csum = 0;
+    unsigned long long csum = 0;
     unsigned char csum_bytes[(params->wots_len2 * params->wots_log_w + 7) / 8];
     unsigned int i;
 
